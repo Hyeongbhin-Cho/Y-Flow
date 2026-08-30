@@ -169,9 +169,12 @@ $P$는 대략 $L_P\le 1$. Lipschitz 스케줄에 사용.
 
 ## 6. 결과 비교 표
 
+Run: `runs/exp_01_swiss_roll`. 데이터 dump `datasets/swiss_roll/default`.  
+지금은 **FlowMatch만** 학습·평가. 나머지 칸은 이후 inference 비교용.
+
 | Method | Safety ↑ | Tube viol. ↓ | Core/Gap viol. ↓ | MMD ↓ | Radius MAE ↓ | Time (s/1k) |
 |--------|----------|--------------|------------------|-------|--------------|-------------|
-| FlowMatch | | | | | | |
+| FlowMatch | 0.7305 | 0.2695 (mean 0.056) | 0.00175 (mean 0.00067) | $3.62\times 10^{-5}$ | 0.138 | 0.051 |
 | HardFlow | | | | | | |
 | SafeFlow | | | | | | |
 | UniConFlow | | | | | | |
@@ -180,7 +183,7 @@ $P$는 대략 $L_P\le 1$. Lipschitz 스케줄에 사용.
 
 정의:
 
-- Safety: 모든 $h_j\le 0$인 점 비율
+- Safety: 모든 $h_j\le 0$인 점 비율 (`safe_ratio`)
 - Tube / Core viol.: 해당 $h>0$ 비율과 평균 $(h)_+$
 - MMD: 생성점 vs 테스트점 (RBF)
 - Radius MAE: $\mathbb{E}|r-au^\star|$
@@ -194,6 +197,28 @@ $P$는 대략 $L_P\le 1$. Lipschitz 스케줄에 사용.
 - GuideFlow: 모양은 괜찮고 Safety는 중간
 - SafeFlow / UniConFlow: Safety 높고, CBF/QP가 점을 경계에 붙일 수 있음
 - HardFlow / YFlow: Safety ≈ 1, MMD는 path-wise CBF보다 나을 가능성
+
+### 6.1 FlowMatch 실행 결과 (`runs/exp_01_swiss_roll/flowmatch`)
+
+설정: linear CFM, MLP $2\to 64\to 64\to 64\to 2$, 20k step, Adam $10^{-3}$, EMA 0.999, Euler $N=100$, $n_{\mathrm{eval}}=4000$, CUDA.  
+데이터: $n_{\mathrm{train}}=20000$, $\sigma=0.05$, $\tau=0.15$, $\rho_{\min}\approx 4.56$, $R\approx 14.43$. 캐시 고정.
+
+학습 곡선 (정성):
+
+- step 2k: 가우시안 구름. 나선 없음.
+- step 20k: 1.5바퀴 나선을 따라감. 매니폴드 두께는 데이터보다 조금 두껍고, 바퀴 사이에 outlier가 보임.
+
+지표 해석:
+
+1. **분포는 맞는다.** MMD $3.6\times 10^{-5}$, Radius MAE $0.138$ ($\tau=0.15$와 비슷한 스케일). scatter가 dump와 겹친다. 무제약 CFM backbone으로는 충분하다.
+2. **hard constraint는 안 지킨다.** Safety $0.731$. 가설(“모양은 괜찮고 Safety는 낮음”)과 같다. dump eval 점은 Safety $0.9975$라, 실패는 데이터 노이즈가 아니라 생성기가 튜브를 넘는 탓이다.
+3. **실패의 거의 전부는 튜브.** Tube viol. $26.95\%$ (4000점 중 약 1078). Core 7점 ($0.175\%$), box 1점. 안쪽 구멍·바깥 박스는 거의 안 깨진다.
+4. **대부분은 튜브 바로 밖, 일부는 바퀴 사이.** 매니폴드 거리 중앙값 $0.081<\tau$. 위반점 거리 중앙값 $0.246$. $d>0.5$인 점 $3.8\%$, $d>1$인 점 $1.4\%$ — scatter에서 팔 사이로 샌 점.
+5. **속도.** $0.051\,\mathrm{s}/1\mathrm{k}$ (4000점 $0.21\,\mathrm{s}$). 이후 제약 방법의 시간 비교 기준선.
+
+결론: FlowMatch는 **모양 baseline**이지 **안전 baseline이 아니다**. HardFlow / YFlow가 손댈 자리는 튜브 밖·바퀴 사이 누수이고, 코어/박스는 이미 거의 비어 있다. $\gamma=0$이면 이 분포와 같아야 한다.
+
+산출물: `last.pt`, `eval_samples.png`, `metrics.json`. 통합표는 `runs/exp_01_swiss_roll/metrics.json`.
 
 ---
 
