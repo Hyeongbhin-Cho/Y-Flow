@@ -219,6 +219,5 @@ __marimo__/
 
 # Experiment outputs
 outputs/
-runs/
 wandb/
 

@@ -16,6 +16,7 @@
 * `test_constraints.py`: 데이터 점 oracle safety
 * `test_cli.py`: `--mode`, `--run_name`, yaml override
 * `test_pipeline.py`: 짧은 학습 후 `metrics.json`
+* `test_hard_flow.py`: flowmatch ckpt skip, HardFlow eval
 
 ---
 

@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import importlib
 import json
 import time
 from pathlib import Path
@@ -15,13 +16,13 @@ from omegaconf import DictConfig
 from constraints.swiss_roll import SwissRollConstraint
 from data.swiss_roll import build_swiss_roll, denormalize
 from eval.metrics import evaluate_points
-from model import build_model
-from sample.euler import EulerSampler
-from train.checkpoint import load_checkpoint
-from train.ema import EMA
-from train.flow_match import ConditionalFlowMatching
 from utils.device import get_device
-from utils.paths import ROOT, flowmatch_ckpt, method_dir, run_name_of
+from utils.paths import ROOT, method_dir, run_name_of
+
+_SAMPLE_MODULES = {
+    "flowmatch": "eval.flow_match",
+    "hardflow": "eval.hard_flow",
+}
 
 
 def _save_scatter(path: Path, points: np.ndarray, reference: np.ndarray | None, title: str) -> None:
@@ -38,39 +39,32 @@ def _save_scatter(path: Path, points: np.ndarray, reference: np.ndarray | None, 
     plt.close(fig)
 
 
-def _sample_flowmatch(cfg: DictConfig, device: torch.device, x0: torch.Tensor) -> torch.Tensor:
-    ckpt_path = flowmatch_ckpt(cfg)
-    if not ckpt_path.is_file():
-        raise FileNotFoundError(f"missing flowmatch checkpoint: {ckpt_path}")
-    model = build_model(cfg).to(device)
-    ema = EMA(model, decay=float(cfg.train.ema_decay))
-    load_checkpoint(ckpt_path, model, ema=ema, map_location=device)
-    ema.copy_to(model)
-    model.eval()
-    method = ConditionalFlowMatching(cfg)
-    sampler = EulerSampler(n_steps=int(cfg.sample.n_steps))
-    return sampler.sample(model, method, x0)
+def _sample_fn(method: str):
+    if method not in _SAMPLE_MODULES:
+        raise NotImplementedError(f"{method} eval is not implemented yet")
+    mod = importlib.import_module(_SAMPLE_MODULES[method])
+    return mod.sample
 
 
-_SAMPLERS = {
-    "flowmatch": _sample_flowmatch,
-}
+def make_eval_x0(cfg: DictConfig, device: torch.device) -> torch.Tensor:
+    """Same (seed, n, dim) always yields the same x0, independent of other RNG use."""
+    n = int(cfg.sample.n_samples)
+    dim = int(cfg.model.get("dim", 2))
+    gen = torch.Generator(device="cpu")
+    gen.manual_seed(int(cfg.seed))
+    return torch.randn(n, dim, generator=gen).to(device=device)
 
 
 def run_eval(cfg: DictConfig, method: str, device: torch.device | None = None) -> dict:
-    if method not in _SAMPLERS:
-        raise NotImplementedError(f"{method} eval is not implemented yet")
-
+    sample = _sample_fn(method)
     device = device or get_device(cfg)
     bundle = build_swiss_roll(cfg)
-    n = int(cfg.sample.n_samples)
-    dim = int(cfg.model.get("dim", 2))
-    x0 = torch.randn(n, dim, device=device)
+    x0 = make_eval_x0(cfg, device)
 
     if device.type == "cuda":
         torch.cuda.synchronize(device)
     t0 = time.perf_counter()
-    z = _SAMPLERS[method](cfg, device, x0)
+    z = sample(cfg, device, x0)
     if device.type == "cuda":
         torch.cuda.synchronize(device)
     elapsed = time.perf_counter() - t0
@@ -82,10 +76,10 @@ def run_eval(cfg: DictConfig, method: str, device: torch.device | None = None) -
         {
             "method": method,
             "run_name": str(cfg.run_name),
-            "n_samples": n,
+            "n_samples": int(x0.shape[0]),
             "n_steps": int(cfg.sample.n_steps),
             "inference_time_s": float(elapsed),
-            "inference_time_s_per_1k": float(elapsed / max(n / 1000.0, 1e-12)),
+            "inference_time_s_per_1k": float(elapsed / max(x0.shape[0] / 1000.0, 1e-12)),
         }
     )
 

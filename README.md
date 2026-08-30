@@ -87,11 +87,25 @@ Swiss roll dump는 `datasets/swiss_roll/default/`에 있다. 없으면 첫 `trai
 ```bash
 conda activate yflow
 
+./run_exp_01_swiss_roll.sh
+```
+
+기본 `COMMAND=hardflow`, `RUN_NAME=exp_01_swiss_roll`. HardFlow는 training-free라 `runs/{run_name}/flowmatch/last.pt`가 있으면 학습을 건너뛴다. 없으면 FlowMatch를 먼저 학습한다.
+
+```bash
+COMMAND=flowmatch ./run_exp_01_swiss_roll.sh
+COMMAND=hardflow RUN_NAME=exp1 ./run_exp_01_swiss_roll.sh
+COMMAND=hardflow ./run_exp_01_swiss_roll.sh --device cuda --steps 20000
+```
+
+직접 호출:
+
+```bash
 python main.py flowmatch --mode train --run_name exp1
 python main.py flowmatch --mode eval --run_name exp1
-
+python main.py hardflow --mode train --run_name exp1
+python main.py hardflow --mode eval --run_name exp1
 python main.py all --mode eval --run_name exp1
-python main.py flowmatch --mode train --run_name exp1 --steps 1000 --device cpu
 ```
 
 커맨드: `all`, `flowmatch`, `hardflow`, `yflow`, `safeflow`, `uniconflow`, `guideflow`.  
@@ -99,11 +113,11 @@ python main.py flowmatch --mode train --run_name exp1 --steps 1000 --device cpu
 
 산출물:
 
-* 체크포인트: `runs/{run_name}/flowmatch/last.pt`
+* FlowMatch 체크포인트: `runs/{run_name}/flowmatch/last.pt` (HardFlow도 이 backbone)
 * 방법별 지표: `runs/{run_name}/{command}/metrics.json`
 * run 통합: `runs/{run_name}/metrics.json`
 
-지금은 `flowmatch` train/eval만 구현되어 있다.
+구현됨: `flowmatch` train/eval, `hardflow` train(skip 또는 FM 학습) / eval. 나머지 command는 아직 `NotImplementedError`.
 
 테스트:
 
@@ -118,6 +132,7 @@ python -m unittest discover -s test -v
 ```
 Y-Flow/
 ├── main.py
+├── run_exp_01_swiss_roll.sh
 ├── configs/exp_01_swiss_roll.yaml
 ├── datasets/swiss_roll/default/   # train.npy, eval.npy, meta.json
 ├── data/
@@ -135,5 +150,11 @@ Y-Flow/
 * [Model](model/README.md)
 * [Train](train/README.md)
 * [Data](data/README.md)
+* [configs](configs/README.md)
+* [constraints](constraints/README.md)
+* [Eval](eval/README.md)
+* [Sample](sample/README.md)
+* [utils](utils/README.md)
+* [viz](viz/README.md)
 * [Docs](docs/README.md)
 * [Test](test/README.md)

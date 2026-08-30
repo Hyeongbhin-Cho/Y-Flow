@@ -8,6 +8,8 @@
 
 ## 1. 관련 README 링크
 *   [Y-Flow 패키지 설명 문서](../README.md)
+*   [Train 패키지 설명 문서](../train/README.md)
+*   [Eval 패키지 설명 문서](../eval/README.md)
 
 ---
 

@@ -1,13 +1,385 @@
-# YFlow
+# YFlow 구현 연구 정리
 
-Physical Guidance Flow Matching + HardFlow-style terminal constraint.
+Physical Guidance Flow Matching (YFlow) + HardFlow-style terminal constraint
 
-타깃을 $X_1$ 근처로 예측한 뒤 **선형 보간**으로 다음 상태로 간다.  
-단순 투영 $P(\hat x_1)$ 대신, 예측된 최종 상태에서 $C$와 $h\le 0$을 풀고, $L_P$와 $t$가 안정된 구간에만 제약을 강하게 건다.
+본 문서는 기존 YFlow를 HardFlow의 일부 아이디어로 개선한 **구현용 이론·알고리즘** 정리이다.  
+
 
 ---
 
-## 구현 목표
+## 1. 연구 목적
+
+Flow Matching 생성 과정에서 **물리 법칙을 엄격히 만족**시키고 hallucination을 줄이는 것이 목표다.
+
+기존 YFlow:
+
+1. 현재 \(x_t\)와 속도 \(v_t\)로 clean target \(\hat x_1\)을 먼저 예측
+2. 물리 연산자 \(P(\cdot)\)를 타깃 공간에 적용
+3. 현재 상태와 가이드된 타깃 사이를 **선형 보간**하여 다음 스텝으로 이동
+
+기존 YFlow의 한계:
+
+- \(P\)는 단순 투영이라 **비용 \(C\)와 하드 제약 \(h\)를 동시에** 다루기 어렵다.
+- 매 스텝 무조건 투영하면 초반 노이즈 구간에 과도한 왜곡이 생길 수 있다.
+- LUCID 대비 bias는 단순하지만, 제약이 “연산자 한 번”으로만 표현된다.
+
+HardFlow에서 가져올 점:
+
+- 제약은 **예측된 최종 상태**에만 건다.
+- \(C(\hat x_1)\)와 \(h(\hat x_1)\le 0\)을 한 스텝 최적화로 푼다.
+- 초반에는 제약을 약하게, \(t\to 1\) 또는 \(L_P\le 1\)이 안정될 때 강하게 건다.
+
+유지할 YFlow 장점:
+
+- HardFlow의 \(\mathcal{M}^{-1}\) 고정점 반복 대신 **선형 보간**으로 다음 상태를 계산
+- 물리 연산자 \(P\)의 1-Lipschitz / 정답 보존성 분석을 그대로 활용
+
+---
+
+## 2. 기존 YFlow 요약
+
+### 2.1 물리 연산자 \(P\)
+
+가정:
+
+1. 1-Lipschitz
+$${
+\|P(x)-P(y)\|\le L_P\|x-y\|,\qquad L_P\le 1
+}$$
+
+2. 양의 동차성 (해당되는 경우)
+$${
+P(\alpha x)=\alpha P(x)\quad(\alpha\ge 0)
+}$$
+
+3. 정답 보존
+$${
+P(X_1)=X_1
+}$$
+
+### 2.2 기존 속도장
+
+선형 경로 \(X^{\mathrm{true}}(t)=(1-t)X_0+t X_1\)에 오차 \(e(t)\)를 더한다.
+
+$${
+X_t=(1-t)X_0+t X_1+e_{\mathrm{YFlow}}(t)
+}$$
+
+타깃 예측:
+
+$${
+X_t+r_t V_t,\qquad r_t=1-t
+}$$
+
+이상적인 rectified path에서는
+
+$${
+X_t+r_t V_t \approx X_1+e_{\mathrm{YFlow}}(t)+\text{(noise)}
+}$$
+
+기존 가이던스:
+
+$${
+V_{\mathrm{YFlow}}(t)=P(X_t+r_t V_t)-X_t
+}$$
+
+다음 상태(이산):
+
+$${
+x_{t+\Delta t}=x_t+\Delta t\,V_{\mathrm{YFlow}}
+}$$
+
+또는 동등하게 타깃과 현재를 보간한다.
+
+### 2.3 LUCID와의 차이 (유지)
+
+| 항목 | YFlow | LUCID |
+|------|-----|-------|
+| 연산자 입력 | \(X_t+r_t V_t\approx X_1+e\) | \(r_t X_t+r_t V_t\) ( \(X_0,X_1,t^2\)가 얽힘) |
+| 전개 중심 | \(P(X_1)=X_1\) | \(X_1\) 주변의 복잡한 섭동 |
+| Bias | \(\frac12 t^2(X_0-X_1)\) | \(\exp(-\frac12 t^2 J)\)가 섞인 적분 |
+
+YFlow는 타깃을 \(X_1\) 근처로 바로 정렬하므로 drift가 단순하다.  
+Improved YFlow도 이 정렬 구조를 유지한다.
+
+---
+
+## 3. Improved YFlow 문제 정의
+
+매 스텝에서 예측된 최종 상태 \(\hat x_1\)이 다음을 만족하도록 조정한다.
+
+1. Hard constraint
+$${
+h(\hat x_1)\le 0
+}$$
+중간 \(x_t\)는 feasible일 필요 없음.
+
+2. Cost
+$${
+C(\hat x_1)
+}$$
+작을수록 좋지만 제약보다 우선순위가 낮음.
+
+3. 물리 연산자 정합 (optional)
+$${
+\hat x_1 \approx P(\hat x_1)\quad\text{또는}\quad \|\hat x_1-P(\hat x_1^{\mathrm{raw}})\| \text{ 제한}
+}$$
+
+4. Nominal에서 크게 벗어나지 않음
+$${
+\|\hat x_1-\hat x_1^{\mathrm{raw}}\|_2^2
+}$$
+
+다음 상태로의 복원은 HardFlow inverse가 아니라 **선형 보간**.
+
+---
+
+## 4. 한 스텝 공식
+
+시간격자 \(0=t_0<\cdots<t_N=1\).  
+현재 상태 \(x_i\), 시각 \(t_i\).
+
+### 4.1 Raw terminal prediction
+
+YFlow 방식 (rectified / linear schedule):
+
+$${
+\hat x_1^{\mathrm{raw}}=x_i+(1-t_i)v_{t_i}^\theta(x_i)
+}$$
+
+HardFlow \(\mathcal{M}\)과 \(\alpha_t=t\), \(\beta_t=1-t\)일 때 같은 식이다.
+
+$${
+\mathcal{M}_{t_i}^\theta(x_i)=x_i+(1-t_i)v_{t_i}^\theta(x_i)
+}$$
+
+즉 Improved YFlow의 raw target은 HardFlow posterior mean과 같다.
+
+### 4.2 물리 연산자 warm start (선택)
+
+단순 YFlow는 여기서 \(P(\hat x_1^{\mathrm{raw}})\)를 바로 쓴다.  
+Improved YFlow는 이를 초기값으로만 쓴다.
+
+$${
+\hat x_1^{(0)}=P(\hat x_1^{\mathrm{raw}})
+}$$
+
+### 4.3 Terminal 최적화 (HardFlow 차용)
+
+$${
+\begin{aligned}
+\hat x_1^*=\arg\min_{\hat x_1}\quad
+& C(\hat x_1)+\frac{\lambda}{2}\|\hat x_1-\hat x_1^{\mathrm{raw}}\|_2^2
++\frac{\mu}{2}\|\hat x_1-P(\hat x_1^{\mathrm{raw}})\|_2^2 \\
+\text{s.t.}\quad
+& h(\hat x_1)\le 0.
+\end{aligned}
+}$$
+
+하이퍼파라미터:
+
+- \(\lambda\): raw flow prediction에 붙는 정도 (HardFlow의 \(\lambda_{oc}\)에 해당)
+- \(\mu\): 물리 투영 근처에 머물게 하는 항. \(\mu=0\)이면 HardFlow형, \(\lambda=0,\mu\to\infty\)면 기존 YFlow형
+- 제약만 필요하면 \(C\equiv 0\)
+
+등식 물리 조건은 \(h\)에 넣어도 된다.
+
+$${
+g(\hat x_1)=0 \quad\Rightarrow\quad \pm g(\hat x_1)\le\epsilon
+}$$
+
+### 4.4 Lipschitz 스케줄로 제약 강도 조절
+
+추정 Lipschitz \(L_P(t)\)와 시간 \(t\)로 게이트를 연다.
+
+$${
+\gamma(t)=
+\begin{cases}
+0, & t < t_{\mathrm{on}}\ \text{또는}\ \widehat L_P(t)>1+\delta \\
+\gamma_{\max}\cdot\frac{t-t_{\mathrm{on}}}{1-t_{\mathrm{on}}}, & \text{otherwise}
+\end{cases}
+}$$
+
+실제 적용:
+
+- \(\gamma=0\): \(\hat x_1^*\leftarrow\hat x_1^{\mathrm{raw}}\) (순수 flow)
+- \(0<\gamma<1\): 제약을 soft / 적은 iteration
+- \(\gamma=\gamma_{\max}\): 위 최적화를 엄격히
+
+HardFlow Remark 7과 같은 이유다. 초반 \(\beta_t\)가 크고 예측이 거칠다.
+
+\(L_P\) 추정 (간단 버전):
+
+$${
+\widehat L_P \approx \frac{\|P(x)-P(y)\|}{\|x-y\|}
+}$$
+
+미니배치 또는 현재 \(\hat x_1^{\mathrm{raw}}\)와 섭동점 몇 개로 계산.
+
+### 4.5 다음 상태: 선형 보간 (YFlow 유지)
+
+HardFlow:
+
+$${
+x_{i+1}=\alpha_{t_{i+1}}\hat x_N^*+\beta_{t_{i+1}}\mathcal{W}(\bar x_{i+1})
+}$$
+
+Improved YFlow:
+
+$${
+x_{i+1}=(1-\eta_i)x_i+\eta_i\hat x_1^*
+}$$
+
+권장 스텝:
+
+$${
+\eta_i=\frac{\Delta t_i}{1-t_i}
+}$$
+
+이면
+
+$${
+x_{i+1}=x_i+\Delta t_i\cdot\frac{\hat x_1^*-x_i}{1-t_i}
+}$$
+
+유효 속도:
+
+$${
+V_{\mathrm{imp}}(t_i)=\frac{\hat x_1^*-x_i}{1-t_i}
+}$$
+
+기존 YFlow의 \(V_{\mathrm{YFlow}}=P(\cdot)-x_t\)를 \(\hat x_1^*-x_t\)로 바꾼 것이다.
+
+마지막 스텝 \(t_N=1\) 직전에는 \(\eta\to 1\)이므로 \(x_N=\hat x_1^*\).  
+최적화가 성공하면 \(h(x_N)\le 0\).
+
+---
+
+## 5. 구현 알고리즘
+
+### 입력
+
+- pretrained \(v_t^\theta\)
+- 물리 연산자 \(P\) (투영 또는 근사 투영)
+- \(C(\cdot)\), \(h(\cdot)\)
+- \(\lambda,\mu,\lambda_{oc}\) 대응 계수
+- \(N\), \(\{t_i\}\), \(t_{\mathrm{on}}\), Lipschitz threshold
+
+### 루프
+
+1. \(x_0\sim p_0\)
+2. for \(i=0,\dots,N-1\):
+   1. \(v\leftarrow v_{t_i}^\theta(x_i)\)
+   2. \(\hat x_1^{\mathrm{raw}}\leftarrow x_i+(1-t_i)v\)
+   3. (선택) \(\hat x_1^{(0)}\leftarrow P(\hat x_1^{\mathrm{raw}})\)
+   4. \(\gamma\leftarrow \mathrm{Schedule}(t_i,\widehat L_P)\)
+   5. if \(\gamma=0\): \(\hat x_1^*\leftarrow\hat x_1^{\mathrm{raw}}\)
+      else: 4.3의 constrained optimization (초기값 \(\hat x_1^{(0)}\) 또는 raw)
+   6. \(\eta\leftarrow \Delta t_i/(1-t_i)\) (마지막 스텝은 \(\eta=1\))
+   7. \(x_{i+1}\leftarrow (1-\eta)x_i+\eta\hat x_1^*\)
+3. return \(x_N\)
+
+### 의사코드
+
+```text
+x = sample_p0()
+for i in 0..N-1:
+    t, dt = t_grid[i], t_grid[i+1]-t_grid[i]
+    v = model(x, t)
+    x1_raw = x + (1-t)*v
+    x1_phys = P(x1_raw)
+    gamma = constraint_schedule(t, lipschitz_estimate(P, x1_raw))
+    if gamma == 0:
+        x1 = x1_raw
+    else:
+        x1 = solve(
+            min  C(z) + (lambda/2)*||z-x1_raw||^2 + (mu/2)*||z-x1_phys||^2
+            s.t. h(z) <= 0,
+            z0 = x1_phys
+        )
+    eta = 1.0 if i == N-1 else dt/(1-t)
+    x = (1-eta)*x + eta*x1
+return x
+```
+
+---
+
+## 6. 이론 스케치 (구현 관점)
+
+### 6.1 Terminal feasibility
+
+마지막 보간이 \(\eta=1\)이면 \(x_N=\hat x_1^*\).  
+서브문제가 실행 가능하면 \(h(x_N)\le 0\).  
+이는 HardFlow Proposition 1과 같은 논리이며, inverse map이 없어도 성립한다.
+
+### 6.2 기존 YFlow bias와의 관계
+
+제약을 켜지 않으면(\(\gamma=0\) 또는 \(\hat x_1^*=P(\hat x_1^{\mathrm{raw}})\)만 사용) 기존 YFlow와 동일하다.  
+\(L_P\le 1\), \(P(X_1)=X_1\), \((J-I)e\approx 0\) 근사에서
+
+$${
+\mathrm{Bias}(e_{\mathrm{YFlow}}(t))\approx\frac12 t^2(X_0-X_1)
+}$$
+
+$${
+\mathrm{Var}(e_{\mathrm{YFlow}}(t))
+=\sigma_1^2 t\,\mathrm{Tr}(I)+\sigma_2^2\Big(t-t^2+\frac13 t^3\Big)\mathrm{Tr}(J^2)
+}$$
+
+최적화가 raw target에서 \(\Delta=\hat x_1^*-\hat x_1^{\mathrm{raw}}\)만큼 옮기면, 추가 drift는 \(\Delta\)의 보간으로 들어간다.  
+\(\lambda\)가 크면 \(\Delta\)가 작아져 YFlow 분석에 가깝고, 제약이 빡세면 \(\Delta\)는 feasible set으로의 최소 이동량이 된다.
+
+### 6.3 선형 보간 vs HardFlow \(\mathcal{F}\)
+
+HardFlow \(\mathcal{F}\)는 \(\mathcal{W}(\bar x_{i+1})\)을 한 번 평가해 \(X_0\) 추정을 섞는다.  
+Improved YFlow는 \(X_0\) 추정을 쓰지 않고
+
+$${
+x_{i+1}=x_i+\eta(\hat x_1^*-x_i)
+}$$
+
+만 사용한다.
+
+장점:
+
+- \(\mathcal{M}^{-1}\) 고정점 / \(\mathcal{W}\) 추가 forward가 없음
+- 구현이 짧고 \(P\) 분석과 맞추기 쉬움
+
+단점:
+
+- affine path의 정확한 역맵은 아님
+- 스케줄이 \(\alpha_t=t\)가 아니면 보간 계수를 일반화해야 함
+
+일반 스케줄:
+
+$${
+\hat x_1^{\mathrm{raw}}=\mathcal{M}_{t_i}^\theta(x_i)
+}$$
+
+$${
+x_{i+1}=\alpha_{t_{i+1}}\hat x_1^*+\beta_{t_{i+1}}\mathcal{W}_{t_i}^\theta(x_i)
+}$$
+
+이 식을 쓰면 HardFlow Problem 6에 더 가까워진다.  
+1차 구현은 linear schedule + 단순 보간으로 충분하다.
+
+---
+
+## 7. HardFlow / 기존 YFlow / Improved YFlow
+
+| 항목 | 기존 YFlow | HardFlow | Improved YFlow |
+|------|----------|----------|----------------|
+| Target 예측 | \(x_t+(1-t)v_t\) | \(\mathcal{M}_t^\theta\) | 동일 (linear면 같음) |
+| 제약 | \(P(\hat x_1)\) | \(h(\hat x_1)\le 0\) 최적화 | \(h\) 최적화 + \(P\) warm start |
+| 비용 \(C\) | 없음 | 있음 | 있음 |
+| 다음 상태 | 선형 보간 | \(\mathcal{F}\approx T^y(\bar x_{i+1})\) | 선형 보간 (기본) |
+| 적용 시점 | 매 스텝 | 후반 권장 | \(t\) + \(L_P\) 스케줄 |
+| Training | free | free | free |
+
+---
+---
+
+## 8. 구현 목표
 
 - [ ] 사전학습 $v_t^\theta$로 raw target $\hat x_1^{\mathrm{raw}}=x_t+(1-t)v_t$를 계산한다.
 - [ ] 물리 연산자 $P$는 해 자체가 아니라 warm start다. $P$는 1-Lipschitz, $P(X_1)=X_1$을 가정한다.
