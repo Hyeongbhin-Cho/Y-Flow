@@ -1,0 +1,45 @@
+# configs/exp_01_swiss_roll.yaml
+exp: exp_01_swiss_roll
+seed: 0
+
+data:
+  name: swiss_roll
+  cache_dir: datasets/swiss_roll/default
+  regenerate: false
+  a: 1.0
+  u_min: 4.71238898038469    # 1.5 pi
+  u_max: 14.137166941154069  # 4.5 pi
+  n_turns: 1.5
+  sigma_obs: 0.05
+  n_train: 20000
+  n_eval: 4000
+  margin: 0.2
+  tau: 0.15                  # 3 * sigma_obs
+
+model:
+  name: mlp
+  dim: 2
+  hidden: [64, 64, 64]
+  time_embed_dim: 32
+
+method:
+  name: flow_matching
+  sigma_min: 0.0
+
+train:
+  batch_size: 256
+  steps: 20000
+  lr: 1.0e-3
+  ema_decay: 0.999
+
+sample:
+  n_samples: 4000
+  n_steps: 100
+
+log:
+  out_dir: outputs/exp_01_swiss_roll
+  plot_every: 2000
+
+device: cuda
+
+

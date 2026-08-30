@@ -1,0 +1,39 @@
+name: yflow
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+
+  # Deep learning
+  - pytorch
+  - torchvision
+  - pytorch-cuda=12.4
+
+  # Numerics / data
+  - numpy
+  - scipy
+  - scikit-learn
+  - pandas
+
+  # Visualization
+  - matplotlib
+  - seaborn
+  - pillow
+  - tqdm
+
+  # Config / notebooks
+  - pyyaml
+  - jupyter
+  - ipykernel
+
+  - pip:
+      - triton==2.3.0
+      - wandb
+      - einops
+      - omegaconf
+      - tensorboard
+      - torchdiffeq
