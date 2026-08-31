@@ -35,7 +35,7 @@ _METHOD_ORDER = (
     "guideflow",
 )
 
-_TRAINABLE = frozenset({"flowmatch", "hardflow", "yflow"})
+_TRAINABLE = frozenset({"flowmatch", "hardflow", "guideflow"})
 
 
 def _not_ready(name: str, action: str):
@@ -59,11 +59,19 @@ def _train_hardflow(cfg: DictConfig) -> None:
     print(f"hardflow backbone {ckpt}")
 
 
-def _train_yflow(cfg: DictConfig) -> None:
-    from train.y_flow import ensure_flowmatch_ckpt
+def _train_guideflow(cfg: DictConfig) -> None:
+    from eval.guide_flow import owns_backbone
+
+    if owns_backbone(cfg):
+        from train.guide_flow import run_train_guideflow
+
+        ckpt = run_train_guideflow(cfg)
+        print(f"saved guideflow backbone {ckpt}")
+        return
+    from train.guide_flow import ensure_flowmatch_ckpt
 
     ckpt = ensure_flowmatch_ckpt(cfg)
-    print(f"yflow backbone {ckpt}")
+    print(f"guideflow backbone {ckpt}")
 
 
 def _eval_method(cfg: DictConfig, method: str) -> None:
@@ -78,7 +86,7 @@ _TRAIN = {
     "yflow": _train_yflow,
     "safeflow": _not_ready("safeflow", "train"),
     "uniconflow": _not_ready("uniconflow", "train"),
-    "guideflow": _not_ready("guideflow", "train"),
+    "guideflow": _train_guideflow,
 }
 
 _EVAL = {
@@ -87,7 +95,7 @@ _EVAL = {
     "yflow": lambda cfg: _eval_method(cfg, "yflow"),
     "safeflow": _not_ready("safeflow", "eval"),
     "uniconflow": _not_ready("uniconflow", "eval"),
-    "guideflow": _not_ready("guideflow", "eval"),
+    "guideflow": lambda cfg: _eval_method(cfg, "guideflow"),
 }
 
 

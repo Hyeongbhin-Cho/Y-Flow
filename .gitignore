@@ -221,3 +221,6 @@ __marimo__/
 outputs/
 wandb/
 
+runs/*/*/last.pt
+runs/*/*/*.npy
+__pycache__/

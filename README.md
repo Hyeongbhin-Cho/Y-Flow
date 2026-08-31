@@ -90,13 +90,17 @@ conda activate yflow
 ./run_exp_01_swiss_roll.sh
 ```
 
-기본 `COMMAND=hardflow`, `RUN_NAME=exp_01_swiss_roll`. HardFlow는 training-free라 `runs/{run_name}/flowmatch/last.pt`가 있으면 학습을 건너뛴다. 없으면 FlowMatch를 먼저 학습한다.
+기본 `COMMAND=hardflow`, `RUN_NAME=exp_01_swiss_roll`. HardFlow는 training-free라 `runs/{run_name}/flowmatch/last.pt`가 있으면 학습을 건너뛴다. 없으면 FlowMatch를 먼저 학습한다. GuideFlow도 기본은 같고, 옵션을 켰을 때만 자체 backbone을 학습한다.
 
 ```bash
 COMMAND=flowmatch ./run_exp_01_swiss_roll.sh
 COMMAND=hardflow RUN_NAME=exp1 ./run_exp_01_swiss_roll.sh
 COMMAND=hardflow ./run_exp_01_swiss_roll.sh --device cuda --steps 20000
+COMMAND=guideflow ./run_exp_01_swiss_roll.sh
+COMMAND=guideflow ./run_exp_01_swiss_roll.sh --rfe_loss true --enabled true
 ```
+
+GuideFlow는 두 모드를 고를 수 있다. 아무 옵션도 주지 않으면 HardFlow와 같은 training-free다. 원논문의 EBM 결합(`--rfe_loss true`)이나 CFG(`--enabled true`)를 켜면 `runs/{run_name}/guideflow/last.pt`에 자체 backbone을 학습한다. 두 옵션은 독립이다. 학습한 backbone으로 평가하려면 eval에도 같은 플래그가 필요한데, 위 스크립트는 train과 eval에 인자를 함께 넘기므로 신경 쓸 필요가 없다.
 
 직접 호출:
 
@@ -105,7 +109,16 @@ python main.py flowmatch --mode train --run_name exp1
 python main.py flowmatch --mode eval --run_name exp1
 python main.py hardflow --mode train --run_name exp1
 python main.py hardflow --mode eval --run_name exp1
+python main.py guideflow --mode train --run_name exp1
+python main.py guideflow --mode eval --run_name exp1
 python main.py all --mode eval --run_name exp1
+```
+
+GuideFlow를 train으로 돌릴 때는 train과 eval에 같은 플래그를 준다.
+
+```bash
+python main.py guideflow --mode train --run_name exp1 --rfe_loss true --enabled true
+python main.py guideflow --mode eval --run_name exp1 --rfe_loss true --enabled true
 ```
 
 커맨드: `all`, `flowmatch`, `hardflow`, `yflow`, `safeflow`, `uniconflow`, `guideflow`.  
@@ -113,11 +126,12 @@ python main.py all --mode eval --run_name exp1
 
 산출물:
 
-* FlowMatch 체크포인트: `runs/{run_name}/flowmatch/last.pt` (HardFlow도 이 backbone)
+* FlowMatch 체크포인트: `runs/{run_name}/flowmatch/last.pt` (HardFlow, training-free GuideFlow도 이 backbone)
+* GuideFlow 자체 체크포인트: `runs/{run_name}/guideflow/last.pt` (`--rfe_loss` 또는 `--enabled`를 켰을 때만)
 * 방법별 지표: `runs/{run_name}/{command}/metrics.json`
 * run 통합: `runs/{run_name}/metrics.json`
 
-구현됨: `flowmatch` train/eval, `hardflow` train(skip 또는 FM 학습) / eval, `yflow` train(skip 또는 FM 학습) / eval. 나머지 command는 아직 `NotImplementedError`.
+구현됨: `flowmatch` train/eval, `hardflow`·`guideflow` train(skip 또는 FM 학습) / eval. 나머지 command는 아직 `NotImplementedError`.
 
 테스트:
 

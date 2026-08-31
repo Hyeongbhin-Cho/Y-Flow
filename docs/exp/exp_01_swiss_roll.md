@@ -170,19 +170,21 @@ $P$는 대략 $L_P\le 1$. Lipschitz 스케줄에 사용.
 ## 6. 결과 비교 표
 
 Run: `runs/exp_01_swiss_roll`. 데이터 dump `datasets/swiss_roll/default`.  
-**FlowMatch**(무제약 baseline), **HardFlow**(terminal 제약), **YFlow**(Physical Guidance + Terminal 제약, PyTorch Autograd PGD) 평가 완료. 나머지 칸은 이후 inference 비교용.
+**FlowMatch**(무제약 baseline)와 **HardFlow**(terminal 제약), **GuideFlow**(생성 중 제약) 평가 완료. 나머지 칸은 이후 inference 비교용.
 
-| Method | Safety ↑ | Tube viol. ↓ | Core/Gap viol. ↓ | MMD ↓ | Radius MAE ↓ | Time (s/1k) |
-|---|---|---|---|---|---|---|
-| FlowMatch | 0.7305 | 0.2695 (mean 0.056) | 0.00175 (mean 0.00067) | $3.62\times 10^{-5}$ | 0.138 | 0.051 |
-| HardFlow | 1.0 | 0.0 (mean 0.0) | 0.0 (mean 0.0) | 0.00986 | 0.0943 | 492.736 |
-| SafeFlow | | | | | | |
-| UniConFlow | | | | | | |
-| GuideFlow | | | | | | |
-| YFlow | 1.0 | 0.0 (mean 0.0) | 0.0 (mean 0.0) | 0.00224 | 0.0727 | 0.739 |
+| Method | Train | Safety ↑ | Tube viol. ↓ | Core/Gap viol. ↓ | MMD ↓ | Radius MAE ↓ | Time (s/1k) |
+|--------|-------|----------|--------------|------------------|-------|--------------|-------------|
+| FlowMatch | train | 0.7305 | 0.2695 (mean 0.056) | 0.00175 (mean 0.00067) | $3.62\times 10^{-5}$ | 0.138 | 0.051 |
+| HardFlow | train-free | 1.0 | 0.0 (mean 0.0) | 0.0 (mean 0.0) | 0.00986 | 0.0943 | 492.736 |
+| SafeFlow | train-free | | | | | | |
+| UniConFlow | train-free | | | | | | |
+| GuideFlow | train-free | 1.0 | 0.0 (mean 0.0) | 0.0 (mean 0.0) | 0.00790 | 0.0625 | 0.072 |
+| GuideFlow | train | 1.0 | 0.0 (mean 0.0) | 0.0 (mean 0.0) | 0.00493 | 0.0647 | 0.115 |
+| YFlow | train-free | | | | | | |
 
 정의:
 
+- Train: `train-free`는 동결 $v_t^\theta$에 inference만 교체, `train`은 backbone을 학습
 - Safety: 모든 $h_j\le 0$인 점 비율 (`safe_ratio`)
 - Tube / Core viol.: 해당 $h>0$ 비율과 평균 $(h)_+$
 - MMD: 생성점 vs 테스트점 (RBF)

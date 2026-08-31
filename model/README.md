@@ -15,6 +15,7 @@ Exp-01 Swiss roll은 2D **좌표점**이므로 MLP를 쓴다. CNN/UNet은 이미
 ## 2. 파일 목록 및 요약
 * `base.py`: `VelocityNet` 인터페이스, `build_model`
 * `time_embed.py`: scalar $t\in[0,1]$ sinusoidal embedding
+* `cond_mlp.py`: GuideFlow CFG용 조건부 속도장 (intent / reward 임베딩과 null 토큰)
 * `mlp.py`: 저차원 속도장 MLP
 
 ---

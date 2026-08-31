@@ -1,6 +1,6 @@
 # eval 패키지 (eval/)
 
-이 패키지는 공통 평가 루프와 방법별 샘플러를 둔다. `evaluate.py`가 `flow_match.py`, `hard_flow.py` 등을 불러 차이를 낸다.
+이 패키지는 공통 평가 루프와 방법별 샘플러를 둔다. `evaluate.py`가 `flow_match.py`, `hard_flow.py`, `guide_flow.py` 등을 불러 차이를 낸다.
 
 ---
 
@@ -17,8 +17,8 @@
 * `_backbone.py`: frozen FlowMatch $v_t^\theta$ 로드
 * `flow_match.py`: unguided Euler
 * `hard_flow.py`: terminal $h,C$ SLSQP 후 affine 복원
-* `y_flow.py`: terminal $h,C$ + $P$ warm start SLSQP 후 선형 보간
-* `safe_flow.py`, `unicon_flow.py`, `guide_flow.py`: 아직 미구현
+* `guide_flow.py`: CVF / CF / RFE 제약 주입 샘플링, 옵션 CFG
+* `y_flow.py`, `safe_flow.py`, `unicon_flow.py`: 아직 미구현
 
 ---
 
@@ -39,7 +39,28 @@
 #### sample
 *   **설명**: $t\ge t_{\mathrm{on}}$에서 예측된 $x_1$에 SLSQP. 마지막 스텝에서 $h(x_N)\le 0$을 목표로 한다.
 
-### y_flow.py
+### guide_flow.py
 
 #### sample
-*   **설명**: $t\ge t_{\mathrm{on}}$에서 물리 투영 $P(\hat{x}_1)$ warm start 기반 $h,C$ SLSQP 최적화 후 현재 상태와 선형 보간. 마지막 스텝에서 $h(x_N)\le 0$을 목표로 한다.
+*   **설명**: 동결 $v_t^\theta$에 세 제약을 주입한다. CVF는 속도장 보정, CF는 $k_c$에서 flow 상태 재설정, RFE는 $t\ge\tau^{*}$에서 에너지 하강. 세 모듈을 모두 끄면 `flow_match.sample`과 같은 결과가 나온다.
+
+#### build_anchor_vocabulary
+*   **설명**: $h\le 0$인 train 점에 farthest point sampling. 논문의 $\mathcal{V}_a$ ($N=256$)에 대응.
+
+#### energy_grad
+*   **설명**: $h$의 제곱 hinge와 $w_{\mathrm{cost}}C$에 대한 닫힌 형태 기울기. 원좌표 $p$에서 계산한다.
+
+#### _GuidedVelocity
+*   **설명**: Eq. (13)의 $v^{\mathrm{guide}}=(1-\gamma)v(x,t)+\gamma v(x,t,c)$. `guidance.enabled`일 때만 쓰며 조건부 backbone이 필요하다.
+
+#### energy_torch
+*   **설명**: 미분 가능한 $E(p)$. EBM 결합 학습이 쓰며, 투영을 상수로 둔 subgradient가 `energy_grad`와 일치한다.
+
+#### owns_backbone
+*   **설명**: CFG나 EBM이 켜져 있으면 GuideFlow가 자체 backbone을 쓴다는 판정.
+
+#### command_bins / ego_progress
+*   **설명**: $C_d$(나선 구간 one-hot)와 $C_r$(중심선 진행도 EP)를 계산한다.
+
+#### energy_weight
+*   **설명**: Eq. (5)의 $\varepsilon(t)$. $\tau^{*}$ 전에는 0, $[\tau^{*},1]$에서 선형 증가, $t\ge 1$에서 $\varepsilon_{\max}$.
