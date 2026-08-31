@@ -35,7 +35,7 @@ class TestCLI(unittest.TestCase):
         from main import main
 
         with self.assertRaises(NotImplementedError):
-            main(["yflow", "--mode", "eval", "--run_name", "cli_unit"])
+            main(["safeflow", "--mode", "eval", "--run_name", "cli_unit"])
 
 
 if __name__ == "__main__":

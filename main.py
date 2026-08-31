@@ -83,7 +83,7 @@ def _eval_method(cfg: DictConfig, method: str) -> None:
 _TRAIN = {
     "flowmatch": _train_flowmatch,
     "hardflow": _train_hardflow,
-    "yflow": _not_ready("yflow", "train"),
+    "yflow": _train_yflow,
     "safeflow": _not_ready("safeflow", "train"),
     "uniconflow": _not_ready("uniconflow", "train"),
     "guideflow": _train_guideflow,
@@ -92,7 +92,7 @@ _TRAIN = {
 _EVAL = {
     "flowmatch": lambda cfg: _eval_method(cfg, "flowmatch"),
     "hardflow": lambda cfg: _eval_method(cfg, "hardflow"),
-    "yflow": _not_ready("yflow", "eval"),
+    "yflow": lambda cfg: _eval_method(cfg, "yflow"),
     "safeflow": _not_ready("safeflow", "eval"),
     "uniconflow": _not_ready("uniconflow", "eval"),
     "guideflow": lambda cfg: _eval_method(cfg, "guideflow"),
