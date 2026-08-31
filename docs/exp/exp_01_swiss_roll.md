@@ -170,19 +170,28 @@ $P$는 대략 $L_P\le 1$. Lipschitz 스케줄에 사용.
 ## 6. 결과 비교 표
 
 Run: `runs/exp_01_swiss_roll`. 데이터 dump `datasets/swiss_roll/default`.  
-**FlowMatch**(무제약 baseline)와 **HardFlow**(terminal 제약) 평가 완료. 나머지 칸은 이후 inference 비교용.
+**FlowMatch**(무제약 baseline), **HardFlow**(terminal 제약), **GuideFlow**(생성 중 제약) 평가 완료. 나머지 칸은 이후 inference 비교용.
 
-| Method | Safety ↑ | Tube viol. ↓ | Core/Gap viol. ↓ | MMD ↓ | Radius MAE ↓ | Time (s/1k) |
-|--------|----------|--------------|------------------|-------|--------------|-------------|
-| FlowMatch | 0.7305 | 0.2695 (mean 0.056) | 0.00175 (mean 0.00067) | $3.62\times 10^{-5}$ | 0.138 | 0.051 |
-| HardFlow | 1.0 | 0.0 (mean 0.0) | 0.0 (mean 0.0) | 0.00986 | 0.0943 | 492.736 |
-| SafeFlow | | | | | | |
-| UniConFlow | | | | | | |
-| GuideFlow | 1.0 | 0.0 (mean 0.0) | 0.0 (mean 0.0) | 0.00741 | 0.1125 | 0.202 (CPU) |
-| YFlow | | | | | | |
+Train 열은 5장의 공통 규칙(제약 방법은 같은 $v_t^\theta$를 고정하고 inference만 교체)을 따르는지 표시한다.
+
+| Method | Train | Safety ↑ | Tube viol. ↓ | Core/Gap viol. ↓ | MMD ↓ | Radius MAE ↓ | Time (s/1k) |
+|--------|-------|----------|--------------|------------------|-------|--------------|-------------|
+| FlowMatch | train | 0.7305 | 0.2695 (mean 0.056) | 0.00175 (mean 0.00067) | $3.62\times 10^{-5}$ | 0.138 | 0.051 |
+| HardFlow | train-free | 1.0 | 0.0 (mean 0.0) | 0.0 (mean 0.0) | 0.00986 | 0.0943 | 492.736 |
+| SafeFlow | train-free | | | | | | |
+| UniConFlow | train-free | | | | | | |
+| GuideFlow | train-free | 1.0 | 0.0 (mean 0.0) | 0.0 (mean 0.0) | 0.00790 | 0.0625 | 0.072 |
+| YFlow | train-free | | | | | | |
+
+옵션 ablation (5장이 명시한 GuideFlow 원논문의 EBM 결합. 비교표 본문과 분리한다):
+
+| Method | Train | Safety ↑ | Tube viol. ↓ | Core/Gap viol. ↓ | MMD ↓ | Radius MAE ↓ | Time (s/1k) |
+|--------|-------|----------|--------------|------------------|-------|--------------|-------------|
+| GuideFlow + EBM/CFG | train | 1.0 | 0.0 (mean 0.0) | 0.0 (mean 0.0) | 0.00493 | 0.0647 | 0.115 |
 
 정의:
 
+- Train: `train-free`는 동결 $v_t^\theta$에 inference만 교체, `train`은 backbone을 학습
 - Safety: 모든 $h_j\le 0$인 점 비율 (`safe_ratio`)
 - Tube / Core viol.: 해당 $h>0$ 비율과 평균 $(h)_+$
 - MMD: 생성점 vs 테스트점 (RBF)
@@ -267,45 +276,42 @@ Run: `runs/exp_01_swiss_roll`. 데이터 dump `datasets/swiss_roll/default`.
 
 ### 6.3 GuideFlow 실행 결과 (`runs/exp_01_swiss_roll/guideflow`)
 
-설정:
-- Backbone: 사전학습 FlowMatch $v_t^\theta$ 동결 (`runs/exp_01_swiss_roll/flowmatch/last.pt`). Training-free.
-- 제약 주입: CVF ($\lambda=0.1$) + CF (`interp`, $k_c=50$) + RFE ($\tau^{*}=0.5$, $\varepsilon_{\max}=0.5$, $n_{\mathrm{refine}}=10$, $w_{\mathrm{cost}}=0$).
-- 앵커 vocabulary: $h\le 0$인 train 점에 farthest point sampling, $N=256$.
-- 추론: Euler $K=100$, $n_{\mathrm{eval}}=4000$, HardFlow와 같은 $x_0$ 시드. **CPU 단독 실행** (FlowMatch/HardFlow는 CUDA + CPU solver라 시간 비교는 참고값).
-- 데이터: 캐시 고정 (`datasets/swiss_roll/default`).
+설정: 사전학습 FlowMatch $v_t^\theta$ 동결(training-free), CVF($\lambda=0.1$) + CF($k_c=50$) + RFE($\tau^{*}=0.5$, $\varepsilon_{\max}=0.5$, $n_{\mathrm{refine}}=10$), 비용 가중치 $w_{\mathrm{cost}}=0.05$.  
+앵커 vocabulary: $h\le 0$인 train 점에 farthest point sampling, $N=256$.  
+추론: Euler $N=100$, $n_{\mathrm{eval}}=4000$, HardFlow와 같은 $x_0$ 시드. 데이터 캐시 고정.
 
-지표 해석:
+1. **Hard constraint 100% 준수 (Safety = 1.0)**:
+   - Tube 위반 $26.95\% (1,078\text{점}) \to 0.00\% (0\text{점})$, Core $0.175\% \to 0.00\%$, Box $0.025\% \to 0.00\%$.
+   - 성공 기준 $\ge 0.99$ 달성. 단 HardFlow Proposition 1 같은 이론적 보장이 아니라, 에너지 하강의 수렴에 의존하는 수치적 결과다. $\varepsilon_{\max}$를 낮추면 Safety가 1에 못 미친다.
 
-1. **Hard constraint 100% 준수 (Safety = 1.0)**: Tube $26.95\%\to 0.00\%$, Core $0.175\%\to 0.00\%$, Box $0.025\%\to 0.00\%$. 최대 튜브 마진 $h_{\mathrm{tube}}\le -0.0100$. 단 HardFlow의 Proposition 1 같은 이론적 보장은 없고, 에너지 하강의 수렴에 의존한다.
-2. **분포 보존은 HardFlow보다 낫다**: MMD $0.00986$(HardFlow) $\to 0.00741$. 사영이 아니라 flow 안에서 제약을 밀어 넣기 때문에 종단 분포가 덜 밀린다. 무제약 FlowMatch($3.62\times 10^{-5}$)와는 여전히 두 자릿수 차이다.
-3. **속도가 결정적 차이**: $0.202\,\mathrm{s}/1\mathrm{k}$ (4,000점 $0.81\,\mathrm{s}$). HardFlow $492.736\,\mathrm{s}/1\mathrm{k}$ 대비 약 2,400배 빠르다. per-sample 비선형 solver 없이 닫힌 형태 기울기만 쓰기 때문이며, 이 표에서 Safety 1.0을 실시간 수준 비용으로 얻은 유일한 방법이다.
-4. **Radius MAE는 HardFlow보다 높다** ($0.0943\to 0.1125$). HardFlow의 비용 $C(p)=d_{\mathcal{M}}^2$가 점을 중심선으로 견인하는 반면 GuideFlow 기본값은 $w_{\mathrm{cost}}=0$이라 hinge 경계까지만 민다. $w_{\mathrm{cost}}=1$로 켜면 Radius MAE는 0이 되지만 튜브 두께가 사라진다.
-5. **껍질(shell) 집중**: $d_{\mathcal{M}}$ 중앙값이 정확히 $\tau-s=0.14$다. $t\ge\tau^{*}$ 구간에서 flow가 점을 밖으로 밀고 에너지가 경계로 되돌리는 평형이 반복된 결과다. $\tau^{*}=0.9$로 에너지 구간을 늦추면 MMD가 $0.00741\to 0.00172$까지 내려간다 (다만 이는 평가 지표를 보고 고른 값이라 기본값으로 삼지 않았다).
-6. **안쪽 나선 편향은 HardFlow보다 약하다**: $u$ 평균 FlowMatch $9.46$, HardFlow $7.91$, GuideFlow $8.03$. 5-bin 히스토그램도 GuideFlow가 조금 더 고르다 (1375/1111/762/421/331 vs 1420/1207/678/414/281).
+2. **매니폴드 밀착도 (Radius MAE)**:
+   - Radius MAE: $0.1379 \to 0.0625$ (약 $54.7\%$ 개선). HardFlow($0.0943$) 대비 $34\%$ 우수.
+   - 두 방법 모두 같은 비용 $C(p)=d_{\mathcal{M}}(p)^2$를 쓰지만, HardFlow는 SLSQP가 $h\le 0$ 제약 하에서 풀어 경계에 걸리는 반면 GuideFlow의 에너지 하강은 제약 없이 곧장 비용을 낮춰 더 깊이 들어간다.
 
-모듈 ablation (같은 시드, 같은 backbone):
+3. **분포 보존성 (MMD)**:
+   - MMD: $3.62\times 10^{-5} \to 0.00790$. HardFlow($0.00986$)보다 낫다.
+   - 사후 투영이 아니라 flow 내부에서 제약을 밀어 넣기 때문에 종단 분포가 덜 밀린다. 다만 무제약 FlowMatch 대비로는 두 자릿수 증가로, 8장 성공 기준의 "제약만 강한 방법보다 크게 나쁘지 않음"을 만족하는 수준이다.
 
-| CVF | CF | RFE | Safety ↑ | Tube viol. ↓ | MMD ↓ | Radius MAE ↓ |
-|:---:|:--:|:---:|----------|--------------|-------|--------------|
-| | | | 0.7282* | 0.2717 | $3.6\times 10^{-5}$ | 0.1429 |
-| ✓ | | | 0.3693 | 0.6308 | $4.0\times 10^{-5}$ | 0.3105 |
-| | ✓ | | 0.5813 | 0.4188 | 0.00408 | 0.1937 |
-| | | ✓ | 1.0000 | 0.0000 | 0.01362 | 0.1166 |
-| | ✓ | ✓ | 1.0000 | 0.0000 | 0.00823 | 0.1182 |
-| ✓ | ✓ | ✓ | 1.0000 | 0.0000 | 0.00741 | 0.1125 |
+4. **추론 비용**:
+   - $0.072\,\mathrm{s}/1\mathrm{k}$. HardFlow($492.736$) 대비 약 6,800배 빠르다. per-sample 비선형 solver 없이 최근접 앵커 탐색과 닫힌 형태 에너지 기울기만 쓰기 때문이다.
 
-\* 무제약 baseline을 CPU에서 재현한 값. §6.1의 0.7305(CUDA)와의 차이는 부동소수점 비결정성이다.
+5. **가설 검증**: 5장 가설의 "GuideFlow: 모양은 괜찮고 Safety는 중간"은 **부분적으로 틀렸다.** 세 전략을 모두 켜면 Safety는 HardFlow와 같은 1.0이고, MMD와 Radius MAE도 HardFlow보다 낫다.
 
-- Safety를 만드는 것은 **RFE 하나**다. CVF·CF 단독은 baseline보다 오히려 나쁘다.
-- CVF 단독이 해로운 이유는 Eq. (14)의 부호가 $v^{c}$ 성분을 줄이는 방향이기 때문이다 ($\lambda<0$으로 뒤집으면 $\lambda=-0.05$에서 Safety $0.807$).
-- CF·CVF는 RFE와 합칠 때 MMD를 개선하는 보완재다 ($0.01362\to 0.00823\to 0.00741$). 논문의 "상보적"이라는 결론과 일치한다.
+산출물: `eval_samples.png`, `eval_samples.npy`, `metrics.json`.
 
-결론:
-- 가설("GuideFlow: 모양은 괜찮고 Safety는 중간")은 **부분적으로 틀렸다**. 에너지항까지 켜면 Safety는 HardFlow와 같은 1.0이고, 모양(MMD)은 HardFlow보다 낫다.
-- 다만 그 Safety는 사영형 에너지 하강이 만든 것이라 종단 보장이 이론적이지 않고, 튜브 경계에 밀도가 쌓이는 부작용이 있다.
-- 자세한 유도, 논문 대응표, 하이퍼파라미터 민감도는 `docs/GuideFlow.md`.
+### 6.4 GuideFlow 옵션 ablation (EBM 결합 학습 + CFG)
 
-산출물: `eval_samples.png`, `eval_samples.npy`, `metrics.json`. 통합표는 `runs/exp_01_swiss_roll/metrics.json`.
+5장이 "옵션 ablation"으로 지정한 원논문의 EBM 결합($\mathcal{L}_{\mathrm{RFE}}$)과 classifier-free guidance를 켠 설정. 20,000 step 학습.
+
+| 설정 | Safety ↑ | MMD ↓ | Radius MAE ↓ | Time (s/1k) |
+|------|----------|-------|--------------|-------------|
+| training-free (비교표) | 1.0 | 0.00790 | 0.0625 | 0.072 |
+| EBM/CFG (옵션) | 1.0 | **0.00493** | 0.0647 | 0.115 |
+
+- **분포 보존이 38% 개선**된다 ($0.00790 \to 0.00493$). 평가 시드 6회 반복으로 측정한 MMD 표준편차 $\pm 0.0009$의 3배를 넘는 차이다.
+- **Radius MAE는 사실상 동일**하다. 정확도는 이미 $w_{\mathrm{cost}}$가 담당하므로 학습이 추가로 기여할 여지가 적다.
+- 즉 EBM 학습이 사는 지점은 정확도가 아니라 분포 보존이다. 속도장 자체가 제약을 인지하게 되어 추론 시점 교정량이 줄고, 그만큼 분포가 덜 밀린다.
+- 다만 이 설정은 backbone을 새로 학습하므로 5장의 공통 규칙 밖이다. 비교표 본문에는 넣지 않는다.
 
 ---
 
