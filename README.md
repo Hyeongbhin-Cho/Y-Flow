@@ -117,7 +117,7 @@ python main.py all --mode eval --run_name exp1
 * 방법별 지표: `runs/{run_name}/{command}/metrics.json`
 * run 통합: `runs/{run_name}/metrics.json`
 
-구현됨: `flowmatch` train/eval, `hardflow` train(skip 또는 FM 학습) / eval. 나머지 command는 아직 `NotImplementedError`.
+구현됨: `flowmatch` train/eval, `hardflow`·`guideflow` train(skip 또는 FM 학습) / eval. 나머지 command는 아직 `NotImplementedError`.
 
 테스트:
 

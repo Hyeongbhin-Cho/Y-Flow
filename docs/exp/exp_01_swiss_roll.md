@@ -178,7 +178,7 @@ Run: `runs/exp_01_swiss_roll`. 데이터 dump `datasets/swiss_roll/default`.
 | HardFlow | 1.0 | 0.0 (mean 0.0) | 0.0 (mean 0.0) | 0.00986 | 0.0943 | 492.736 |
 | SafeFlow | | | | | | |
 | UniConFlow | | | | | | |
-| GuideFlow | | | | | | |
+| GuideFlow | 1.0 | 0.0 (mean 0.0) | 0.0 (mean 0.0) | 0.00741 | 0.1125 | 0.202 (CPU) |
 | YFlow | | | | | | |
 
 정의:
@@ -262,6 +262,48 @@ Run: `runs/exp_01_swiss_roll`. 데이터 dump `datasets/swiss_roll/default`.
 - 무제약 FlowMatch의 치명적 결점이었던 바퀴 사이 점 누출(26.95%)을 완벽히 차단함.
 - 한계점으로는 **순차 CPU 비선형 최적화로 인한 극심한 추론 지연**과 **목적함수 및 제어로 인한 안쪽 나선으로의 밀도 편향**이 확인됨.
 - 향후 비교될 **YFlow**에서는 closed-form 또는 매니폴드 투영($P$) warm start, 선형 보간 기법을 통해 이 연산 지연과 분포 왜곡을 극복하는 것이 핵심 목표가 됨.
+
+산출물: `eval_samples.png`, `eval_samples.npy`, `metrics.json`. 통합표는 `runs/exp_01_swiss_roll/metrics.json`.
+
+### 6.3 GuideFlow 실행 결과 (`runs/exp_01_swiss_roll/guideflow`)
+
+설정:
+- Backbone: 사전학습 FlowMatch $v_t^\theta$ 동결 (`runs/exp_01_swiss_roll/flowmatch/last.pt`). Training-free.
+- 제약 주입: CVF ($\lambda=0.1$) + CF (`interp`, $k_c=50$) + RFE ($\tau^{*}=0.5$, $\varepsilon_{\max}=0.5$, $n_{\mathrm{refine}}=10$, $w_{\mathrm{cost}}=0$).
+- 앵커 vocabulary: $h\le 0$인 train 점에 farthest point sampling, $N=256$.
+- 추론: Euler $K=100$, $n_{\mathrm{eval}}=4000$, HardFlow와 같은 $x_0$ 시드. **CPU 단독 실행** (FlowMatch/HardFlow는 CUDA + CPU solver라 시간 비교는 참고값).
+- 데이터: 캐시 고정 (`datasets/swiss_roll/default`).
+
+지표 해석:
+
+1. **Hard constraint 100% 준수 (Safety = 1.0)**: Tube $26.95\%\to 0.00\%$, Core $0.175\%\to 0.00\%$, Box $0.025\%\to 0.00\%$. 최대 튜브 마진 $h_{\mathrm{tube}}\le -0.0100$. 단 HardFlow의 Proposition 1 같은 이론적 보장은 없고, 에너지 하강의 수렴에 의존한다.
+2. **분포 보존은 HardFlow보다 낫다**: MMD $0.00986$(HardFlow) $\to 0.00741$. 사영이 아니라 flow 안에서 제약을 밀어 넣기 때문에 종단 분포가 덜 밀린다. 무제약 FlowMatch($3.62\times 10^{-5}$)와는 여전히 두 자릿수 차이다.
+3. **속도가 결정적 차이**: $0.202\,\mathrm{s}/1\mathrm{k}$ (4,000점 $0.81\,\mathrm{s}$). HardFlow $492.736\,\mathrm{s}/1\mathrm{k}$ 대비 약 2,400배 빠르다. per-sample 비선형 solver 없이 닫힌 형태 기울기만 쓰기 때문이며, 이 표에서 Safety 1.0을 실시간 수준 비용으로 얻은 유일한 방법이다.
+4. **Radius MAE는 HardFlow보다 높다** ($0.0943\to 0.1125$). HardFlow의 비용 $C(p)=d_{\mathcal{M}}^2$가 점을 중심선으로 견인하는 반면 GuideFlow 기본값은 $w_{\mathrm{cost}}=0$이라 hinge 경계까지만 민다. $w_{\mathrm{cost}}=1$로 켜면 Radius MAE는 0이 되지만 튜브 두께가 사라진다.
+5. **껍질(shell) 집중**: $d_{\mathcal{M}}$ 중앙값이 정확히 $\tau-s=0.14$다. $t\ge\tau^{*}$ 구간에서 flow가 점을 밖으로 밀고 에너지가 경계로 되돌리는 평형이 반복된 결과다. $\tau^{*}=0.9$로 에너지 구간을 늦추면 MMD가 $0.00741\to 0.00172$까지 내려간다 (다만 이는 평가 지표를 보고 고른 값이라 기본값으로 삼지 않았다).
+6. **안쪽 나선 편향은 HardFlow보다 약하다**: $u$ 평균 FlowMatch $9.46$, HardFlow $7.91$, GuideFlow $8.03$. 5-bin 히스토그램도 GuideFlow가 조금 더 고르다 (1375/1111/762/421/331 vs 1420/1207/678/414/281).
+
+모듈 ablation (같은 시드, 같은 backbone):
+
+| CVF | CF | RFE | Safety ↑ | Tube viol. ↓ | MMD ↓ | Radius MAE ↓ |
+|:---:|:--:|:---:|----------|--------------|-------|--------------|
+| | | | 0.7282* | 0.2717 | $3.6\times 10^{-5}$ | 0.1429 |
+| ✓ | | | 0.3693 | 0.6308 | $4.0\times 10^{-5}$ | 0.3105 |
+| | ✓ | | 0.5813 | 0.4188 | 0.00408 | 0.1937 |
+| | | ✓ | 1.0000 | 0.0000 | 0.01362 | 0.1166 |
+| | ✓ | ✓ | 1.0000 | 0.0000 | 0.00823 | 0.1182 |
+| ✓ | ✓ | ✓ | 1.0000 | 0.0000 | 0.00741 | 0.1125 |
+
+\* 무제약 baseline을 CPU에서 재현한 값. §6.1의 0.7305(CUDA)와의 차이는 부동소수점 비결정성이다.
+
+- Safety를 만드는 것은 **RFE 하나**다. CVF·CF 단독은 baseline보다 오히려 나쁘다.
+- CVF 단독이 해로운 이유는 Eq. (14)의 부호가 $v^{c}$ 성분을 줄이는 방향이기 때문이다 ($\lambda<0$으로 뒤집으면 $\lambda=-0.05$에서 Safety $0.807$).
+- CF·CVF는 RFE와 합칠 때 MMD를 개선하는 보완재다 ($0.01362\to 0.00823\to 0.00741$). 논문의 "상보적"이라는 결론과 일치한다.
+
+결론:
+- 가설("GuideFlow: 모양은 괜찮고 Safety는 중간")은 **부분적으로 틀렸다**. 에너지항까지 켜면 Safety는 HardFlow와 같은 1.0이고, 모양(MMD)은 HardFlow보다 낫다.
+- 다만 그 Safety는 사영형 에너지 하강이 만든 것이라 종단 보장이 이론적이지 않고, 튜브 경계에 밀도가 쌓이는 부작용이 있다.
+- 자세한 유도, 논문 대응표, 하이퍼파라미터 민감도는 `docs/GuideFlow.md`.
 
 산출물: `eval_samples.png`, `eval_samples.npy`, `metrics.json`. 통합표는 `runs/exp_01_swiss_roll/metrics.json`.
 

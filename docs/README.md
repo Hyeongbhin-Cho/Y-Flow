@@ -14,7 +14,7 @@
 * `FlowMatch.md`: 무제약 FM baseline 구현 목표
 * `HardFlow.md`: HardFlow 구현 목표 체크리스트
 * `YFlow.md`: YFlow 구현 목표 체크리스트
-* `GuideFlow.md`: 담당 외. 비움
+* `GuideFlow.md`: GuideFlow 구현 목표 체크리스트
 * `SafeFlow.md`: 담당 외. 비움
 * `UniConFlow.md`: 담당 외. 비움
 * `exp/exp_01_swiss_roll.md`: Swiss roll 비교 실험 프로토콜. 데이터는 `datasets/swiss_roll/default/`에 고정
@@ -35,7 +35,10 @@
 ### YFlow.md
 *   **설명**: $P$ warm start + terminal $h,C$ + 선형 보간의 구현 목표.
 
-### GuideFlow.md / SafeFlow.md / UniConFlow.md
+### GuideFlow.md
+*   **설명**: CVF / CF / RFE 세 제약 주입 전략의 구현 목표. Exp-01 이식 방법과 모듈 ablation 실측 포함.
+
+### SafeFlow.md / UniConFlow.md
 *   **설명**: 다른 담당. 내용을 채우지 않음.
 
 ### exp/exp_01_swiss_roll.md

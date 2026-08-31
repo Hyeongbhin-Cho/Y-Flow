@@ -45,6 +45,42 @@ hardflow:
   lambda_oc: 10.0
   max_iter: 20
 
+guideflow:
+  n_anchors: 256       # trajectory vocabulary V_a
+  cvf: true            # Constraining the Velocity Field
+  lambda_cvf: 0.1
+  cvf_t_on: 0.0
+  cf: true             # Constraining the Flow States
+  cf_mode: interp      # interp | replace (Eq. 16 literal)
+  k_c: 50
+  rfe: true            # Refining the Flow by EBM
+  tau_star: 0.5
+  eta_max: 0.5
+  n_refine: 10
+  slack: 0.01
+  w_tube: 1.0
+  w_core: 1.0
+  w_box: 1.0
+  w_cost: 0.05
+  guidance:            # Classifier-Free Intent and Reward Guidance (Eq. 12, 13)
+    enabled: false     # false: frozen unconditional FlowMatch backbone (Exp-01 비교 기본값)
+    signal: anchor     # anchor (C_p) | command (C_d). 논문상 동시 사용하지 않음
+    n_commands: 5
+    p_uncond: 0.2      # 조건 마스킹 확률 p
+    gamma: 1.0         # guidance scale
+    reward: true       # RAS: EP style condition
+    ep: 1.0            # 추론 시 EP 값. 1에 가까울수록 공격적
+    cond_steps: 20000
+    cond_lr: 1.0e-3
+    cond_batch_size: 256
+    cond_hidden: [128, 128, 128]
+    cond_embed_dim: 32
+  rfe_train:           # Refining the Flow by EBM, 학습 측 (Eq. 18)
+    rfe_loss: false    # false: 에너지를 추론 시점에만 평가 (Exp-01 비교 기본값)
+    lambda_rfe: 1.0
+    t_min: 0.5         # 에너지 항을 켜는 시각. Eq. (5)의 tau_star와 같은 역할
+    rollout_steps: -1  # -1: 샘플러 격자(dt=1/K) 그대로 rollout. 0: posterior mean 근사. >0: 고정 스텝
+
 device: cuda
 
 

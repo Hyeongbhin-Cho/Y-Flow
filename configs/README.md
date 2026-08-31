@@ -11,7 +11,7 @@
 ---
 
 ## 2. 파일 목록 및 요약
-* `exp_01_swiss_roll.yaml`: Exp-01 Swiss roll. 데이터 캐시, MLP, CFM, HardFlow $t_{\mathrm{on}}$
+* `exp_01_swiss_roll.yaml`: Exp-01 Swiss roll. 데이터 캐시, MLP, CFM, HardFlow $t_{\mathrm{on}}$, GuideFlow CVF/CF/RFE
 
 ---
 
@@ -27,5 +27,14 @@
 
 #### hardflow
 *   **설명**: `t_on`, `lambda_oc`, `max_iter`. training-free 샘플링만 사용.
+
+#### guideflow
+*   **설명**: `cvf`/`cf`/`rfe`로 모듈을 켜고 끈다. CVF는 `lambda_cvf`, `t_on`. CF는 `cf_mode`(`interp` 기본, `replace`는 Eq. (16) 문자 그대로), `k_c`, `n_anchors`. RFE는 `tau_star`, `eta_max`, `n_refine`, `slack`과 에너지 가중치 `w_tube`/`w_core`/`w_box`/`w_cost`. 셋 다 `false`면 무제약 FlowMatch와 같다.
+
+#### guideflow.guidance
+*   **설명**: Classifier-Free Intent and Reward Guidance. `enabled: false`(기본)면 동결 무조건 backbone을 쓰고 Exp-01 비교 프로토콜이 유지된다. `true`면 조건부 backbone을 따로 학습한다. `signal`은 `anchor`($C_p$) 또는 `command`($C_d$), `gamma`는 guidance scale, `p_uncond`는 마스킹 확률, `reward`/`ep`는 RAS. `cond_steps`/`cond_lr`/`cond_batch_size`/`cond_hidden`/`cond_embed_dim`은 GuideFlow 자체 backbone 학습 설정(CFG/EBM 공통).
+
+#### guideflow.rfe_train
+*   **설명**: EBM 결합 학습(Eq. 18). `rfe_loss: false`(기본)면 에너지를 추론 시점에만 평가한다. `true`면 $\mathcal{L}_{\mathrm{RFE}}$를 CFM loss에 더해 속도장을 학습한다. `lambda_rfe`는 가중치, `t_min`은 에너지 항을 켜는 시각, `rollout_steps`는 생성 종단 계산 방식(0이면 posterior mean 근사, 양수면 그 수만큼 미분 가능 Euler 적분).
 
 실행 예: `python main.py hardflow --mode eval --run_name exp1 --config configs/exp_01_swiss_roll.yaml`.
