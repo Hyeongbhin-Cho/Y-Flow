@@ -17,7 +17,8 @@
 * `_backbone.py`: frozen FlowMatch $v_t^\theta$ 로드
 * `flow_match.py`: unguided Euler
 * `hard_flow.py`: terminal $h,C$ SLSQP 후 affine 복원
-* `y_flow.py`, `safe_flow.py`, `unicon_flow.py`, `guide_flow.py`: 아직 미구현
+* `y_flow.py`: terminal $h,C$ + $P$ warm start SLSQP 후 선형 보간
+* `safe_flow.py`, `unicon_flow.py`, `guide_flow.py`: 아직 미구현
 
 ---
 
@@ -37,3 +38,8 @@
 
 #### sample
 *   **설명**: $t\ge t_{\mathrm{on}}$에서 예측된 $x_1$에 SLSQP. 마지막 스텝에서 $h(x_N)\le 0$을 목표로 한다.
+
+### y_flow.py
+
+#### sample
+*   **설명**: $t\ge t_{\mathrm{on}}$에서 물리 투영 $P(\hat{x}_1)$ warm start 기반 $h,C$ SLSQP 최적화 후 현재 상태와 선형 보간. 마지막 스텝에서 $h(x_N)\le 0$을 목표로 한다.
