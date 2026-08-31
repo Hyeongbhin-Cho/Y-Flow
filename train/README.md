@@ -17,7 +17,8 @@
 * `ema.py`: exponential moving average
 * `checkpoint.py`: `last.pt` 저장/로드
 * `hard_flow.py`: training-free. `runs/{run_name}/flowmatch/last.pt`가 있으면 skip, 없으면 flowmatch 학습
-* `y_flow.py`, `safe_flow.py`, `unicon_flow.py`, `guide_flow.py`: 아직 미구현
+* `y_flow.py`: training-free. `runs/{run_name}/flowmatch/last.pt`가 있으면 skip, 없으면 flowmatch 학습
+* `safe_flow.py`, `unicon_flow.py`, `guide_flow.py`: 아직 미구현
 
 ---
 
@@ -33,7 +34,7 @@
 #### ConditionalFlowMatching
 *   **설명**: $x_t=(1-t)x_0+t x_1$, $\|v_\theta-u\|^2$. $h,C,P$ 없음. `velocity()`는 Euler가 호출.
 
-### hard_flow.py
+### hard_flow.py / y_flow.py
 
 #### ensure_flowmatch_ckpt
 *   **설명**: 체크포인트가 있으면 경로를 출력하고 반환. 없으면 `run_train(..., method="flowmatch")`.

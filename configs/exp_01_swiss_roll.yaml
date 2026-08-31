@@ -45,6 +45,15 @@ hardflow:
   lambda_oc: 10.0
   max_iter: 20
 
+yflow:
+  t_on: 0.5
+  lambda_oc: 10.0
+  mu: 1.0
+  max_iter: 20
+  delta: 0.1
+  gamma_max: 1.0
+  safety_buffer: 1.0e-4
+
 device: cuda
 
 
