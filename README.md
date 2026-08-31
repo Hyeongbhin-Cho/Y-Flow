@@ -90,7 +90,7 @@ conda activate yflow
 ./run_exp_01_swiss_roll.sh
 ```
 
-기본 `COMMAND=hardflow`, `RUN_NAME=exp_01_swiss_roll`. HardFlow와 GuideFlow는 training-free라 `runs/{run_name}/flowmatch/last.pt`가 있으면 학습을 건너뛴다. 없으면 FlowMatch를 먼저 학습한다.
+기본 `COMMAND=hardflow`, `RUN_NAME=exp_01_swiss_roll`. HardFlow는 training-free라 `runs/{run_name}/flowmatch/last.pt`가 있으면 학습을 건너뛴다. 없으면 FlowMatch를 먼저 학습한다. GuideFlow도 기본은 같고, 옵션을 켰을 때만 자체 backbone을 학습한다.
 
 ```bash
 COMMAND=flowmatch ./run_exp_01_swiss_roll.sh
@@ -100,7 +100,7 @@ COMMAND=guideflow ./run_exp_01_swiss_roll.sh
 COMMAND=guideflow ./run_exp_01_swiss_roll.sh --rfe_loss true --enabled true
 ```
 
-GuideFlow만 train / training-free를 고를 수 있다. 기본은 training-free이고, 원논문의 EBM 결합(`--rfe_loss true`)과 CFG(`--enabled true`)를 켜면 자체 backbone을 학습한다. 두 옵션은 독립이며, train으로 만든 backbone은 eval에도 같은 플래그를 줘야 한다. 위 스크립트는 train과 eval에 인자를 함께 넘기므로 신경 쓸 필요가 없다.
+GuideFlow는 두 모드를 고를 수 있다. 아무 옵션도 주지 않으면 HardFlow와 같은 training-free다. 원논문의 EBM 결합(`--rfe_loss true`)이나 CFG(`--enabled true`)를 켜면 `runs/{run_name}/guideflow/last.pt`에 자체 backbone을 학습한다. 두 옵션은 독립이다. 학습한 backbone으로 평가하려면 eval에도 같은 플래그가 필요한데, 위 스크립트는 train과 eval에 인자를 함께 넘기므로 신경 쓸 필요가 없다.
 
 직접 호출:
 
