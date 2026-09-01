@@ -35,7 +35,7 @@ _METHOD_ORDER = (
     "guideflow",
 )
 
-_TRAINABLE = frozenset({"flowmatch", "hardflow", "guideflow"})
+_TRAINABLE = frozenset({"flowmatch", "hardflow", "yflow", "guideflow"})
 
 
 def _not_ready(name: str, action: str):
@@ -57,6 +57,13 @@ def _train_hardflow(cfg: DictConfig) -> None:
 
     ckpt = ensure_flowmatch_ckpt(cfg)
     print(f"hardflow backbone {ckpt}")
+
+
+def _train_yflow(cfg: DictConfig) -> None:
+    from train.y_flow import ensure_flowmatch_ckpt
+
+    ckpt = ensure_flowmatch_ckpt(cfg)
+    print(f"yflow backbone {ckpt}")
 
 
 def _train_guideflow(cfg: DictConfig) -> None:

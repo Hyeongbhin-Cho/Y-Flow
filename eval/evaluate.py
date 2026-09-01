@@ -22,6 +22,7 @@ from utils.paths import ROOT, method_dir, run_name_of
 _SAMPLE_MODULES = {
     "flowmatch": "eval.flow_match",
     "hardflow": "eval.hard_flow",
+    "yflow": "eval.y_flow",
     "guideflow": "eval.guide_flow",
 }
 

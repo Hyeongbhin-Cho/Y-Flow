@@ -45,6 +45,15 @@ hardflow:
   lambda_oc: 10.0
   max_iter: 20
 
+yflow:
+  t_on: 0.5
+  lambda_oc: 10.0
+  mu: 1.0
+  max_iter: 20
+  delta: 0.1
+  gamma_max: 1.0
+  safety_buffer: 1.0e-4
+
 guideflow:
   n_anchors: 256       # trajectory vocabulary V_a
   cvf: true            # Constraining the Velocity Field
@@ -82,5 +91,4 @@ guideflow:
     rollout_steps: -1  # -1: 샘플러 격자(dt=1/K) 그대로 rollout. 0: posterior mean 근사. >0: 고정 스텝
 
 device: cuda
-
 

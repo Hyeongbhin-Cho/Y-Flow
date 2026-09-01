@@ -90,7 +90,7 @@ conda activate yflow
 ./run_exp_01_swiss_roll.sh
 ```
 
-기본 `COMMAND=hardflow`, `RUN_NAME=exp_01_swiss_roll`. HardFlow는 training-free라 `runs/{run_name}/flowmatch/last.pt`가 있으면 학습을 건너뛴다. 없으면 FlowMatch를 먼저 학습한다. GuideFlow도 기본은 같고, 옵션을 켰을 때만 자체 backbone을 학습한다.
+기본 `COMMAND=yflow`, `RUN_NAME=exp_01_swiss_roll`. HardFlow/YFlow는 training-free라 `runs/{run_name}/flowmatch/last.pt`가 있으면 학습을 건너뛴다. 없으면 FlowMatch를 먼저 학습한다. GuideFlow도 기본은 같고, 옵션을 켰을 때만 자체 backbone을 학습한다.
 
 ```bash
 COMMAND=flowmatch ./run_exp_01_swiss_roll.sh
