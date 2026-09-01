@@ -17,8 +17,10 @@
 * `_backbone.py`: frozen FlowMatch $v_t^\theta$ 로드
 * `flow_match.py`: unguided Euler
 * `hard_flow.py`: terminal $h,C$ SLSQP 후 affine 복원
+* `safe_flow.py`: CFMBF-QP 속도 보정, Euler/Dopri5, terminal safety filter
 * `guide_flow.py`: CVF / CF / RFE 제약 주입 샘플링, 옵션 CFG
-* `y_flow.py`, `safe_flow.py`, `unicon_flow.py`: 아직 미구현
+* `sample_result.py`: 방법별 추가 진단 지표를 공통 평가기로 전달
+* `unicon_flow.py`: 아직 미구현
 
 ---
 
@@ -38,6 +40,11 @@
 
 #### sample
 *   **설명**: $t\ge t_{\mathrm{on}}$에서 예측된 $x_1$에 SLSQP. 마지막 스텝에서 $h(x_N)\le 0$을 목표로 한다.
+
+### safe_flow.py
+
+#### sample
+*   **설명**: 동결 FlowMatch 속도를 원좌표로 변환하고 $t\ge0.5$에서 composite FMBF slack-QP의 최소 보정을 더한다. Euler와 Dopri5를 지원하며 마지막에 안전하지 않은 점만 terminal filter로 보정한다.
 
 ### guide_flow.py
 

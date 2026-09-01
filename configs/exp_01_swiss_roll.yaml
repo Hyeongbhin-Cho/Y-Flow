@@ -54,6 +54,26 @@ yflow:
   gamma_max: 1.0
   safety_buffer: 1.0e-4
 
+safeflow:
+  enabled: true
+  integrator: euler           # euler | dopri5
+  t_on: 0.5                   # paper experiment: CFMBF starts at t*=0.5
+  phi_schedule: paper_piecewise
+  phi0: 1.0
+  phi_gamma: 0.9
+  phi_omega: 3.0
+  slack_weight: 1.0
+  terminal_eps: 1.0e-3       # Dopri5 integrates to 1-eps before terminal filtering
+  eps: 1.0e-8
+  qp_active_tol: 1.0e-6
+  dopri5:
+    rtol: 1.0e-5
+    atol: 1.0e-7
+  terminal_filter:
+    enabled: true
+    max_iter: 50
+    ftol: 1.0e-9
+
 guideflow:
   n_anchors: 256       # trajectory vocabulary V_a
   cvf: true            # Constraining the Velocity Field
@@ -91,4 +111,3 @@ guideflow:
     rollout_steps: -1  # -1: 샘플러 격자(dt=1/K) 그대로 rollout. 0: posterior mean 근사. >0: 고정 스텝
 
 device: cuda
-

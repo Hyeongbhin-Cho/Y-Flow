@@ -31,11 +31,20 @@ class TestCLI(unittest.TestCase):
         self.assertEqual(str(cfg.device), "cpu")
         self.assertTrue(str(method_dir(cfg, "flowmatch")).endswith("runs/cli_unit/flowmatch"))
 
-    def test_unimplemented_eval(self) -> None:
-        from main import main
-
-        with self.assertRaises(NotImplementedError):
-            main(["safeflow", "--mode", "eval", "--run_name", "cli_unit"])
+    def test_safeflow_integrator_override(self) -> None:
+        args, cfg = parse_args(
+            [
+                "safeflow",
+                "--mode",
+                "eval",
+                "--run_name",
+                "cli_unit",
+                "--safeflow.integrator",
+                "dopri5",
+            ]
+        )
+        self.assertEqual(args.command, "safeflow")
+        self.assertEqual(str(cfg.safeflow.integrator), "dopri5")
 
 
 if __name__ == "__main__":

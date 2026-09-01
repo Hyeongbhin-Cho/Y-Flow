@@ -15,7 +15,7 @@
 * `HardFlow.md`: HardFlow 구현 목표 체크리스트
 * `YFlow.md`: YFlow 구현 목표 체크리스트
 * `GuideFlow.md`: GuideFlow 구현 목표 체크리스트
-* `SafeFlow.md`: 담당 외. 비움
+* `SafeFlow.md`: FMBF/CFMBF-QP, Euler/Dopri5, terminal filter의 Exp-01 구현
 * `UniConFlow.md`: 담당 외. 비움
 * `exp/exp_01_swiss_roll.md`: Swiss roll 비교 실험 프로토콜. 데이터는 `datasets/swiss_roll/default/`에 고정
 
@@ -38,7 +38,10 @@
 ### GuideFlow.md
 *   **설명**: CVF / CF / RFE 세 제약 주입 전략의 구현 목표. Exp-01 이식 방법과 모듈 ablation 실측 포함.
 
-### SafeFlow.md / UniConFlow.md
+### SafeFlow.md
+*   **설명**: 논문의 training-free SafeFlow를 $H=0$ Swiss-roll 점 문제로 축소한 구현과 한계를 설명한다.
+
+### UniConFlow.md
 *   **설명**: 다른 담당. 내용을 채우지 않음.
 
 ### exp/exp_01_swiss_roll.md
