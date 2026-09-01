@@ -170,7 +170,8 @@ $P$는 대략 $L_P\le 1$. Lipschitz 스케줄에 사용.
 ## 6. 결과 비교 표
 
 Run: `runs/exp_01_swiss_roll`. 데이터 dump `datasets/swiss_roll/default`.  
-**FlowMatch**(무제약 baseline)와 **HardFlow**(terminal 제약), **GuideFlow**(생성 중 제약) 평가 완료. 나머지 칸은 이후 inference 비교용.
+**FlowMatch**, **HardFlow**, **SafeFlow**, **GuideFlow**, **YFlow** 평가를 완료했다.
+**UniConFlow**는 이후 inference 비교용으로 남겨 둔다.
 
 | Method | Train | Safety ↑ | Tube viol. ↓ | Core/Gap viol. ↓ | MMD ↓ | Radius MAE ↓ | Time (s/1k) |
 |--------|-------|----------|--------------|------------------|-------|--------------|-------------|
@@ -190,7 +191,12 @@ Run: `runs/exp_01_swiss_roll`. 데이터 dump `datasets/swiss_roll/default`.
 - Tube / Core viol.: 해당 $h>0$ 비율과 평균 $(h)_+$
 - MMD: 생성점 vs 테스트점 (RBF)
 - Radius MAE: $\mathbb{E}|r-au^\star|$
-- Time: 점 1000개 inference
+- Time: 점 1000개 inference. 단, 아래 값은 행별 실행 당시 환경에서 측정한 기록이다.
+
+시간 값은 같은 장비에서 다시 잰 직접 비교가 아니다. SafeFlow 두 행은 Apple M4 Pro
+CPU에서 측정했고, 기존 방법 행은 CUDA 또는 CUDA+CPU 혼합 환경에서 생성된 이전
+artifact의 값을 유지했다. 방법 간 속도 순위를 판단하려면 동일 장비에서 다시
+benchmark해야 한다.
 
 정성: $xy$ scatter + 금지영역 overlay + unrolled $u$ 히스토그램.
 
@@ -315,7 +321,7 @@ Run: `runs/exp_01_swiss_roll`. 데이터 dump `datasets/swiss_roll/default`.
 SafeFlow 전용 학습 없이 같은 20k-step FlowMatch EMA 체크포인트와 고정된 4,000개
 `x0`를 사용했다. $t\ge0.5$에서 smooth CFMBF-QP를 적용하고, 끝에서 smooth safe
 set에 대한 최소거리 SLSQP terminal filter를 실행했다. solver 실패 시 대체 투영을
-반환하지 않는다.
+반환하지 않는다. 아래 시간은 Apple M4 Pro CPU에서 측정한 값이다.
 
 | Integrator | Safety | Pre-filter safety | Terminal rate | NFE | MMD | Time (s/1k) |
 |------------|--------|-------------------|---------------|-----|-----|-------------|

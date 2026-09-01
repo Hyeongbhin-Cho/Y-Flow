@@ -12,13 +12,16 @@ SafeFlow 전용 모델은 학습하지 않는다. `runs/{run_name}/flowmatch/las
 
 기존 제약 API는 위반량 $g_j(p)\leq0$을 사용한다. 평가 지표는 이 원래 제약을
 그대로 사용하지만, FMBF에는 논문의 $C^1$ 가정을 맞추기 위한 매끄럽고 보수적인
-대리 barrier를 사용한다. 부호 규약은
+대리 barrier $\tilde h_j$를 사용한다. 논문의 부호 규약에 맞춰 안전 영역에서는
+$\tilde h_j\geq0$이며,
 
 $$
-h_j(p)=-g_j(p)\geq0
+\tilde h_j(p)\geq0\quad\Longrightarrow\quad g_j(p)\leq0
 $$
 
-이다. Exp-01의 composite barrier는 `tube`, `core`, `outer`, `box` 네 개다.
+가 성립하도록 구성한다. 매끄럽게 바꿨기 때문에 일반적으로
+$\tilde h_j=-g_j$인 것은 아니다. 이하 코드와 식의 $h_j$는 이 대리 barrier를
+뜻한다. Exp-01의 composite barrier는 `tube`, `core`, `outer`, `box` 네 개다.
 `outer`는 주기식으로 표현한 무한 나선 중 원래의 유한한 $u$ 구간만 남기는
 반경 guard다.
 
