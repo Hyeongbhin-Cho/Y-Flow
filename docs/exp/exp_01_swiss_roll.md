@@ -176,11 +176,12 @@ Run: `runs/exp_01_swiss_roll`. 데이터 dump `datasets/swiss_roll/default`.
 |--------|-------|----------|--------------|------------------|-------|--------------|-------------|
 | FlowMatch | train | 0.7305 | 0.2695 (mean 0.056) | 0.00175 (mean 0.00067) | $3.62\times 10^{-5}$ | 0.138 | 0.051 |
 | HardFlow | train-free | 1.0 | 0.0 (mean 0.0) | 0.0 (mean 0.0) | 0.00986 | 0.0943 | 492.736 |
-| SafeFlow | train-free | | | | | | |
+| SafeFlow (Euler) | train-free | 1.0 | 0.0 (mean 0.0) | 0.0 (mean 0.0) | 0.01534 | 0.1161 | 2.016 |
+| SafeFlow (Dopri5) | train-free | 1.0 | 0.0 (mean 0.0) | 0.0 (mean 0.0) | 0.01555 | 0.1170 | 3.704 |
 | UniConFlow | train-free | | | | | | |
 | GuideFlow | train-free | 1.0 | 0.0 (mean 0.0) | 0.0 (mean 0.0) | 0.00790 | 0.0625 | 0.072 |
 | GuideFlow | train | 1.0 | 0.0 (mean 0.0) | 0.0 (mean 0.0) | 0.00493 | 0.0647 | 0.115 |
-| YFlow | train-free | | | | | | |
+| YFlow | train-free | 1.0 | 0.0 (mean 0.0) | 0.0 (mean 0.0) | 0.00224 | 0.0727 | 0.622 |
 
 정의:
 
@@ -308,6 +309,29 @@ Run: `runs/exp_01_swiss_roll`. 데이터 dump `datasets/swiss_roll/default`.
 - PyTorch Autograd 기반 배치 최적화 파이프라인의 완성으로, 향후 고차원 문제 및 타 도메인으로의 확장성을 완벽히 확보함.
 
 산출물: `eval_samples.png`, `eval_samples.npy`, `metrics.json`. 통합표는 `runs/exp_01_swiss_roll/metrics.json`.
+
+### 6.4 SafeFlow 실행 결과 (`runs/exp_01_swiss_roll/safeflow`)
+
+SafeFlow 전용 학습 없이 같은 20k-step FlowMatch EMA 체크포인트와 고정된 4,000개
+`x0`를 사용했다. $t\ge0.5$에서 smooth CFMBF-QP를 적용하고, 끝에서 smooth safe
+set에 대한 최소거리 SLSQP terminal filter를 실행했다. solver 실패 시 대체 투영을
+반환하지 않는다.
+
+| Integrator | Safety | Pre-filter safety | Terminal rate | NFE | MMD | Time (s/1k) |
+|------------|--------|-------------------|---------------|-----|-----|-------------|
+| Euler | 1.0 | 0.4055 | 0.60025 | 100 | 0.01534 | 2.016 |
+| Dopri5 | 1.0 | 0.40625 | 0.60225 | 526 | 0.01555 | 3.704 |
+
+두 적분기 모두 terminal filter 뒤 원래 tube/core/box 제약을 4,000개 전부 만족했다.
+다만 결과의 약 60%에 terminal filter가 발동했고 MMD도 무제약 FlowMatch보다 크게
+나빠졌다. 따라서 이번 결과는 smooth FMBF/CFMBF 메커니즘과 최종 안전성 검증에는
+성공했지만, 경로 전체를 갖는 논문의 로봇 실험이나 분포 보존 성능을 재현했다고
+해석하면 안 된다. smooth safe set이 원래 제약보다 보수적이므로 terminal rate는
+`1 - pre_filter_safe_ratio`보다 조금 클 수 있다.
+
+산출물: `eval_samples_euler.png`, `eval_samples_dopri5.png`,
+`metrics_euler.json`, `metrics_dopri5.json`. 통합 `metrics.json`은 기본 비교값인
+Euler 결과를 가리킨다.
 
 ---
 

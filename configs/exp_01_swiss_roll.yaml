@@ -64,15 +64,18 @@ safeflow:
   phi_omega: 3.0
   slack_weight: 1.0
   terminal_eps: 1.0e-3       # Dopri5 integrates to 1-eps before terminal filtering
-  eps: 1.0e-8
+  smooth_radius_eps: 1.0e-2
+  smooth_tube_margin: 2.0e-3
+  smooth_box_temperature: 1.0e-3
   qp_active_tol: 1.0e-6
   dopri5:
     rtol: 1.0e-5
     atol: 1.0e-7
   terminal_filter:
     enabled: true
-    max_iter: 50
-    ftol: 1.0e-9
+    max_iter: 100
+    ftol: 1.0e-7
+    constraint_tol: 1.0e-7
 
 guideflow:
   n_anchors: 256       # trajectory vocabulary V_a

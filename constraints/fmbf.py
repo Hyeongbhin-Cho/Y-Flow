@@ -15,7 +15,6 @@ class CompositeQPSolution:
     slack: torch.Tensor
     raw_residual: torch.Tensor
     relaxed_residual: torch.Tensor
-    fallback: torch.Tensor
     active_mask: torch.Tensor
 
 
@@ -146,27 +145,22 @@ def solve_composite_fmbf(
     inf = torch.full_like(objective, torch.inf)
     selected = torch.where(valid, objective, inf).argmin(dim=1)
     has_valid = valid.any(dim=1)
+    if not bool(has_valid.all()):
+        failed = int((~has_valid).sum())
+        raise RuntimeError(f"CFMBF active-set solver failed for {failed} batch items")
     row = torch.arange(batch, device=b.device)
 
     chosen_u = stacked_u[row, selected]
     chosen_slack = stacked_slack[row, selected]
     chosen_raw = stacked_raw[row, selected]
-    fallback_u = torch.zeros_like(chosen_u)
-    fallback_raw = flat_a
-    fallback_slack = torch.relu(-fallback_raw)
-    chosen_u = torch.where(has_valid.unsqueeze(-1), chosen_u, fallback_u)
-    chosen_raw = torch.where(has_valid.unsqueeze(-1), chosen_raw, fallback_raw)
-    chosen_slack = torch.where(has_valid.unsqueeze(-1), chosen_slack, fallback_slack)
     relaxed = chosen_raw + chosen_slack
 
     masks = torch.tensor(mask_values, device=b.device, dtype=torch.long)
     chosen_mask = masks[selected]
-    chosen_mask = torch.where(has_valid, chosen_mask, torch.full_like(chosen_mask, -1))
     return CompositeQPSolution(
         correction=chosen_u.reshape(*batch_shape, dim),
         slack=chosen_slack.reshape(*batch_shape, n_constraints),
         raw_residual=chosen_raw.reshape(*batch_shape, n_constraints),
         relaxed_residual=relaxed.reshape(*batch_shape, n_constraints),
-        fallback=(~has_valid).reshape(batch_shape),
         active_mask=chosen_mask.reshape(batch_shape),
     )

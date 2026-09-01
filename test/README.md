@@ -18,7 +18,7 @@
 * `test_pipeline.py`: 짧은 학습 후 `metrics.json`
 * `test_hard_flow.py`: flowmatch ckpt skip, HardFlow eval
 * `test_guide_flow.py`: CVF 기하, 앵커 feasibility, 에너지 기울기·스케줄, CFG guidance scale, GuideFlow eval
-* `test_fmbf.py`: FMBF gain, KKT 닫힌형 해, composite QP, Swiss-roll barrier 기울기
+* `test_fmbf.py`: FMBF gain, KKT 닫힌형 해, composite QP, smooth barrier와 solver 실패 처리
 * `test_safe_flow.py`: checkpoint 재사용, Euler/FlowMatch 동일성, Euler/Dopri5 안전성·진단 지표
 
 ---

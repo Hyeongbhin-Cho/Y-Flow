@@ -13,7 +13,7 @@ from scipy.optimize import minimize
 from constraints.fmbf import barrier_gain, solve_composite_fmbf, solve_single_fmbf
 from constraints.swiss_roll import SwissRollConstraint
 from constraints.swiss_roll_fmbf import SwissRollFMBF
-from data.swiss_roll import build_swiss_roll
+from data.swiss_roll import build_swiss_roll, spiral
 from utils.paths import ROOT
 
 
@@ -81,26 +81,37 @@ class TestFMBF(unittest.TestCase):
                 options={"ftol": 1.0e-12, "maxiter": 200},
             )
             self.assertTrue(scipy_result.success)
-            self.assertFalse(bool(solution.fallback))
             self.assertGreaterEqual(float(solution.relaxed_residual.min()), -1.0e-9)
             ours = float(
                 solution.correction.square().sum() + solution.slack.square().sum()
             )
             self.assertAlmostEqual(ours, objective(scipy_result.x), places=7)
-            self.assertTrue(np.allclose(solution.correction.numpy(), scipy_result.x[:2], atol=2e-6))
+            self.assertTrue(
+                np.allclose(solution.correction.numpy(), scipy_result.x[:2], atol=2e-6)
+            )
 
-    def test_barrier_values_are_negative_existing_constraints(self) -> None:
-        points = np.array([[5.0, 2.0], [-3.0, 7.0], [4.0, -8.0]], dtype=np.float64)
-        values, _ = self.fmbf.values_and_gradients(torch.tensor(points, dtype=torch.float64))
-        existing = self.constraint.h(points)
-        expected = -np.stack([existing[name] for name in self.fmbf.names], axis=-1)
-        self.assertTrue(np.allclose(values.numpy(), expected, atol=1.0e-10))
+    def test_smooth_safe_set_is_conservative(self) -> None:
+        rng = np.random.default_rng(42)
+        radius = float(self.bundle["meta"].R)
+        points = rng.uniform(-radius, radius, size=(50_000, 2))
+        values, _ = self.fmbf.values_and_gradients(
+            torch.tensor(points, dtype=torch.float64)
+        )
+        smooth_safe = (values.numpy() >= 0.0).all(axis=-1)
+        self.assertGreater(int(smooth_safe.sum()), 0)
+        existing = self.constraint.h(points[smooth_safe])
+        for name in self.fmbf.reference_names:
+            self.assertTrue(np.all(existing[name] <= 0.0))
 
     def test_barrier_gradients_match_finite_difference(self) -> None:
-        points = torch.tensor([[5.0, 2.0], [-3.0, 7.0], [4.0, -8.0]], dtype=torch.float64)
+        mid_u = 0.5 * (self.bundle["meta"].u_min + self.bundle["meta"].u_max)
+        center = spiral(np.array([mid_u]), self.bundle["meta"].a)[0]
+        points = torch.from_numpy(
+            np.asarray([[0.0, 0.0], [5.0, 5.0], center], dtype=np.float64)
+        )
         _, gradients = self.fmbf.values_and_gradients(points)
-        eps = 1.0e-6
         for row in range(points.shape[0]):
+            eps = 1.0e-9 if row == 0 else 1.0e-6
             for dim in range(2):
                 plus = points.clone()
                 minus = points.clone()
@@ -110,19 +121,46 @@ class TestFMBF(unittest.TestCase):
                 value_minus, _ = self.fmbf.values_and_gradients(minus)
                 numerical = (value_plus[row] - value_minus[row]) / (2.0 * eps)
                 self.assertTrue(
-                    torch.allclose(numerical, gradients[row, :, dim], atol=2.0e-5, rtol=2.0e-5),
-                    msg=f"row={row} dim={dim} numerical={numerical} analytic={gradients[row, :, dim]}",
+                    torch.allclose(
+                        numerical,
+                        gradients[row, :, dim],
+                        atol=2.0e-5,
+                        rtol=2.0e-5,
+                    ),
+                    msg=(
+                        f"row={row} dim={dim} numerical={numerical} "
+                        f"analytic={gradients[row, :, dim]}"
+                    ),
                 )
 
-    def test_origin_subgradients_and_terminal_filter_are_safe(self) -> None:
-        values, gradients = self.fmbf.values_and_gradients(torch.zeros(1, 2, dtype=torch.float64))
+    def test_sampled_safety_boundaries_have_nonzero_gradients(self) -> None:
+        rng = np.random.default_rng(101)
+        radius = float(self.bundle["meta"].R)
+        points = torch.from_numpy(rng.uniform(-radius, radius, size=(50_000, 2)))
+        values, gradients = self.fmbf.values_and_gradients(points)
+        for index, name in enumerate(self.fmbf.names):
+            near_boundary = values[:, index].abs() < 5.0e-3
+            self.assertTrue(bool(near_boundary.any()), msg=f"no {name} boundary samples")
+            norms = gradients[near_boundary, index].norm(dim=-1)
+            self.assertGreater(float(norms.min()), 0.9, msg=name)
+
+    def test_smooth_barriers_and_terminal_filter_are_safe(self) -> None:
+        values, gradients = self.fmbf.values_and_gradients(
+            torch.zeros(1, 2, dtype=torch.float64)
+        )
         self.assertTrue(torch.isfinite(values).all())
         self.assertTrue(torch.isfinite(gradients).all())
-        filtered, stats = self.fmbf.terminal_filter(np.array([[0.0, 0.0], [100.0, 100.0]]))
+        filtered, stats = self.fmbf.terminal_filter(
+            np.array([[0.0, 0.0], [100.0, 100.0]]), max_iter=100
+        )
         self.assertEqual(stats.filtered, 2)
         h = self.constraint.h(filtered)
-        for name in self.fmbf.names:
+        for name in self.fmbf.reference_names:
             self.assertTrue(np.all(h[name] <= 0.0))
+
+    def test_terminal_filter_does_not_hide_solver_failure(self) -> None:
+        with self.assertRaises(RuntimeError):
+            self.fmbf.terminal_filter(np.array([[100.0, 100.0]]), max_iter=1)
 
 
 if __name__ == "__main__":
