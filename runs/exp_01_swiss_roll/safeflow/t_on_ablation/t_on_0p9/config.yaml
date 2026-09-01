@@ -1,0 +1,111 @@
+exp: exp_01_swiss_roll
+seed: 0
+data:
+  name: swiss_roll
+  cache_dir: datasets/swiss_roll/default
+  regenerate: false
+  a: 1.0
+  u_min: 4.71238898038469
+  u_max: 14.137166941154069
+  n_turns: 1.5
+  sigma_obs: 0.05
+  n_train: 20000
+  n_eval: 4000
+  margin: 0.2
+  tau: 0.15
+model:
+  name: mlp
+  dim: 2
+  hidden:
+  - 64
+  - 64
+  - 64
+  time_embed_dim: 32
+method:
+  name: flow_matching
+  sigma_min: 0.0
+train:
+  batch_size: 256
+  steps: 20000
+  lr: 0.001
+  ema_decay: 0.999
+sample:
+  n_samples: 4000
+  n_steps: 100
+log:
+  out_dir: outputs/exp_01_swiss_roll
+  plot_every: 2000
+hardflow:
+  t_on: 0.5
+  lambda_oc: 10.0
+  max_iter: 20
+yflow:
+  t_on: 0.5
+  lambda_oc: 10.0
+  mu: 1.0
+  max_iter: 20
+  delta: 0.1
+  gamma_max: 1.0
+  safety_buffer: 0.0001
+safeflow:
+  enabled: true
+  integrator: euler
+  t_on: 0.9
+  phi_schedule: paper_piecewise
+  phi0: 1.0
+  phi_gamma: 0.9
+  phi_omega: 3.0
+  slack_weight: 1.0
+  terminal_eps: 0.001
+  smooth_radius_eps: 0.01
+  smooth_tube_margin: 0.002
+  smooth_box_temperature: 0.001
+  qp_active_tol: 1.0e-06
+  dopri5:
+    rtol: 1.0e-05
+    atol: 1.0e-07
+  terminal_filter:
+    enabled: true
+    max_iter: 100
+    ftol: 1.0e-07
+    constraint_tol: 1.0e-07
+guideflow:
+  n_anchors: 256
+  cvf: true
+  lambda_cvf: 0.1
+  cvf_t_on: 0.0
+  cf: true
+  cf_mode: interp
+  k_c: 50
+  rfe: true
+  tau_star: 0.5
+  eta_max: 0.5
+  n_refine: 10
+  slack: 0.01
+  w_tube: 1.0
+  w_core: 1.0
+  w_box: 1.0
+  w_cost: 0.05
+  guidance:
+    enabled: false
+    signal: anchor
+    n_commands: 5
+    p_uncond: 0.2
+    gamma: 1.0
+    reward: true
+    ep: 1.0
+    cond_steps: 20000
+    cond_lr: 0.001
+    cond_batch_size: 256
+    cond_hidden:
+    - 128
+    - 128
+    - 128
+    cond_embed_dim: 32
+  rfe_train:
+    rfe_loss: false
+    lambda_rfe: 1.0
+    t_min: 0.5
+    rollout_steps: -1
+device: cuda
+run_name: exp_01_swiss_roll

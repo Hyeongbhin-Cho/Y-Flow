@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import io
+import json
 import shutil
 import tempfile
 import unittest
@@ -15,6 +16,7 @@ from omegaconf import OmegaConf
 from eval.evaluate import make_eval_x0, run_eval
 from eval.flow_match import sample as sample_flowmatch
 from eval.safe_flow import sample as sample_safeflow
+from eval.safe_flow_t_on_ablation import run_ablation
 from train.safe_flow import ensure_flowmatch_ckpt
 from utils.device import get_device
 from utils.paths import ROOT, flowmatch_ckpt
@@ -108,6 +110,26 @@ class TestSafeFlow(unittest.TestCase):
         self.assertTrue(
             (ROOT / "runs" / self.run_name / "safeflow" / "metrics_dopri5.json").is_file()
         )
+
+    def test_t_on_ablation_writes_reproducible_artifacts(self) -> None:
+        cfg = self._cfg()
+        cfg.sample.n_samples = 4
+        cfg.sample.n_steps = 4
+        self._ensure_backbone(cfg)
+        output_dir = ROOT / "runs" / self.run_name / "safeflow" / "t_on_ablation"
+        result_dir = run_ablation(cfg, output_dir=output_dir)
+
+        summary = json.loads((result_dir / "summary.json").read_text())
+        self.assertEqual(summary["t_on_values"], [0.5, 0.7, 0.8, 0.9])
+        self.assertEqual(len(summary["results"]), 4)
+        self.assertTrue((result_dir / "comparison.png").is_file())
+        self.assertTrue((result_dir / "u_histogram.png").is_file())
+        for tag in ("t_on_0p5", "t_on_0p7", "t_on_0p8", "t_on_0p9"):
+            setting_dir = result_dir / tag
+            self.assertTrue((setting_dir / "config.yaml").is_file())
+            self.assertTrue((setting_dir / "eval_samples.npy").is_file())
+            self.assertTrue((setting_dir / "eval_samples.png").is_file())
+            self.assertTrue((setting_dir / "metrics.json").is_file())
 
 
 if __name__ == "__main__":

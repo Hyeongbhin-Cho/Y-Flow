@@ -339,6 +339,27 @@ set에 대한 최소거리 SLSQP terminal filter를 실행했다. solver 실패 
 `metrics_euler.json`, `metrics_dopri5.json`. 통합 `metrics.json`은 기본 비교값인
 Euler 결과를 가리킨다.
 
+### 6.5 SafeFlow `t_on` ablation
+
+Euler와 동일한 FlowMatch 체크포인트, 4,000개 `x0`를 사용해 안전 보정을 시작하는
+시각만 바꿨다. 모든 설정은 terminal filter 이후 Safety 1.0이었다.
+
+| `t_on` | MMD | Mean $u$ | Pre-filter safety | Terminal rate |
+|--------|-----|----------|-------------------|---------------|
+| 0.5 | 0.01534 | 7.732 | 0.4055 | 0.60025 |
+| 0.7 | 0.00897 | 8.024 | 0.3660 | 0.64250 |
+| 0.8 | 0.00195 | 8.709 | 0.3475 | 0.66050 |
+| 0.9 | 0.00000* | 9.332 | 0.37575 | 0.63275 |
+
+평가 데이터의 mean $u$는 9.363이다. 보정을 늦출수록 안쪽 나선으로의 밀도 쏠림이
+줄어 분포 차이가 작아졌다. `t_on=0.9`의 MMD 0은 unbiased estimate의 음수를 0으로
+clamp한 값이므로 분포가 완전히 같다는 뜻은 아니다. 또한 terminal rate는 여전히
+약 63--66%라서 늦은 보정은 최종 필터 의존을 제거하지 못했다. 논문 실험 설정을
+따르는 기본 비교값은 `t_on=0.5`로 유지한다.
+
+재현 명령은 `python -m eval.safe_flow_t_on_ablation`이다. 전체 요약과 원본 샘플은
+`runs/exp_01_swiss_roll/safeflow/t_on_ablation/`에 저장한다.
+
 ---
 
 ## 7. 프로토콜

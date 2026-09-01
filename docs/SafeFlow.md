@@ -94,9 +94,16 @@ python main.py safeflow --mode train --run_name exp_01_swiss_roll
 python main.py safeflow --mode eval --run_name exp_01_swiss_roll
 python main.py safeflow --mode eval --run_name exp_01_swiss_roll \
   --safeflow.integrator dopri5
+
+# 동일한 x0로 t_on=0.5/0.7/0.8/0.9 재현
+python -m eval.safe_flow_t_on_ablation
 ```
 
 `metrics.json`에는 공통 safety/MMD/time 외에 `nfe`, `pre_filter_safe_ratio`,
 terminal-filter 발동률, 보정량, slack, FMBF residual을 기록한다. 적분기별 결과는
 `metrics_euler.json`과 `metrics_dopri5.json`에도 보존한다. 최종 안전성뿐 아니라
 terminal filter가 대부분의 결과를 대신 고친 것은 아닌지도 함께 확인한다.
+
+`t_on` ablation은 `runs/exp_01_swiss_roll/safeflow/t_on_ablation/`에 설정별
+`config.yaml`, `eval_samples.npy`, `eval_samples.png`, `metrics.json`을 저장한다.
+루트의 `summary.json`, `comparison.png`, `u_histogram.png`는 네 설정의 비교용이다.
