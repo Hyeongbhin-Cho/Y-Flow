@@ -1,0 +1,17 @@
+{
+  "safe_ratio": 1.0,
+  "tube_viol_rate": 0.0,
+  "tube_viol_mean": 0.0,
+  "core_viol_rate": 0.0,
+  "core_viol_mean": 0.0,
+  "box_viol_rate": 0.0,
+  "box_viol_mean": 0.0,
+  "mmd": 0.01431817763683374,
+  "radius_mae": 0.031927427511196545,
+  "method": "uniconflow",
+  "run_name": "exp_01_swiss_roll",
+  "n_samples": 4000,
+  "n_steps": 100,
+  "inference_time_s": 3.0794222999998055,
+  "inference_time_s_per_1k": 0.7698555749999514
+}

@@ -18,7 +18,8 @@
 * `checkpoint.py`: `last.pt` 저장/로드
 * `hard_flow.py`: training-free. `runs/{run_name}/flowmatch/last.pt`가 있으면 skip, 없으면 flowmatch 학습
 * `guide_flow.py`: 기본은 training-free. `guidance.enabled` 또는 `rfe_train.rfe_loss`이면 자체 backbone 학습
-* `y_flow.py`, `safe_flow.py`, `unicon_flow.py`: 아직 미구현
+* `y_flow.py`, `unicon_flow.py`: training-free. 공통 FlowMatch 체크포인트 재사용
+* `safe_flow.py`: 아직 미구현
 
 ---
 

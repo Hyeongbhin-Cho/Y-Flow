@@ -18,7 +18,9 @@
 * `flow_match.py`: unguided Euler
 * `hard_flow.py`: terminal $h,C$ SLSQP 후 affine 복원
 * `guide_flow.py`: CVF / CF / RFE 제약 주입 샘플링, 옵션 CFG
-* `y_flow.py`, `safe_flow.py`, `unicon_flow.py`: 아직 미구현
+* `y_flow.py`: 물리 투영, terminal PGD, 선형 보간
+* `unicon_flow.py`: PTZF certificate, batched slack QP, terminal refinement
+* `safe_flow.py`: 아직 미구현
 
 ---
 

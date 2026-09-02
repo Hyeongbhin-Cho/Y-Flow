@@ -18,6 +18,23 @@
       "inference_time_s": 0.20557181000003766,
       "inference_time_s_per_1k": 0.051392952500009415
     },
+    "guideflow": {
+      "safe_ratio": 1.0,
+      "tube_viol_rate": 0.0,
+      "tube_viol_mean": 0.0,
+      "core_viol_rate": 0.0,
+      "core_viol_mean": 0.0,
+      "box_viol_rate": 0.0,
+      "box_viol_mean": 0.0,
+      "mmd": 0.007900293528720681,
+      "radius_mae": 0.062495347250988174,
+      "method": "guideflow",
+      "run_name": "exp_01_swiss_roll",
+      "n_samples": 4000,
+      "n_steps": 100,
+      "inference_time_s": 0.28844308400039154,
+      "inference_time_s_per_1k": 0.07211077100009788
+    },
     "hardflow": {
       "safe_ratio": 1.0,
       "tube_viol_rate": 0.0,
@@ -34,6 +51,23 @@
       "n_steps": 100,
       "inference_time_s": 1970.9458240449994,
       "inference_time_s_per_1k": 492.73645601124986
+    },
+    "uniconflow": {
+      "safe_ratio": 1.0,
+      "tube_viol_rate": 0.0,
+      "tube_viol_mean": 0.0,
+      "core_viol_rate": 0.0,
+      "core_viol_mean": 0.0,
+      "box_viol_rate": 0.0,
+      "box_viol_mean": 0.0,
+      "mmd": 0.01431817763683374,
+      "radius_mae": 0.031927427511196545,
+      "method": "uniconflow",
+      "run_name": "exp_01_swiss_roll",
+      "n_samples": 4000,
+      "n_steps": 100,
+      "inference_time_s": 3.0794222999998055,
+      "inference_time_s_per_1k": 0.7698555749999514
     },
     "yflow": {
       "safe_ratio": 1.0,

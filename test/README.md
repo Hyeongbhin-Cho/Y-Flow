@@ -18,6 +18,7 @@
 * `test_pipeline.py`: 짧은 학습 후 `metrics.json`
 * `test_hard_flow.py`: flowmatch ckpt skip, HardFlow eval
 * `test_guide_flow.py`: CVF 기하, 앵커 feasibility, 에너지 기울기·스케줄, CFG guidance scale, GuideFlow eval
+* `test_unicon_flow.py`: PTZF 감소 성질, slack QP certificate 보정과 비활성 조건
 
 ---
 

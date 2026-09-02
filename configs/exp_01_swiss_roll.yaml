@@ -45,6 +45,15 @@ hardflow:
   lambda_oc: 10.0
   max_iter: 20
 
+uniconflow:
+  free_until: 0.0          # PTZF guidance start; 0 follows the paper experiments
+  ptzf_rate: 1.0           # c_gamma in Eq. (36)
+  gamma: 1.0               # class-K function gamma(r) = gamma * r
+  slack_weight: 100.0      # P_delta; larger values enforce certificates harder
+  max_guidance_norm: 20.0  # numerical guard for early, off-distribution samples
+  terminal_refinement: true
+  safety_buffer: 1.0e-4
+
 guideflow:
   n_anchors: 256       # trajectory vocabulary V_a
   cvf: true            # Constraining the Velocity Field
