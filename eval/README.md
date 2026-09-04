@@ -15,12 +15,15 @@
 * `evaluate.py`: 데이터, 시간 측정, metrics, scatter, JSON
 * `metrics.py`: `safe_ratio`, tube/core/box 위반, MMD, radius MAE
 * `_backbone.py`: frozen FlowMatch $v_t^\theta$ 로드
+* `sample_result.py`: 방법별 추가 진단 지표를 공통 평가기로 전달
 * `flow_match.py`: unguided Euler
-* `hard_flow.py`: terminal $h,C$ SLSQP 후 affine 복원
 * `guide_flow.py`: CVF / CF / RFE 제약 주입 샘플링, 옵션 CFG
-* `y_flow.py`: 물리 투영, terminal PGD, 선형 보간
+* `safe_flow.py`: CFMBF-QP 속도 보정, Euler/Dopri5, terminal safety filter
+* `safe_flow_t_on_ablation.py`: 같은 체크포인트와 $x_0$로 `t_on` 네 값을 재평가하고 설정별 산출물 저장
 * `unicon_flow.py`: PTZF certificate, batched slack QP, terminal refinement
-* `safe_flow.py`: 아직 미구현
+* `hard_flow.py`: terminal $h,C$ SLSQP 후 affine 복원
+* `y_flow.py`: 물리 투영, terminal PGD, 선형 보간
+
 
 ---
 
@@ -40,6 +43,16 @@
 
 #### sample
 *   **설명**: $t\ge t_{\mathrm{on}}$에서 예측된 $x_1$에 SLSQP. 마지막 스텝에서 $h(x_N)\le 0$을 목표로 한다.
+
+### safe_flow.py
+
+#### sample
+*   **설명**: 동결 FlowMatch 속도를 원좌표로 변환하고 $t\ge0.5$에서 composite FMBF slack-QP의 최소 보정을 더한다. Euler와 Dopri5를 지원하며 마지막에 안전하지 않은 점만 terminal filter로 보정한다.
+
+### safe_flow_t_on_ablation.py
+
+#### run_ablation
+*   **설명**: 기본 `t_on=[0.5, 0.7, 0.8, 0.9]`를 동일한 4,000개 `x0`로 실행한다. 각 설정의 config, samples, metrics, scatter와 전체 비교 그림·$u$ 히스토그램을 `runs/{run_name}/safeflow/t_on_ablation/`에 저장한다.
 
 ### guide_flow.py
 

@@ -40,20 +40,6 @@ log:
   out_dir: outputs/exp_01_swiss_roll
   plot_every: 2000
 
-hardflow:
-  t_on: 0.5
-  lambda_oc: 10.0
-  max_iter: 20
-
-uniconflow:
-  free_until: 0.0          # PTZF guidance start; 0 follows the paper experiments
-  ptzf_rate: 1.0           # c_gamma in Eq. (36)
-  gamma: 1.0               # class-K function gamma(r) = gamma * r
-  slack_weight: 100.0      # P_delta; larger values enforce certificates harder
-  max_guidance_norm: 20.0  # numerical guard for early, off-distribution samples
-  terminal_refinement: true
-  safety_buffer: 1.0e-4
-
 guideflow:
   n_anchors: 256       # trajectory vocabulary V_a
   cvf: true            # Constraining the Velocity Field
@@ -90,6 +76,50 @@ guideflow:
     t_min: 0.5         # 에너지 항을 켜는 시각. Eq. (5)의 tau_star와 같은 역할
     rollout_steps: -1  # -1: 샘플러 격자(dt=1/K) 그대로 rollout. 0: posterior mean 근사. >0: 고정 스텝
 
+safeflow:
+  enabled: true
+  integrator: euler           # euler | dopri5
+  t_on: 0.5                   # paper experiment: CFMBF starts at t*=0.5
+  phi_schedule: paper_piecewise
+  phi0: 1.0
+  phi_gamma: 0.9
+  phi_omega: 3.0
+  slack_weight: 1.0
+  terminal_eps: 1.0e-3       # Dopri5 integrates to 1-eps before terminal filtering
+  smooth_radius_eps: 1.0e-2
+  smooth_tube_margin: 2.0e-3
+  smooth_box_temperature: 1.0e-3
+  qp_active_tol: 1.0e-6
+  dopri5:
+    rtol: 1.0e-5
+    atol: 1.0e-7
+  terminal_filter:
+    enabled: true
+    max_iter: 100
+    ftol: 1.0e-7
+    constraint_tol: 1.0e-7
+
+uniconflow:
+  free_until: 0.0          # PTZF guidance start; 0 follows the paper experiments
+  ptzf_rate: 1.0           # c_gamma in Eq. (36)
+  gamma: 1.0               # class-K function gamma(r) = gamma * r
+  slack_weight: 100.0      # P_delta; larger values enforce certificates harder
+  max_guidance_norm: 20.0  # numerical guard for early, off-distribution samples
+  terminal_refinement: true
+  safety_buffer: 1.0e-4
+  
+hardflow:
+  t_on: 0.5
+  lambda_oc: 10.0
+  max_iter: 20
+
+yflow:
+  t_on: 0.5
+  lambda_oc: 10.0
+  mu: 1.0
+  max_iter: 20
+  delta: 0.1
+  gamma_max: 1.0
+  safety_buffer: 1.0e-4
+
 device: cuda
-
-

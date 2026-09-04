@@ -170,17 +170,19 @@ $P$는 대략 $L_P\le 1$. Lipschitz 스케줄에 사용.
 ## 6. 결과 비교 표
 
 Run: `runs/exp_01_swiss_roll`. 데이터 dump `datasets/swiss_roll/default`.  
-**FlowMatch**(무제약 baseline)와 **HardFlow**(terminal 제약), **GuideFlow**(생성 중 제약) 평가 완료. 나머지 칸은 이후 inference 비교용.
+**FlowMatch**, **HardFlow**, **SafeFlow**, **GuideFlow**, **YFlow** 평가를 완료했다.
+**UniConFlow**는 이후 inference 비교용으로 남겨 둔다.
 
 | Method | Train | Safety ↑ | Tube viol. ↓ | Core/Gap viol. ↓ | MMD ↓ | Radius MAE ↓ | Time (s/1k) |
 |--------|-------|----------|--------------|------------------|-------|--------------|-------------|
 | FlowMatch | train | 0.7305 | 0.2695 (mean 0.056) | 0.00175 (mean 0.00067) | $3.62\times 10^{-5}$ | 0.138 | 0.051 |
 | HardFlow | train-free | 1.0 | 0.0 (mean 0.0) | 0.0 (mean 0.0) | 0.00986 | 0.0943 | 492.736 |
-| SafeFlow | train-free | | | | | | |
+| SafeFlow (Euler) | train-free | 1.0 | 0.0 (mean 0.0) | 0.0 (mean 0.0) | 0.01534 | 0.1161 | 2.016 |
+| SafeFlow (Dopri5) | train-free | 1.0 | 0.0 (mean 0.0) | 0.0 (mean 0.0) | 0.01555 | 0.1170 | 3.704 |
 | UniConFlow | train-free | | | | | | |
 | GuideFlow | train-free | 1.0 | 0.0 (mean 0.0) | 0.0 (mean 0.0) | 0.00790 | 0.0625 | 0.072 |
 | GuideFlow | train | 1.0 | 0.0 (mean 0.0) | 0.0 (mean 0.0) | 0.00493 | 0.0647 | 0.115 |
-| YFlow | train-free | | | | | | |
+| YFlow | train-free | 1.0 | 0.0 (mean 0.0) | 0.0 (mean 0.0) | 0.00224 | 0.0727 | 0.622 |
 
 정의:
 
@@ -189,7 +191,12 @@ Run: `runs/exp_01_swiss_roll`. 데이터 dump `datasets/swiss_roll/default`.
 - Tube / Core viol.: 해당 $h>0$ 비율과 평균 $(h)_+$
 - MMD: 생성점 vs 테스트점 (RBF)
 - Radius MAE: $\mathbb{E}|r-au^\star|$
-- Time: 점 1000개 inference
+- Time: 점 1000개 inference. 단, 아래 값은 행별 실행 당시 환경에서 측정한 기록이다.
+
+시간 값은 같은 장비에서 다시 잰 직접 비교가 아니다. SafeFlow 두 행은 Apple M4 Pro
+CPU에서 측정했고, 기존 방법 행은 CUDA 또는 CUDA+CPU 혼합 환경에서 생성된 이전
+artifact의 값을 유지했다. 방법 간 속도 순위를 판단하려면 동일 장비에서 다시
+benchmark해야 한다.
 
 정성: $xy$ scatter + 금지영역 overlay + unrolled $u$ 히스토그램.
 
@@ -308,6 +315,50 @@ Run: `runs/exp_01_swiss_roll`. 데이터 dump `datasets/swiss_roll/default`.
 - PyTorch Autograd 기반 배치 최적화 파이프라인의 완성으로, 향후 고차원 문제 및 타 도메인으로의 확장성을 완벽히 확보함.
 
 산출물: `eval_samples.png`, `eval_samples.npy`, `metrics.json`. 통합표는 `runs/exp_01_swiss_roll/metrics.json`.
+
+### 6.4 SafeFlow 실행 결과 (`runs/exp_01_swiss_roll/safeflow`)
+
+SafeFlow 전용 학습 없이 같은 20k-step FlowMatch EMA 체크포인트와 고정된 4,000개
+`x0`를 사용했다. $t\ge0.5$에서 smooth CFMBF-QP를 적용하고, 끝에서 smooth safe
+set에 대한 최소거리 SLSQP terminal filter를 실행했다. solver 실패 시 대체 투영을
+반환하지 않는다. 아래 시간은 Apple M4 Pro CPU에서 측정한 값이다.
+
+| Integrator | Safety | Pre-filter safety | Terminal rate | NFE | MMD | Time (s/1k) |
+|------------|--------|-------------------|---------------|-----|-----|-------------|
+| Euler | 1.0 | 0.4055 | 0.60025 | 100 | 0.01534 | 2.016 |
+| Dopri5 | 1.0 | 0.40625 | 0.60225 | 526 | 0.01555 | 3.704 |
+
+두 적분기 모두 terminal filter 뒤 원래 tube/core/box 제약을 4,000개 전부 만족했다.
+다만 결과의 약 60%에 terminal filter가 발동했고 MMD도 무제약 FlowMatch보다 크게
+나빠졌다. 따라서 이번 결과는 smooth FMBF/CFMBF 메커니즘과 최종 안전성 검증에는
+성공했지만, 경로 전체를 갖는 논문의 로봇 실험이나 분포 보존 성능을 재현했다고
+해석하면 안 된다. smooth safe set이 원래 제약보다 보수적이므로 terminal rate는
+`1 - pre_filter_safe_ratio`보다 조금 클 수 있다.
+
+산출물: `eval_samples_euler.png`, `eval_samples_dopri5.png`,
+`metrics_euler.json`, `metrics_dopri5.json`. 통합 `metrics.json`은 기본 비교값인
+Euler 결과를 가리킨다.
+
+### 6.5 SafeFlow `t_on` ablation
+
+Euler와 동일한 FlowMatch 체크포인트, 4,000개 `x0`를 사용해 안전 보정을 시작하는
+시각만 바꿨다. 모든 설정은 terminal filter 이후 Safety 1.0이었다.
+
+| `t_on` | MMD | Mean $u$ | Pre-filter safety | Terminal rate |
+|--------|-----|----------|-------------------|---------------|
+| 0.5 | 0.01534 | 7.732 | 0.4055 | 0.60025 |
+| 0.7 | 0.00897 | 8.024 | 0.3660 | 0.64250 |
+| 0.8 | 0.00195 | 8.709 | 0.3475 | 0.66050 |
+| 0.9 | 0.00000* | 9.332 | 0.37575 | 0.63275 |
+
+평가 데이터의 mean $u$는 9.363이다. 보정을 늦출수록 안쪽 나선으로의 밀도 쏠림이
+줄어 분포 차이가 작아졌다. `t_on=0.9`의 MMD 0은 unbiased estimate의 음수를 0으로
+clamp한 값이므로 분포가 완전히 같다는 뜻은 아니다. 또한 terminal rate는 여전히
+약 63--66%라서 늦은 보정은 최종 필터 의존을 제거하지 못했다. 논문 실험 설정을
+따르는 기본 비교값은 `t_on=0.5`로 유지한다.
+
+재현 명령은 `python -m eval.safe_flow_t_on_ablation`이다. 전체 요약과 원본 샘플은
+`runs/exp_01_swiss_roll/safeflow/t_on_ablation/`에 저장한다.
 
 ---
 

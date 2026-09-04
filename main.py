@@ -19,23 +19,23 @@ from utils.seed import seed_everything
 COMMANDS = (
     "all",
     "flowmatch",
-    "hardflow",
-    "yflow",
+    "guideflow",
     "safeflow",
     "uniconflow",
-    "guideflow",
+    "hardflow",
+    "yflow",
 )
 
 _METHOD_ORDER = (
     "flowmatch",
-    "hardflow",
-    "yflow",
+    "guideflow",
     "safeflow",
     "uniconflow",
-    "guideflow",
+    "hardflow",
+    "yflow",
 )
 
-_TRAINABLE = frozenset({"flowmatch", "hardflow", "yflow", "uniconflow", "guideflow"})
+_TRAINABLE = frozenset({"flowmatch", "guideflow", "safeflow", "uniconflow", "hardflow", "yflow"})
 
 
 def _not_ready(name: str, action: str):
@@ -73,6 +73,20 @@ def _train_uniconflow(cfg: DictConfig) -> None:
     print(f"uniconflow backbone {ckpt}")
 
 
+def _train_yflow(cfg: DictConfig) -> None:
+    from train.y_flow import ensure_flowmatch_ckpt
+
+    ckpt = ensure_flowmatch_ckpt(cfg)
+    print(f"yflow backbone {ckpt}")
+
+
+def _train_safeflow(cfg: DictConfig) -> None:
+    from train.safe_flow import ensure_flowmatch_ckpt
+
+    ckpt = ensure_flowmatch_ckpt(cfg)
+    print(f"safeflow backbone {ckpt}")
+
+
 def _train_guideflow(cfg: DictConfig) -> None:
     from eval.guide_flow import owns_backbone
 
@@ -96,20 +110,20 @@ def _eval_method(cfg: DictConfig, method: str) -> None:
 
 _TRAIN = {
     "flowmatch": _train_flowmatch,
+    "guideflow": _train_guideflow,
+    "safeflow": _train_safeflow,
+    "uniconflow": _train_uniconflow,
     "hardflow": _train_hardflow,
     "yflow": _train_yflow,
-    "safeflow": _not_ready("safeflow", "train"),
-    "uniconflow": _train_uniconflow,
-    "guideflow": _train_guideflow,
 }
 
 _EVAL = {
     "flowmatch": lambda cfg: _eval_method(cfg, "flowmatch"),
+    "guideflow": lambda cfg: _eval_method(cfg, "guideflow"),
+    "safeflow": lambda cfg: _eval_method(cfg, "safeflow"),
+    "uniconflow": lambda cfg: _eval_method(cfg, "uniconflow"),
     "hardflow": lambda cfg: _eval_method(cfg, "hardflow"),
     "yflow": lambda cfg: _eval_method(cfg, "yflow"),
-    "safeflow": _not_ready("safeflow", "eval"),
-    "uniconflow": lambda cfg: _eval_method(cfg, "uniconflow"),
-    "guideflow": lambda cfg: _eval_method(cfg, "guideflow"),
 }
 
 

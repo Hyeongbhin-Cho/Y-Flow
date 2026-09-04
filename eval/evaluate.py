@@ -16,15 +16,17 @@ from omegaconf import DictConfig
 from constraints.swiss_roll import SwissRollConstraint
 from data.swiss_roll import build_swiss_roll, denormalize
 from eval.metrics import evaluate_points
+from eval.sample_result import SampleResult
 from utils.device import get_device
 from utils.paths import ROOT, method_dir, run_name_of
 
 _SAMPLE_MODULES = {
     "flowmatch": "eval.flow_match",
+    "guideflow": "eval.guide_flow",
+    "safeflow": "eval.safe_flow",
+    "uniconflow": "eval.unicon_flow",
     "hardflow": "eval.hard_flow",
     "yflow": "eval.y_flow",
-    "uniconflow": "eval.unicon_flow",
-    "guideflow": "eval.guide_flow",
 }
 
 
@@ -67,7 +69,13 @@ def run_eval(cfg: DictConfig, method: str, device: torch.device | None = None) -
     if device.type == "cuda":
         torch.cuda.synchronize(device)
     t0 = time.perf_counter()
-    z = sample(cfg, device, x0)
+    sample_output = sample(cfg, device, x0)
+    if isinstance(sample_output, SampleResult):
+        z = sample_output.samples
+        diagnostics = sample_output.diagnostics
+    else:
+        z = sample_output
+        diagnostics = {}
     if device.type == "cuda":
         torch.cuda.synchronize(device)
     elapsed = time.perf_counter() - t0
@@ -85,12 +93,24 @@ def run_eval(cfg: DictConfig, method: str, device: torch.device | None = None) -
             "inference_time_s_per_1k": float(elapsed / max(x0.shape[0] / 1000.0, 1e-12)),
         }
     )
+    metrics.update(diagnostics)
 
     out_dir = method_dir(cfg, method)
     out_dir.mkdir(parents=True, exist_ok=True)
     _save_scatter(out_dir / "eval_samples.png", p, bundle["train_raw"], f"{method} eval")
     np.save(out_dir / "eval_samples.npy", p)
     (out_dir / "metrics.json").write_text(json.dumps(metrics, indent=2))
+    integrator = diagnostics.get("integrator")
+    if integrator:
+        tag = str(integrator).lower()
+        _save_scatter(
+            out_dir / f"eval_samples_{tag}.png",
+            p,
+            bundle["train_raw"],
+            f"{method} {tag} eval",
+        )
+        np.save(out_dir / f"eval_samples_{tag}.npy", p)
+        (out_dir / f"metrics_{tag}.json").write_text(json.dumps(metrics, indent=2))
     write_run_metrics(cfg)
     print(json.dumps(metrics, indent=2))
     return metrics

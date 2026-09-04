@@ -12,11 +12,13 @@
 ## 2. 파일 목록 및 요약
 * `NOTICE.md`: 마크다운·코드 작성 규칙
 * `FlowMatch.md`: 무제약 FM baseline 구현 목표
+* `GuideFlow.md`: GuideFlow 구현 목표 체크리스트
+* `SafeFlow.md`: FMBF/CFMBF-QP, Euler/Dopri5, terminal filter의 Exp-01 구현
+* `UniConFlow.md`: PTZF 기반 certificate, slack QP, Swiss Roll 적용 범위
 * `HardFlow.md`: HardFlow 구현 목표 체크리스트
 * `YFlow.md`: YFlow 구현 목표 체크리스트
-* `GuideFlow.md`: GuideFlow 구현 목표 체크리스트
-* `SafeFlow.md`: 담당 외. 비움
-* `UniConFlow.md`: PTZF 기반 certificate, slack QP, Swiss Roll 적용 범위
+
+
 * `exp/exp_01_swiss_roll.md`: Swiss roll 비교 실험 프로토콜. 데이터는 `datasets/swiss_roll/default/`에 고정
 
 ---
@@ -39,7 +41,7 @@
 *   **설명**: CVF / CF / RFE 세 제약 주입 전략의 구현 목표. Exp-01 이식 방법과 모듈 ablation 실측 포함.
 
 ### SafeFlow.md
-*   **설명**: 다른 담당. 내용을 채우지 않음.
+*   **설명**: 논문의 training-free SafeFlow를 $H=0$ Swiss-roll 점 문제로 축소한 구현과 한계를 설명한다.
 
 ### UniConFlow.md
 *   **설명**: 논문의 일반 constrained generation을 Swiss Roll 부등식 제약에 적용한 구현 대응표.

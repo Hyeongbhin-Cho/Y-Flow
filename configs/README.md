@@ -11,7 +11,7 @@
 ---
 
 ## 2. 파일 목록 및 요약
-* `exp_01_swiss_roll.yaml`: Exp-01 Swiss roll. 데이터 캐시, MLP, CFM, HardFlow $t_{\mathrm{on}}$, GuideFlow CVF/CF/RFE
+* `exp_01_swiss_roll.yaml`: Exp-01 Swiss roll. 데이터 캐시, MLP, CFM, HardFlow/YFlow/SafeFlow/GuideFlow 설정
 
 ---
 
@@ -27,6 +27,9 @@
 
 #### hardflow
 *   **설명**: `t_on`, `lambda_oc`, `max_iter`. training-free 샘플링만 사용.
+
+#### safeflow
+*   **설명**: `integrator`는 `euler`(기본) 또는 `dopri5`. `t_on=0.5`부터 CFMBF 보정을 적용한다. `phi_schedule`, `phi0`, `phi_gamma`, `slack_weight`가 gain과 relaxed QP를 정한다. `smooth_*`는 $C^\infty$ Swiss-roll barrier의 반경 smoothing, tube margin, box temperature를 정하고, `terminal_filter`는 최종 최소거리 문제의 반복 수와 허용오차를 정한다.
 
 #### guideflow
 *   **설명**: `cvf`/`cf`/`rfe`로 모듈을 켜고 끈다. CVF는 `lambda_cvf`, `t_on`. CF는 `cf_mode`(`interp` 기본, `replace`는 Eq. (16) 문자 그대로), `k_c`, `n_anchors`. RFE는 `tau_star`, `eta_max`, `n_refine`, `slack`과 에너지 가중치 `w_tube`/`w_core`/`w_box`/`w_cost`. 셋 다 `false`면 무제약 FlowMatch와 같다.
