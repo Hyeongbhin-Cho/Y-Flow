@@ -358,9 +358,13 @@ x_{i+1}=t_{i+1}\hat x_N^*+(1-t_{i+1})\big(\bar x_{i+1}-t_{i+1}v_{t_{i+1}}^\theta
 | 이차 비용 + 선형/박스 제약 | QP, 가능하면 닫힌 해 |
 | 일반 비선형 (로봇, maze, PDE) | IPOPT, SQP, interior-point |
 | 신경망 제약 (LPIPS) + 고차원 | Augmented Lagrangian, 고정 iteration |
+| 매끄러운 투영 집합 (Swiss Roll 등) | **PyTorch Autograd GPU-batched PGD** |
 
 \(C\)와 \(h\)는 일반적으로 미분 가능해야 gradient-based solver를 쓸 수 있다.  
 집합 \(\mathcal{S}=\{x\mid h(x)\le 0\}\)이 본질이고, \(h\le 0\)은 solver가 다루는 표준 표현이다.
+
+> **구현 노트 (Exp-01 가속)**:  
+> 초기 프로토타입의 순차 CPU SciPy SLSQP는 4,000개 샘플 최적화에 약 33분(~1,970초)이 소요되었다. 현재는 목적함수 미분을 `torch.autograd.grad`로 일괄 처리하고 safe set으로의 투영(`project_feasible`)을 반복하는 **GPU-batched Projected Gradient Descent (PGD)**로 전면 가속하여, 이론적 제약 보장을 완벽히 유지하면서 1~2초 내에 샘플링을 완료한다.
 
 ### 5.5 실용 heuristic
 

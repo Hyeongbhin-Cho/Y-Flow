@@ -39,3 +39,8 @@ Exp-01 Swiss roll은 2D **좌표점**이므로 MLP를 쓴다. CNN/UNet은 이미
 
 #### VelocityMLP
 *   **설명**: `[x, embed(t)]`를 MLP에 넣어 $v\in\mathbb{R}^d$를 낸다. 기본 `dim=2`, hidden `(64, 64, 64)`.
+
+### cond_mlp.py
+
+#### ConditionalVelocityMLP
+*   **설명**: GuideFlow CFG를 위한 조건부 속도장 $v_\theta(x,t,c)$. 의도(intent: 앵커 또는 커맨드)와 보상(reward: EP 진행도)을 임베딩하고, 독립 조건 마스킹과 null 토큰을 지원한다.

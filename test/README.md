@@ -21,6 +21,8 @@
 * `test_fmbf.py`: FMBF gain, KKT 닫힌형 해, composite QP, smooth barrier와 solver 실패 처리
 * `test_safe_flow.py`: checkpoint 재사용, Euler/FlowMatch 동일성, Euler/Dopri5 안전성·진단 지표, `t_on` ablation 산출물
 * `test_unicon_flow.py`: PTZF 감소 성질, slack QP certificate 보정과 비활성 조건
+* `test_y_flow.py`: FlowMatch ckpt skip, 립시츠 상수 추정, PGD 가이던스 및 deterministic eval 재현성
+
 ---
 
 ## 3. 세부 명세

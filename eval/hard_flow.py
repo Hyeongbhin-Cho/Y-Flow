@@ -1,117 +1,116 @@
 # -*- coding: utf-8 -*-
 # eval/hard_flow.py
-"""Training-free HardFlow sampling. Terminal h, C on predicted x_1, then affine map back."""
+"""Training-free HardFlow sampling with PyTorch Autograd GPU-batched optimization."""
 
 from __future__ import annotations
 
-import numpy as np
 import torch
 from omegaconf import DictConfig
-from scipy.optimize import minimize
 
-from constraints.swiss_roll import SwissRollConstraint
 from data.swiss_roll import build_swiss_roll
 from eval._backbone import load_frozen_velocity
-
-_H_NAMES = ("tube", "core", "box")
-
-
-def _to_p(z: np.ndarray, mean: np.ndarray, std: np.ndarray) -> np.ndarray:
-    return z * std + mean
+from eval.y_flow import project_feasible, torch_nearest_u, torch_spiral
 
 
-def _to_z(p: np.ndarray, mean: np.ndarray, std: np.ndarray) -> np.ndarray:
-    return (p - mean) / std
-
-
-def _feasible(p: np.ndarray, constraint: SwissRollConstraint) -> bool:
-    h = constraint.h(np.asarray(p, dtype=np.float64).reshape(1, 2))
-    return all(float(h[name][0]) <= 1e-8 for name in _H_NAMES)
-
-
-def _project_fallback(p_bar: np.ndarray, constraint: SwissRollConstraint) -> np.ndarray:
-    p = constraint.project(p_bar.reshape(1, 2))[0]
-    r = float(np.linalg.norm(p))
-    if r < constraint.meta.rho_min and r > 1e-12:
-        p = p * (constraint.meta.rho_min / r)
-    return np.clip(p, -constraint.meta.R, constraint.meta.R)
-
-
-def _solve_terminal(
-    z_bar: np.ndarray,
-    mean: np.ndarray,
-    std: np.ndarray,
-    constraint: SwissRollConstraint,
+def solve_terminal_pgd_hardflow(
+    z_bar: torch.Tensor,
+    mean: torch.Tensor,
+    std: torch.Tensor,
+    a: float,
+    u_min: float,
+    u_max: float,
+    tau: float,
+    rho_min: float,
+    R: float,
     lam: float,
-    max_iter: int,
-) -> np.ndarray:
-    z_bar = np.asarray(z_bar, dtype=np.float64).reshape(2)
-    mean = np.asarray(mean, dtype=np.float64).reshape(2)
-    std = np.asarray(std, dtype=np.float64).reshape(2)
+    n_iters: int = 20,
+    buffer: float = 1e-4,
+) -> torch.Tensor:
+    """GPU-batched Projected Gradient Descent for HardFlow terminal optimization."""
+    p_init = z_bar * std + mean
+    p_feas = project_feasible(p_init, a, u_min, u_max, tau, rho_min, R, buffer=buffer)
+    z = (p_feas - mean) / std
 
-    def fun(z: np.ndarray) -> float:
-        p = _to_p(z, mean, std)
-        cost = float(constraint.cost(p.reshape(1, 2))[0])
-        return cost + 0.5 * lam * float(np.sum((z - z_bar) ** 2))
+    lr = 1.0 / (lam + 2.0)
 
-    def ineq(name: str):
-        return {
-            "type": "ineq",
-            "fun": lambda z, n=name: float(-constraint.h(_to_p(z, mean, std).reshape(1, 2))[n][0]),
-        }
+    for _ in range(n_iters):
+        z = z.detach().requires_grad_(True)
+        p = z * std + mean
+        u = torch_nearest_u(p, a, u_min, u_max)
+        g = torch_spiral(u, a)
+        cost = ((p - g) ** 2).sum(dim=-1)
+        bar_penalty = 0.5 * lam * ((z - z_bar) ** 2).sum(dim=-1)
 
-    res = minimize(
-        fun,
-        z_bar,
-        method="SLSQP",
-        constraints=[ineq("tube"), ineq("core"), ineq("box")],
-        options={"maxiter": max_iter, "ftol": 1e-9, "disp": False},
-    )
-    z_hat = np.asarray(res.x, dtype=np.float64).reshape(2)
-    if _feasible(_to_p(z_hat, mean, std), constraint):
-        return z_hat
-    p = _project_fallback(_to_p(z_bar, mean, std), constraint)
-    return _to_z(p, mean, std)
+        total_loss = (cost + bar_penalty).sum()
+        grad = torch.autograd.grad(total_loss, z)[0]
+
+        z_step = z - lr * grad
+        p_step = z_step * std + mean
+        p_feas = project_feasible(p_step, a, u_min, u_max, tau, rho_min, R, buffer=buffer)
+        z = (p_feas - mean) / std
+
+    return z.detach()
 
 
 @torch.no_grad()
 def sample(cfg: DictConfig, device: torch.device, x0: torch.Tensor) -> torch.Tensor:
     model, method = load_frozen_velocity(cfg, device)
     bundle = build_swiss_roll(cfg)
+    meta = bundle["meta"]
+    a = float(meta.a)
+    u_min = float(meta.u_min)
+    u_max = float(meta.u_max)
+    tau = float(meta.tau)
+    rho_min = float(meta.rho_min)
+    R = float(meta.R)
+
     mean_t = bundle["mean"].to(device=device, dtype=x0.dtype)
     std_t = bundle["std"].to(device=device, dtype=x0.dtype)
-    mean_np = bundle["mean"].detach().cpu().numpy()
-    std_np = bundle["std"].detach().cpu().numpy()
-    constraint = SwissRollConstraint(bundle["meta"])
-    t_on = float(cfg.hardflow.get("t_on", 0.5))
-    lambda_oc = float(cfg.hardflow.get("lambda_oc", 10.0))
-    max_iter = int(cfg.hardflow.get("max_iter", 20))
+
+    hf_cfg = cfg.get("hardflow", {})
+    t_on = float(hf_cfg.get("t_on", 0.5))
+    lambda_oc = float(hf_cfg.get("lambda_oc", 10.0))
+    max_iter = int(hf_cfg.get("max_iter", 20))
+    safety_buffer = float(hf_cfg.get("safety_buffer", 1e-4))
+
     steps = int(cfg.sample.n_steps)
     dt = 1.0 / steps
     x = x0
     model.eval()
+
     for i in range(steps):
         t = i / steps
         t_next = (i + 1) / steps
-        t_tensor = torch.full((x.shape[0],), t, device=x.device, dtype=x.dtype)
+        t_tensor = torch.full((x.shape[0],), t, device=device, dtype=x.dtype)
         v = method.velocity(model, x, t_tensor)
         bar_x = x + dt * v
+
         if t < t_on and i < steps - 1:
             x = bar_x
             continue
-        t_next_tensor = torch.full((x.shape[0],), t_next, device=x.device, dtype=x.dtype)
+
+        t_next_tensor = torch.full((x.shape[0],), t_next, device=device, dtype=x.dtype)
         v_next = method.velocity(model, bar_x, t_next_tensor)
         bar_x1 = bar_x + (1.0 - t_next) * v_next
-        z_bar = bar_x1.detach().cpu().numpy()
+
         lam = lambda_oc * (t_next ** 2) / max(dt, 1e-8)
-        z_star_np = np.stack(
-            [
-                _solve_terminal(z_bar[j], mean_np, std_np, constraint, lam, max_iter)
-                for j in range(z_bar.shape[0])
-            ],
-            axis=0,
-        )
-        z_star = torch.from_numpy(z_star_np.astype(np.float32)).to(device=x.device, dtype=x.dtype)
+        with torch.enable_grad():
+            z_star = solve_terminal_pgd_hardflow(
+                bar_x1,
+                mean_t,
+                std_t,
+                a=a,
+                u_min=u_min,
+                u_max=u_max,
+                tau=tau,
+                rho_min=rho_min,
+                R=R,
+                lam=lam,
+                n_iters=max_iter,
+                buffer=safety_buffer,
+            )
+
         w0 = bar_x - t_next * v_next
         x = t_next * z_star + (1.0 - t_next) * w0
+
     return x

@@ -90,14 +90,16 @@ conda activate yflow
 ./run_exp_01_swiss_roll.sh
 ```
 
-기본 `COMMAND=yflow`, `RUN_NAME=exp_01_swiss_roll`. HardFlow/YFlow/SafeFlow는 training-free라 `runs/{run_name}/flowmatch/last.pt`가 있으면 학습을 건너뛴다. 없으면 FlowMatch를 먼저 학습한다. GuideFlow도 기본은 같고, 옵션을 켰을 때만 자체 backbone을 학습한다.
+기본 `COMMAND=yflow`, `RUN_NAME=exp_01_swiss_roll`. HardFlow/YFlow/SafeFlow/UniConFlow는 training-free라 `runs/{run_name}/flowmatch/last.pt`가 있으면 학습을 건너뛴다. 없으면 FlowMatch를 먼저 학습한다. GuideFlow도 기본은 같고, 옵션을 켰을 때만 자체 backbone을 학습한다.
 
 ```bash
 COMMAND=flowmatch ./run_exp_01_swiss_roll.sh
 COMMAND=hardflow RUN_NAME=exp1 ./run_exp_01_swiss_roll.sh
 COMMAND=hardflow ./run_exp_01_swiss_roll.sh --device cuda --steps 20000
+COMMAND=yflow ./run_exp_01_swiss_roll.sh
 COMMAND=safeflow ./run_exp_01_swiss_roll.sh
 COMMAND=safeflow ./run_exp_01_swiss_roll.sh --safeflow.integrator dopri5
+COMMAND=uniconflow ./run_exp_01_swiss_roll.sh
 COMMAND=guideflow ./run_exp_01_swiss_roll.sh
 COMMAND=guideflow ./run_exp_01_swiss_roll.sh --rfe_loss true --enabled true
 ```
@@ -111,6 +113,8 @@ python main.py flowmatch --mode train --run_name exp1
 python main.py flowmatch --mode eval --run_name exp1
 python main.py hardflow --mode train --run_name exp1
 python main.py hardflow --mode eval --run_name exp1
+python main.py yflow --mode train --run_name exp1
+python main.py yflow --mode eval --run_name exp1
 python main.py safeflow --mode train --run_name exp1
 python main.py safeflow --mode eval --run_name exp1
 python main.py guideflow --mode train --run_name exp1
@@ -132,7 +136,7 @@ python main.py guideflow --mode eval --run_name exp1 --rfe_loss true --enabled t
 
 산출물:
 
-* FlowMatch 체크포인트: `runs/{run_name}/flowmatch/last.pt` (HardFlow, YFlow, SafeFlow, training-free GuideFlow도 이 backbone)
+* FlowMatch 체크포인트: `runs/{run_name}/flowmatch/last.pt` (HardFlow, YFlow, SafeFlow, UniConFlow, training-free GuideFlow도 이 backbone)
 * GuideFlow 자체 체크포인트: `runs/{run_name}/guideflow/last.pt` (`--rfe_loss` 또는 `--enabled`를 켰을 때만)
 * 방법별 지표: `runs/{run_name}/{command}/metrics.json`
 * run 통합: `runs/{run_name}/metrics.json`

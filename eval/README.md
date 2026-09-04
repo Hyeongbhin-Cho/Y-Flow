@@ -42,7 +42,21 @@
 ### hard_flow.py
 
 #### sample
-*   **설명**: $t\ge t_{\mathrm{on}}$에서 예측된 $x_1$에 SLSQP. 마지막 스텝에서 $h(x_N)\le 0$을 목표로 한다.
+*   **설명**: $t\ge t_{\mathrm{on}}$에서 예측된 종단점에 대해 PyTorch Autograd GPU 배치 PGD로 $h,C$ 최적화를 수행하고, HardFlow 고유의 Affine 역매핑($w_0$)으로 복원한다. 마지막 스텝에서 $h(x_N)\le 0$을 만족한다.
+
+#### solve_terminal_pgd_hardflow
+*   **설명**: 목적함수(비용 $C$ + FlowMatch 정규화 패널티)에 대해 GPU 배치 투영 경사하강법(PGD)을 수행하여 safe set 내부의 최적 종단점을 구한다.
+
+### y_flow.py
+
+#### sample
+*   **설명**: 동결 FlowMatch 속도를 따르다 $t\ge t_{\mathrm{on}}$에서 예측 종단점에 대해 물리 투영 $P(\hat{x}_1^{\mathrm{raw}})$ warm start 후 PyTorch Autograd GPU 배치 PGD로 $h,C$ 최적화를 수행한다. 국소 립시츠 추정치 $\widehat{L}_P$에 따른 적응형 게이팅과 선형 보간을 적용한다.
+
+#### estimate_lipschitz
+*   **설명**: 물리 투영 연산자 $P$의 국소 립시츠 상수를 유한차분 배치 연산으로 추정한다 ($L_P \le 1+\delta$ 안정성 검증).
+
+#### optimize_x1_pgd
+*   **설명**: 목적함수(비용 $C$ + nominal 복원 + 물리 투영 가이던스)에 대해 GPU 배치 투영 경사하강법을 수행하여 safe set 내부의 최적 종단점을 구한다.
 
 ### safe_flow.py
 
@@ -53,6 +67,17 @@
 
 #### run_ablation
 *   **설명**: 기본 `t_on=[0.5, 0.7, 0.8, 0.9]`를 동일한 4,000개 `x0`로 실행한다. 각 설정의 config, samples, metrics, scatter와 전체 비교 그림·$u$ 히스토그램을 `runs/{run_name}/safeflow/t_on_ablation/`에 저장한다.
+
+### unicon_flow.py
+
+#### sample
+*   **설명**: PTZF(Prescribed-Time Zeroing Function) 기반 제약 certificate와 배치 slack QP를 통해 매 스텝 nominal 속도에 최소 보정 가이던스를 더한다. 종료 시점에서는 매니폴드 투영(terminal refinement)으로 잔여 수치 오차를 제거한다.
+
+#### constraint_values / constraint_jacobian
+*   **설명**: tube/core/box 제약 $h(z)\le 0$ 값과 Autograd를 통한 자코비안 $\partial h/\partial z$를 배치 계산한다.
+
+#### ptzf_reference / qp_guidance
+*   **설명**: 종단 $t=1$에서 0으로 수렴하는 기준 궤적 $r(t)$와 그 도함수를 구하고, certificate 조건을 만족하는 closed-form 배치 최소 노름 QP 가이던스를 계산한다.
 
 ### guide_flow.py
 

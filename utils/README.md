@@ -29,4 +29,4 @@
 ### paths.py
 
 #### method_dir / flowmatch_ckpt
-*   **설명**: 체크포인트는 항상 `runs/{run_name}/flowmatch/last.pt`. HardFlow도 이 파일을 쓴다.
+*   **설명**: 체크포인트는 항상 `runs/{run_name}/flowmatch/last.pt`. HardFlow, YFlow, SafeFlow, UniConFlow, training-free GuideFlow도 이 backbone을 공유한다.
