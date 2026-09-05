@@ -7,28 +7,33 @@ from __future__ import annotations
 import torch
 from omegaconf import DictConfig
 
-from data.swiss_roll import build_swiss_roll
+from data.base import BaseConstraint, build_dataset
 from eval._backbone import load_frozen_velocity
-from eval.y_flow import project_feasible, torch_nearest_u, torch_spiral
 
 
 def solve_terminal_pgd_hardflow(
     z_bar: torch.Tensor,
     mean: torch.Tensor,
     std: torch.Tensor,
-    a: float,
-    u_min: float,
-    u_max: float,
-    tau: float,
-    rho_min: float,
-    R: float,
-    lam: float,
+    constraint: BaseConstraint | None = None,
+    lam: float = 10.0,
     n_iters: int = 20,
     buffer: float = 1e-4,
+    *,
+    a: float | None = None,
+    u_min: float | None = None,
+    u_max: float | None = None,
+    tau: float | None = None,
+    rho_min: float | None = None,
+    R: float | None = None,
 ) -> torch.Tensor:
     """GPU-batched Projected Gradient Descent for HardFlow terminal optimization."""
     p_init = z_bar * std + mean
-    p_feas = project_feasible(p_init, a, u_min, u_max, tau, rho_min, R, buffer=buffer)
+    if constraint is not None:
+        p_feas = constraint.project_feasible(p_init, buffer=buffer)
+    else:
+        from data.swiss_roll import project_feasible
+        p_feas = project_feasible(p_init, a, u_min, u_max, tau, rho_min, R, buffer=buffer)
     z = (p_feas - mean) / std
 
     lr = 1.0 / (lam + 2.0)
@@ -36,9 +41,13 @@ def solve_terminal_pgd_hardflow(
     for _ in range(n_iters):
         z = z.detach().requires_grad_(True)
         p = z * std + mean
-        u = torch_nearest_u(p, a, u_min, u_max)
-        g = torch_spiral(u, a)
-        cost = ((p - g) ** 2).sum(dim=-1)
+        if constraint is not None:
+            cost = constraint.cost(p)
+        else:
+            from data.swiss_roll import torch_nearest_u, torch_spiral
+            u = torch_nearest_u(p, a, u_min, u_max)
+            g = torch_spiral(u, a)
+            cost = ((p - g) ** 2).sum(dim=-1)
         bar_penalty = 0.5 * lam * ((z - z_bar) ** 2).sum(dim=-1)
 
         total_loss = (cost + bar_penalty).sum()
@@ -46,7 +55,11 @@ def solve_terminal_pgd_hardflow(
 
         z_step = z - lr * grad
         p_step = z_step * std + mean
-        p_feas = project_feasible(p_step, a, u_min, u_max, tau, rho_min, R, buffer=buffer)
+        if constraint is not None:
+            p_feas = constraint.project_feasible(p_step, buffer=buffer)
+        else:
+            from data.swiss_roll import project_feasible
+            p_feas = project_feasible(p_step, a, u_min, u_max, tau, rho_min, R, buffer=buffer)
         z = (p_feas - mean) / std
 
     return z.detach()
@@ -55,14 +68,8 @@ def solve_terminal_pgd_hardflow(
 @torch.no_grad()
 def sample(cfg: DictConfig, device: torch.device, x0: torch.Tensor) -> torch.Tensor:
     model, method = load_frozen_velocity(cfg, device)
-    bundle = build_swiss_roll(cfg)
-    meta = bundle["meta"]
-    a = float(meta.a)
-    u_min = float(meta.u_min)
-    u_max = float(meta.u_max)
-    tau = float(meta.tau)
-    rho_min = float(meta.rho_min)
-    R = float(meta.R)
+    bundle = build_dataset(cfg)
+    constraint = bundle["constraint"]
 
     mean_t = bundle["mean"].to(device=device, dtype=x0.dtype)
     std_t = bundle["std"].to(device=device, dtype=x0.dtype)
@@ -99,12 +106,7 @@ def sample(cfg: DictConfig, device: torch.device, x0: torch.Tensor) -> torch.Ten
                 bar_x1,
                 mean_t,
                 std_t,
-                a=a,
-                u_min=u_min,
-                u_max=u_max,
-                tau=tau,
-                rho_min=rho_min,
-                R=R,
+                constraint=constraint,
                 lam=lam,
                 n_iters=max_iter,
                 buffer=safety_buffer,

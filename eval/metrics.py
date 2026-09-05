@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from constraints.swiss_roll import SwissRollConstraint
+from data.base import BaseConstraint
 
 
 def _subsample(p: np.ndarray, n_max: int, rng: np.random.Generator) -> np.ndarray:
@@ -53,27 +53,25 @@ def rbf_mmd(
 def evaluate_points(
     samples: np.ndarray,
     test: np.ndarray,
-    constraint: SwissRollConstraint,
+    constraint: BaseConstraint,
 ) -> dict[str, float]:
     h = constraint.h(samples)
-    stacked = np.stack([h["tube"], h["core"], h["box"]], axis=-1)
+    stacked = np.stack(list(h.values()), axis=-1)
     safe = (stacked <= 0).all(axis=-1)
 
     def viol(arr: np.ndarray) -> tuple[float, float]:
         pos = np.maximum(arr, 0.0)
         return float((arr > 0).mean()), float(pos.mean())
 
-    tube_rate, tube_mean = viol(h["tube"])
-    core_rate, core_mean = viol(h["core"])
-    box_rate, box_mean = viol(h["box"])
-    return {
+    metrics: dict[str, float] = {
         "safe_ratio": float(safe.mean()),
-        "tube_viol_rate": tube_rate,
-        "tube_viol_mean": tube_mean,
-        "core_viol_rate": core_rate,
-        "core_viol_mean": core_mean,
-        "box_viol_rate": box_rate,
-        "box_viol_mean": box_mean,
-        "mmd": rbf_mmd(samples, test),
-        "radius_mae": float(constraint.radius_error(samples).mean()),
     }
+    for name, val in h.items():
+        rate, mean = viol(val)
+        metrics[f"{name}_viol_rate"] = rate
+        metrics[f"{name}_viol_mean"] = mean
+
+    metrics["mmd"] = rbf_mmd(samples, test)
+    if hasattr(constraint, "radius_error"):
+        metrics["radius_mae"] = float(constraint.radius_error(samples).mean())
+    return metrics

@@ -59,7 +59,7 @@ a_j+b_j^\top u+\delta_j\geq0,
 \quad a_j=b_j^\top v_p+\varphi(t,h_j)h_j.
 $$
 
-제약이 네 개뿐이므로 `constraints/fmbf.py`는 $2^4$ active set을 배치 열거해 전역 최적해를 구한다. 보정은 $u_z=u_p/\sigma$로 정규화 공간에 되돌린다. 유효한 active set을 수치적으로 찾지 못하면 다른 해를 대신 반환하지 않고 실행을 중단한다.
+제약이 네 개뿐이므로 `data/base.py`의 CFMBF QP 솔버는 $2^4$ active set을 배치 열거해 전역 최적해를 구한다. 보정은 $u_z=u_p/\sigma$로 정규화 공간에 되돌린다. 유효한 active set을 수치적으로 찾지 못하면 다른 해를 대신 반환하지 않고 실행을 중단한다.
 
 기본 gain은 논문 실험의 piecewise schedule이다.
 

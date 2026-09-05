@@ -15,8 +15,7 @@ import numpy as np
 import torch
 from omegaconf import DictConfig, OmegaConf
 
-from constraints.swiss_roll import SwissRollConstraint
-from data.swiss_roll import build_swiss_roll, denormalize, nearest_u
+from data.swiss_roll import SwissRollConstraint, build_swiss_roll, denormalize, nearest_u
 from eval.evaluate import _save_scatter, make_eval_x0
 from eval.metrics import evaluate_points
 from eval.safe_flow import sample

@@ -12,7 +12,7 @@ from omegaconf import DictConfig, OmegaConf
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from data.swiss_roll import build_swiss_roll, denormalize
+from data.base import build_dataset, denormalize
 from model import build_model
 from sample.euler import EulerSampler
 from train.checkpoint import save_checkpoint
@@ -46,7 +46,7 @@ def run_train(
     out_dir.mkdir(parents=True, exist_ok=True)
     OmegaConf.save(cfg, out_dir / "config.yaml")
 
-    bundle = build_swiss_roll(cfg)
+    bundle = build_dataset(cfg)
     loader = DataLoader(
         bundle["train"],
         batch_size=int(cfg.train.batch_size),

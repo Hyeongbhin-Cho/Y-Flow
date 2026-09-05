@@ -10,10 +10,7 @@ import numpy as np
 import torch
 from omegaconf import DictConfig
 
-from constraints.fmbf import barrier_gain, solve_composite_fmbf
-from constraints.swiss_roll import SwissRollConstraint
-from constraints.swiss_roll_fmbf import SwissRollFMBF
-from data.swiss_roll import build_swiss_roll
+from data.base import barrier_gain, build_dataset, solve_composite_fmbf
 from eval._backbone import load_frozen_velocity
 from eval.sample_result import SampleResult
 
@@ -108,11 +105,11 @@ class _SafeVelocity:
 @torch.no_grad()
 def sample(cfg: DictConfig, device: torch.device, x0: torch.Tensor) -> SampleResult:
     model, method = load_frozen_velocity(cfg, device)
-    bundle = build_swiss_roll(cfg)
+    bundle = build_dataset(cfg)
+    constraint = bundle["constraint"]
     mean = bundle["mean"].to(device=device, dtype=x0.dtype)
     std = bundle["std"].to(device=device, dtype=x0.dtype)
-    fmbf = SwissRollFMBF(
-        bundle["meta"],
+    fmbf = constraint.get_fmbf(
         radius_eps=float(cfg.safeflow.smooth_radius_eps),
         tube_margin=float(cfg.safeflow.smooth_tube_margin),
         box_temperature=float(cfg.safeflow.smooth_box_temperature),
@@ -128,12 +125,8 @@ def sample(cfg: DictConfig, device: torch.device, x0: torch.Tensor) -> SampleRes
         raise ValueError(f"unknown SafeFlow integrator: {integrator}")
 
     p_pre = (z_pre * std + mean).detach().cpu().numpy().astype(np.float64)
-    constraint = SwissRollConstraint(bundle["meta"])
     existing_h = constraint.h(p_pre)
-    safe_pre = np.stack(
-        [existing_h[name] <= 0.0 for name in SwissRollFMBF.reference_names],
-        axis=-1,
-    ).all(axis=-1)
+    safe_pre = np.stack(list(existing_h.values()), axis=-1).max(axis=-1) <= 0.0
 
     terminal_filtered = 0
     p_final = p_pre

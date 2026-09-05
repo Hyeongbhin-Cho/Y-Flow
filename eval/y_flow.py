@@ -7,72 +7,37 @@ from __future__ import annotations
 import math
 import numpy as np
 import torch
-from omegaconf import DictConfig
-
-from constraints.swiss_roll import SwissRollConstraint
-from data.swiss_roll import build_swiss_roll
+from data.base import BaseConstraint, build_dataset
 from eval._backbone import load_frozen_velocity
 
 
 def torch_spiral(u: torch.Tensor, a: float) -> torch.Tensor:
-    return torch.stack([a * u * torch.cos(u), a * u * torch.sin(u)], dim=-1)
+    from data.swiss_roll import torch_spiral as _ts
+    return _ts(u, a)
 
 
 def torch_nearest_u(p: torch.Tensor, a: float, u_min: float, u_max: float) -> torch.Tensor:
-    phi = torch.atan2(p[:, 1], p[:, 0])
-    k0 = int(math.floor(u_min / (2.0 * math.pi))) - 1
-    k1 = int(math.ceil(u_max / (2.0 * math.pi))) + 1
-    ks = torch.arange(k0, k1 + 1, device=p.device, dtype=p.dtype)
-    u_cands = phi[:, None] + 2.0 * math.pi * ks[None, :]
-    u_min_t = torch.full((p.shape[0], 1), u_min, device=p.device, dtype=p.dtype)
-    u_max_t = torch.full((p.shape[0], 1), u_max, device=p.device, dtype=p.dtype)
-    u_all = torch.cat([u_cands, u_min_t, u_max_t], dim=1)
-    u_all = torch.clamp(u_all, u_min, u_max)
-    g = torch_spiral(u_all, a)
-    d2 = ((g - p[:, None, :]) ** 2).sum(dim=-1)
-    min_idx = d2.argmin(dim=1)
-    return u_all[torch.arange(p.shape[0], device=p.device), min_idx]
+    from data.swiss_roll import torch_nearest_u as _tnu
+    return _tnu(p, a, u_min, u_max)
 
 
 def torch_project_to_manifold(p: torch.Tensor, a: float, u_min: float, u_max: float) -> torch.Tensor:
-    u = torch_nearest_u(p, a, u_min, u_max)
-    return torch_spiral(u, a)
+    from data.swiss_roll import torch_project_to_manifold as _tpm
+    return _tpm(p, a, u_min, u_max)
 
 
 def estimate_lipschitz(
     p: np.ndarray | torch.Tensor,
-    constraint_or_a: SwissRollConstraint | float,
+    constraint_or_a: BaseConstraint | float,
     u_min: float | None = None,
     u_max: float | None = None,
     eps: float = 1e-4,
 ) -> np.ndarray | torch.Tensor:
-    """Estimate local Lipschitz constant of physical projection operator P via batched PyTorch."""
-    is_np = isinstance(p, np.ndarray)
-    if isinstance(constraint_or_a, SwissRollConstraint):
-        a = float(constraint_or_a.meta.a)
-        u_min = float(constraint_or_a.meta.u_min)
-        u_max = float(constraint_or_a.meta.u_max)
-    else:
-        a = float(constraint_or_a)
-        assert u_min is not None and u_max is not None
-
-    if is_np:
-        p_t = torch.from_numpy(p.astype(np.float32))
-    else:
-        p_t = p
-
-    p_proj = torch_project_to_manifold(p_t, a, u_min, u_max)
-    dirs = torch.tensor([[1.0, 0.0], [-1.0, 0.0], [0.0, 1.0], [0.0, -1.0]], device=p_t.device, dtype=p_t.dtype)
-    max_L = torch.zeros(p_t.shape[0], device=p_t.device, dtype=p_t.dtype)
-    for d in dirs:
-        p_pert = p_t + eps * d[None, :]
-        p_pert_proj = torch_project_to_manifold(p_pert, a, u_min, u_max)
-        diff = torch.norm(p_pert_proj - p_proj, dim=-1)
-        max_L = torch.maximum(max_L, diff / eps)
-
-    if is_np:
-        return max_L.cpu().numpy()
-    return max_L
+    """Estimate local Lipschitz constant of physical projection operator P."""
+    if isinstance(constraint_or_a, BaseConstraint):
+        return constraint_or_a.estimate_lipschitz(p, eps=eps)
+    from data.swiss_roll import estimate_lipschitz as _el
+    return _el(p, constraint_or_a, u_min=u_min, u_max=u_max, eps=eps)
 
 
 def project_feasible(
@@ -109,23 +74,28 @@ def solve_terminal_pgd(
     z_phys: torch.Tensor,
     mean: torch.Tensor,
     std: torch.Tensor,
-    a: float,
-    u_min: float,
-    u_max: float,
-    tau: float,
-    rho_min: float,
-    R: float,
-    lam: float,
-    mu: float,
+    constraint: BaseConstraint | None = None,
+    lam: float = 10.0,
+    mu: float = 1.0,
     n_iters: int = 15,
     buffer: float = 1e-4,
+    *,
+    a: float | None = None,
+    u_min: float | None = None,
+    u_max: float | None = None,
+    tau: float | None = None,
+    rho_min: float | None = None,
+    R: float | None = None,
 ) -> torch.Tensor:
     """GPU-batched Projected Gradient Descent with PyTorch Autograd."""
     denom = max(lam + mu, 1e-8)
     z_quad = (lam * z_raw + mu * z_phys) / denom
 
     p_init = z_quad * std + mean
-    p_feas = project_feasible(p_init, a, u_min, u_max, tau, rho_min, R, buffer=buffer)
+    if constraint is not None:
+        p_feas = constraint.project_feasible(p_init, buffer=buffer)
+    else:
+        p_feas = project_feasible(p_init, a, u_min, u_max, tau, rho_min, R, buffer=buffer)
     z = (p_feas - mean) / std
 
     lr = 1.0 / (denom + 2.0)
@@ -133,9 +103,12 @@ def solve_terminal_pgd(
     for _ in range(n_iters):
         z = z.detach().requires_grad_(True)
         p = z * std + mean
-        u = torch_nearest_u(p, a, u_min, u_max)
-        g = torch_spiral(u, a)
-        cost = ((p - g) ** 2).sum(dim=-1)
+        if constraint is not None:
+            cost = constraint.cost(p)
+        else:
+            u = torch_nearest_u(p, a, u_min, u_max)
+            g = torch_spiral(u, a)
+            cost = ((p - g) ** 2).sum(dim=-1)
         raw_penalty = 0.5 * lam * ((z - z_raw) ** 2).sum(dim=-1)
         phys_penalty = 0.5 * mu * ((z - z_phys) ** 2).sum(dim=-1) if mu > 0 else 0.0
 
@@ -144,7 +117,10 @@ def solve_terminal_pgd(
 
         z_step = z - lr * grad
         p_step = z_step * std + mean
-        p_feas = project_feasible(p_step, a, u_min, u_max, tau, rho_min, R, buffer=buffer)
+        if constraint is not None:
+            p_feas = constraint.project_feasible(p_step, buffer=buffer)
+        else:
+            p_feas = project_feasible(p_step, a, u_min, u_max, tau, rho_min, R, buffer=buffer)
         z = (p_feas - mean) / std
 
     return z.detach()
@@ -153,14 +129,8 @@ def solve_terminal_pgd(
 @torch.no_grad()
 def sample(cfg: DictConfig, device: torch.device, x0: torch.Tensor) -> torch.Tensor:
     model, method = load_frozen_velocity(cfg, device)
-    bundle = build_swiss_roll(cfg)
-    meta = bundle["meta"]
-    a = float(meta.a)
-    u_min = float(meta.u_min)
-    u_max = float(meta.u_max)
-    tau = float(meta.tau)
-    rho_min = float(meta.rho_min)
-    R = float(meta.R)
+    bundle = build_dataset(cfg)
+    constraint = bundle["constraint"]
 
     mean_t = bundle["mean"].to(device=device, dtype=x0.dtype)
     std_t = bundle["std"].to(device=device, dtype=x0.dtype)
@@ -193,10 +163,17 @@ def sample(cfg: DictConfig, device: torch.device, x0: torch.Tensor) -> torch.Ten
             continue
 
         p_raw = x1_raw * std_t + mean_t
-        p_phys = torch_project_to_manifold(p_raw, a, u_min, u_max)
-        z_phys = (p_phys - mean_t) / std_t
+        p_phys = constraint.project_physical(p_raw)
+        if p_phys is not None:
+            z_phys = (p_phys - mean_t) / std_t
+            step_mu = mu_val
+        else:
+            z_phys = x1_raw
+            step_mu = 0.0
 
-        L_P = estimate_lipschitz(p_raw, a, u_min, u_max)
+        L_P = constraint.estimate_lipschitz(p_raw)
+        if L_P is None:
+            L_P = torch.zeros(p_raw.shape[0], device=device, dtype=p_raw.dtype)
 
         g_val = gamma_max * min(max((t - t_on) / max(1.0 - t_on, 1e-8), 0.0), 1.0)
         gamma = torch.where(
@@ -214,14 +191,9 @@ def sample(cfg: DictConfig, device: torch.device, x0: torch.Tensor) -> torch.Ten
                 z_phys,
                 mean_t,
                 std_t,
-                a,
-                u_min,
-                u_max,
-                tau,
-                rho_min,
-                R,
+                constraint=constraint,
                 lam=lam,
-                mu=mu_val,
+                mu=step_mu,
                 n_iters=n_iters,
                 buffer=safety_buffer,
             )

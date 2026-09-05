@@ -36,29 +36,23 @@ def ensure_flowmatch_ckpt(cfg: DictConfig) -> Path:
 
 
 def build_conditions(cfg: DictConfig, bundle: dict) -> dict[str, torch.Tensor]:
-    from constraints.swiss_roll import SwissRollConstraint
-    from eval.guide_flow import (
-        build_anchor_vocabulary,
-        command_bins,
-        ego_progress,
-        intent_dim_of,
-    )
+    from eval.guide_flow import intent_dim_of
 
     g = cfg.guideflow.guidance
-    constraint = SwissRollConstraint(bundle["meta"])
+    constraint = bundle["constraint"]
     train_raw = bundle["train_raw"].astype(np.float64)
     mean = bundle["mean"].numpy().astype(np.float64)
     std = bundle["std"].numpy().astype(np.float64)
 
-    anchors_p = build_anchor_vocabulary(
-        train_raw, constraint, int(cfg.guideflow.get("n_anchors", 256)), int(cfg.seed)
+    anchors_p = constraint.build_anchor_vocabulary(
+        train_raw, int(cfg.guideflow.get("n_anchors", 256)), int(cfg.seed)
     )
     d2 = ((train_raw[:, None, :] - anchors_p[None, :, :]) ** 2).sum(axis=-1)
     nearest = d2.argmin(axis=1)
     n_commands = int(g.get("n_commands", 5))
 
     if str(g.get("signal", "anchor")) == "command":
-        idx = command_bins(anchors_p[nearest], constraint, n_commands)
+        idx = constraint.command_bins(anchors_p[nearest], n_commands)
         intent = np.eye(n_commands, dtype=np.float32)[idx]
     else:
         intent = ((anchors_p[nearest] - mean) / std).astype(np.float32)
@@ -66,7 +60,7 @@ def build_conditions(cfg: DictConfig, bundle: dict) -> dict[str, torch.Tensor]:
     return {
         "x1": bundle["train"].points,
         "intent": torch.from_numpy(intent),
-        "reward": torch.from_numpy(ego_progress(train_raw, constraint).astype(np.float32)),
+        "reward": torch.as_tensor(constraint.progress(train_raw), dtype=torch.float32),
         "intent_dim": intent_dim_of(cfg),
     }
 
@@ -88,9 +82,8 @@ def _null_conditions(bundle: dict) -> dict:
 
 
 def run_train_guideflow(cfg: DictConfig, device: torch.device | None = None) -> Path:
-    from constraints.swiss_roll import SwissRollConstraint
-    from data.swiss_roll import build_swiss_roll
-    from eval.guide_flow import energy_torch, energy_weights_of
+    from data.base import build_dataset
+    from eval.guide_flow import energy_weights_of
     from model import build_model
     from model.cond_mlp import build_cond_model
     from train.checkpoint import save_checkpoint
@@ -108,8 +101,8 @@ def run_train_guideflow(cfg: DictConfig, device: torch.device | None = None) -> 
     out_dir.mkdir(parents=True, exist_ok=True)
     OmegaConf.save(cfg, out_dir / "config.yaml")
 
-    bundle = build_swiss_roll(cfg)
-    constraint = SwissRollConstraint(bundle["meta"])
+    bundle = build_dataset(cfg)
+    constraint = bundle["constraint"]
     cond = build_conditions(cfg, bundle) if use_cond else _null_conditions(bundle)
     loader = DataLoader(
         TensorDataset(cond["x1"], cond["intent"], cond["reward"]),
@@ -178,8 +171,8 @@ def run_train_guideflow(cfg: DictConfig, device: torch.device | None = None) -> 
                     )
                     x1_hat = x1_hat + dtau.reshape(-1, 1) * vv
                     tau = tau + dtau
-            e_gen = energy_torch(x1_hat * std + mean, constraint, *weights, slack)
-            e_gt = energy_torch(x1 * std + mean, constraint, *weights, slack).detach()
+            e_gen = constraint.energy(x1_hat * std + mean, *weights, slack=slack)
+            e_gt = constraint.energy(x1 * std + mean, *weights, slack=slack).detach()
             loss = loss + lambda_rfe * (gate * (e_gen - e_gt)).mean()
 
         opt.zero_grad(set_to_none=True)

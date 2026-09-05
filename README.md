@@ -162,7 +162,6 @@ Y-Flow/
 ├── model/
 ├── train/
 ├── sample/
-├── constraints/
 ├── eval/
 ├── utils/
 ├── docs/
@@ -174,7 +173,6 @@ Y-Flow/
 * [Train](train/README.md)
 * [Data](data/README.md)
 * [configs](configs/README.md)
-* [constraints](constraints/README.md)
 * [Eval](eval/README.md)
 * [Sample](sample/README.md)
 * [utils](utils/README.md)

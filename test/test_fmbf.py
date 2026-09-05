@@ -10,10 +10,8 @@ import torch
 from omegaconf import OmegaConf
 from scipy.optimize import minimize
 
-from constraints.fmbf import barrier_gain, solve_composite_fmbf, solve_single_fmbf
-from constraints.swiss_roll import SwissRollConstraint
-from constraints.swiss_roll_fmbf import SwissRollFMBF
-from data.swiss_roll import build_swiss_roll, spiral
+from data.base import barrier_gain, solve_composite_fmbf, solve_single_fmbf
+from data.swiss_roll import SwissRollConstraint, SwissRollFMBF, build_swiss_roll, spiral
 from utils.paths import ROOT
 
 

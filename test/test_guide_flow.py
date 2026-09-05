@@ -14,8 +14,7 @@ import numpy as np
 import torch
 from omegaconf import OmegaConf
 
-from constraints.swiss_roll import SwissRollConstraint
-from data.swiss_roll import build_swiss_roll
+from data.swiss_roll import SwissRollConstraint, build_swiss_roll
 from eval.evaluate import run_eval
 from eval.guide_flow import (
     _constrain_velocity,

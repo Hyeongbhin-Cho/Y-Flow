@@ -9,8 +9,7 @@ import unittest
 import numpy as np
 from omegaconf import OmegaConf
 
-from constraints.swiss_roll import SwissRollConstraint
-from data.swiss_roll import build_swiss_roll
+from data.swiss_roll import SwissRollConstraint, build_swiss_roll
 from eval.metrics import evaluate_points
 from utils.paths import ROOT
 
@@ -33,6 +32,45 @@ class TestConstraints(unittest.TestCase):
                 cons,
             )
             self.assertGreater(origin["core_viol_rate"], 0.9)
+
+    def test_autograd_differentiability(self) -> None:
+        import torch
+        from data.swiss_roll import SwissRollMeta
+
+        meta = SwissRollMeta(
+            a=1.0,
+            u_min=4.71,
+            u_max=14.14,
+            n_turns=1.5,
+            sigma_obs=0.05,
+            n_train=10,
+            n_eval=10,
+            margin=0.2,
+            tau=0.15,
+            rho_min=4.56,
+            R=14.43,
+            seed=0,
+            mean=(0.0, 0.0),
+            std=(1.0, 1.0),
+            arc_length=100.0,
+        )
+        cons = SwissRollConstraint(meta)
+        p = torch.randn(10, 2, requires_grad=True)
+
+        # 1. Cost differentiability
+        cost = cons.cost(p)
+        self.assertTrue(cost.requires_grad)
+        grad_cost = torch.autograd.grad(cost.sum(), p, retain_graph=True)[0]
+        self.assertEqual(grad_cost.shape, (10, 2))
+        self.assertTrue(torch.isfinite(grad_cost).all())
+
+        # 2. Hard constraints (h) differentiability
+        h_dict = cons.h(p)
+        for key in ["tube", "core", "box"]:
+            self.assertTrue(h_dict[key].requires_grad, f"h[{key}] should require grad")
+            grad_h = torch.autograd.grad(h_dict[key].sum(), p, retain_graph=True)[0]
+            self.assertEqual(grad_h.shape, (10, 2))
+            self.assertTrue(torch.isfinite(grad_h).all())
 
 
 if __name__ == "__main__":

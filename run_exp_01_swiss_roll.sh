@@ -9,7 +9,7 @@ cd "$ROOT"
 RUN_NAME="${RUN_NAME:-exp_01_swiss_roll}"
 CONFIG="${CONFIG:-configs/exp_01_swiss_roll.yaml}"
 PYTHON="${PYTHON:-python}"
-COMMAND="${COMMAND:-yflow}"
+COMMAND="${COMMAND:-all}"
 
 echo "==> train ${COMMAND}  run_name=${RUN_NAME}"
 "${PYTHON}" main.py "${COMMAND}" --mode train --run_name "${RUN_NAME}" --config "${CONFIG}" "$@"

@@ -94,8 +94,7 @@ class TestYFlow(unittest.TestCase):
 
     def test_lipschitz_estimation(self) -> None:
         import numpy as np
-        from constraints.swiss_roll import SwissRollConstraint
-        from data.swiss_roll import build_swiss_roll
+        from data.swiss_roll import SwissRollConstraint, build_swiss_roll
         from eval.y_flow import estimate_lipschitz
 
         cfg = self._cfg()

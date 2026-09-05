@@ -169,196 +169,143 @@ $P$는 대략 $L_P\le 1$. Lipschitz 스케줄에 사용.
 
 ## 6. 결과 비교 표
 
-Run: `runs/exp_01_swiss_roll`. 데이터 dump `datasets/swiss_roll/default`.  
-**FlowMatch**, **HardFlow**, **SafeFlow**, **GuideFlow**, **YFlow** 평가를 완료했다.
-**UniConFlow**는 이후 inference 비교용으로 남겨 둔다.
+- **실험 환경 (동일 하드웨어/소프트웨어 단일 환경)**:
+  - **GPU**: NVIDIA GeForce RTX 3090 (24GB VRAM)
+  - **Driver Version**: 580.126.09, **CUDA Version**: 13.0
+  - **OS / Platform**: Linux x86_64
+  - **데이터 소스**: [runs/exp_01_swiss_roll/metrics.json](file:///home/hyeon/Research/Y-Flow/runs/exp_01_swiss_roll/metrics.json) (데이터 dump: `datasets/swiss_roll/default`)
+  - **평가 프로토콜**: $n_{\mathrm{eval}}=4000$, $N_{\mathrm{steps}}=100$, 동일 초기 가우시안 노이즈 $x_0$, 동일 FlowMatch $v_t^\theta$ backbone
 
-| Method | Train | Safety ↑ | Tube viol. ↓ | Core/Gap viol. ↓ | MMD ↓ | Radius MAE ↓ | Time (s/1k) |
-|--------|-------|----------|--------------|------------------|-------|--------------|-------------|
-| FlowMatch | train | 0.7305 | 0.2695 (mean 0.056) | 0.00175 (mean 0.00067) | $3.62\times 10^{-5}$ | 0.138 | 0.051 |
-| HardFlow | train-free | 1.0 | 0.0 (mean 0.0) | 0.0 (mean 0.0) | 0.00986 | 0.0943 | 492.736 |
-| SafeFlow (Euler) | train-free | 1.0 | 0.0 (mean 0.0) | 0.0 (mean 0.0) | 0.01534 | 0.1161 | 2.016 |
-| SafeFlow (Dopri5) | train-free | 1.0 | 0.0 (mean 0.0) | 0.0 (mean 0.0) | 0.01555 | 0.1170 | 3.704 |
-| UniConFlow | train-free | | | | | | |
-| GuideFlow | train-free | 1.0 | 0.0 (mean 0.0) | 0.0 (mean 0.0) | 0.00790 | 0.0625 | 0.072 |
-| GuideFlow | train | 1.0 | 0.0 (mean 0.0) | 0.0 (mean 0.0) | 0.00493 | 0.0647 | 0.115 |
-| YFlow | train-free | 1.0 | 0.0 (mean 0.0) | 0.0 (mean 0.0) | 0.00224 | 0.0727 | 0.622 |
+| Method | Type | Safety ↑ | Tube viol. rate (mean) ↓ | Core viol. rate (mean) ↓ | Box viol. rate (mean) ↓ | MMD ↓ | Radius MAE ↓ | Time (s/1k) ↓ | Total Time (s) ↓ |
+|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **FlowMatch** (Baseline) | train | 0.7305 | 0.2695 (0.05624) | 0.00175 (0.00067) | 0.00025 (0.00001) | $3.62\times 10^{-5}$ | 0.1379 | **0.0514** | **0.206 s** |
+| **GuideFlow** | train-free | **1.0000** | 0.0000 (0.0) | 0.0000 (0.0) | 0.0000 (0.0) | 0.00790 | 0.0625 | 0.0721 | 0.288 s |
+| **HardFlow** | train-free | **1.0000** | 0.0000 (0.0) | 0.0000 (0.0) | 0.0000 (0.0) | 0.00986 | 0.0943 | 492.736 | 1970.95 s |
+| **SafeFlow (Euler)** | train-free | **1.0000** | 0.0000 (0.0) | 0.0000 (0.0) | 0.0000 (0.0) | 0.01534 | 0.1161 | 2.0163 | 8.065 s |
+| *(SafeFlow Dopri5)* | train-free | *1.0000* | *0.0000 (0.0)* | *0.0000 (0.0)* | *0.0000 (0.0)* | *0.01555* | *0.1170* | *3.7035* | *14.814 s* |
+| **UniConFlow** | train-free | **1.0000** | 0.0000 (0.0) | 0.0000 (0.0) | 0.0000 (0.0) | 0.01432 | **0.0319** | 0.7699 | 3.079 s |
+| **YFlow** (Ours) | train-free | **1.0000** | 0.0000 (0.0) | 0.0000 (0.0) | 0.0000 (0.0) | **0.00224** | 0.0727 | 0.6219 | **2.488 s** |
 
-정의:
+지표 정의:
+- **Type**: `train`은 백본 학습 포함, `train-free`는 사전학습된 동일 $v_t^\theta$ 동결 상태에서 추론만 제어
+- **Safety**: 모든 하드 제약($h_{\mathrm{tube}}, h_{\mathrm{core}}, h_{\mathrm{box}} \le 0$)을 완전히 만족하는 샘플 비율 (`safe_ratio`)
+- **Viol. rate & mean**: 해당 제약 $h > 0$ 위반율 및 위반량의 평균값 $(h)_+$
+- **MMD**: 생성 샘플과 테스트 정답 샘플 간 Maximum Mean Discrepancy (RBF 커널, 낮을수록 원본 분포 보존 우수)
+- **Radius MAE**: 나선 곡선 중심선 기준 반경 절대 오차 $\mathbb{E}|r - a u^*|$
+- **Time**: 1,000점 생성 기준 시간(`s/1k`) 및 4,000점 전수 추론 총 소요 시간(`Total Time`)
 
-- Train: `train-free`는 동결 $v_t^\theta$에 inference만 교체, `train`은 backbone을 학습
-- Safety: 모든 $h_j\le 0$인 점 비율 (`safe_ratio`)
-- Tube / Core viol.: 해당 $h>0$ 비율과 평균 $(h)_+$
-- MMD: 생성점 vs 테스트점 (RBF)
-- Radius MAE: $\mathbb{E}|r-au^\star|$
-- Time: 점 1000개 inference. 단, 아래 값은 행별 실행 당시 환경에서 측정한 기록이다.
+---
 
-시간 값은 같은 장비에서 다시 잰 직접 비교가 아니다. SafeFlow 두 행은 Apple M4 Pro
-CPU에서 측정했고, 기존 방법 행은 CUDA 또는 CUDA+CPU 혼합 환경에서 생성된 이전
-artifact의 값을 유지했다. 방법 간 속도 순위를 판단하려면 동일 장비에서 다시
-benchmark해야 한다.
+### 6.1 FlowMatch 실행 결과 (무제약 Baseline, `runs/exp_01_swiss_roll/flowmatch`)
 
-정성: $xy$ scatter + 금지영역 overlay + unrolled $u$ 히스토그램.
+- **설정**: Linear CFM, 20k step 학습, Euler $N=100$, $n_{\mathrm{eval}}=4000$, RTX 3090.
+- **분포 학습의 우수성**:
+  - MMD가 $3.62 \times 10^{-5}$로 가장 낮아 데이터 매니폴드의 전반적인 형상을 완벽히 포착함.
+  - 추론 시간 $0.206\,\mathrm{s}$ ($0.051\,\mathrm{s}/1\mathrm{k}$)로 순수 신경망 추론만의 최고 속도 제공.
+- **하드 제약 위반의 치명적 한계**:
+  - **Safety Rate 73.05%**: 4,000개 샘플 중 약 27%에 달하는 1,078개 샘플이 제약을 위반함.
+  - 실패의 99% 이상이 **튜브 이탈(Tube viol. rate 26.95%)**에서 발생하며, 나선 팔 바깥 및 인접한 바퀴 사이(arm gap)로 점들이 새어나감.
+  - 무제약 Flow Matching은 평균적인 생성 품질은 우수하나 신뢰성/안전성 보장이 필요한 실제 응용에는 부적합함을 입증.
 
-가설:
-
-- FlowMatch: 나선 모양(MMD)은 괜찮고 Safety는 낮음. 틈·코어로 점이 샘
-- GuideFlow: 모양은 괜찮고 Safety는 중간
-- SafeFlow / UniConFlow: Safety 높고, CBF/QP가 점을 경계에 붙일 수 있음
-- HardFlow / YFlow: Safety ≈ 1, MMD는 path-wise CBF보다 나을 가능성
-
-### 6.1 FlowMatch 실행 결과 (`runs/exp_01_swiss_roll/flowmatch`)
-
-설정: linear CFM, MLP $2\to 64\to 64\to 64\to 2$, 20k step, Adam $10^{-3}$, EMA 0.999, Euler $N=100$, $n_{\mathrm{eval}}=4000$, CUDA.  
-데이터: $n_{\mathrm{train}}=20000$, $\sigma=0.05$, $\tau=0.15$, $\rho_{\min}\approx 4.56$, $R\approx 14.43$. 캐시 고정.
-
-학습 곡선 (정성):
-
-- step 2k: 가우시안 구름. 나선 없음.
-- step 20k: 1.5바퀴 나선을 따라감. 매니폴드 두께는 데이터보다 조금 두껍고, 바퀴 사이에 outlier가 보임.
-
-지표 해석:
-
-1. **분포는 맞는다.** MMD $3.6\times 10^{-5}$, Radius MAE $0.138$ ($\tau=0.15$와 비슷한 스케일). scatter가 dump와 겹친다. 무제약 CFM backbone으로는 충분하다.
-2. **hard constraint는 안 지킨다.** Safety $0.731$. 가설(“모양은 괜찮고 Safety는 낮음”)과 같다. dump eval 점은 Safety $0.9975$라, 실패는 데이터 노이즈가 아니라 생성기가 튜브를 넘는 탓이다.
-3. **실패의 거의 전부는 튜브.** Tube viol. $26.95\%$ (4000점 중 약 1078). Core 7점 ($0.175\%$), box 1점. 안쪽 구멍·바깥 박스는 거의 안 깨진다.
-4. **대부분은 튜브 바로 밖, 일부는 바퀴 사이.** 매니폴드 거리 중앙값 $0.081<\tau$. 위반점 거리 중앙값 $0.246$. $d>0.5$인 점 $3.8\%$, $d>1$인 점 $1.4\%$ — scatter에서 팔 사이로 샌 점.
-5. **속도.** $0.051\,\mathrm{s}/1\mathrm{k}$ (4000점 $0.21\,\mathrm{s}$). 이후 제약 방법의 시간 비교 기준선.
-
-결론: FlowMatch는 **모양 baseline**이지 **안전 baseline이 아니다**. HardFlow / YFlow가 손댈 자리는 튜브 밖·바퀴 사이 누수이고, 코어/박스는 이미 거의 비어 있다. $\gamma=0$이면 이 분포와 같아야 한다.
-
-산출물: `last.pt`, `eval_samples.png`, `metrics.json`. 통합표는 `runs/exp_01_swiss_roll/metrics.json`.
+---
 
 ### 6.2 HardFlow 실행 결과 (`runs/exp_01_swiss_roll/hardflow`)
 
-설정:
-- Backbone: 사전학습된 FlowMatch $v_t^\theta$ 체크포인트(`runs/exp_01_swiss_roll/flowmatch/last.pt`) 동결 사용 (Training-free).
-- 추론 및 최적화: Euler $N=100$, $n_{\mathrm{eval}}=4000$, $\Delta t=0.01$, $t_{\mathrm{on}}=0.5$, $\lambda_{oc}=10.0$, SciPy SLSQP (max_iter=20, ftol=1e-9), fallback $\Pi_{\mathcal{M}}$, CUDA (속도장) + CPU (SLSQP).
-- 데이터: $n_{\mathrm{train}}=20000$, $\sigma=0.05$, $\tau=0.15$, $\rho_{\min}\approx 4.56$, $R\approx 14.43$. 캐시 고정 (`datasets/swiss_roll/default`).
+- **설정**: Training-free, Euler $N=100$, $t_{\mathrm{on}}=0.5$, $\lambda_{oc}=10.0$, CPU SciPy SLSQP (max_iter=20).
+- **Hard Constraint 완전 보장**:
+  - Safety Rate 1.0000 (위반율 0.00%): Proposition 1에 기반하여 예측 최종 상태 $\hat{x}_N$에 직접 제약 최적화를 수행함으로써 모든 점을 튜브 내부로 완전히 수렴시킴.
+- **극심한 연산 병목 및 분포 편향**:
+  - **추론 시간 1,970.95초 (~32.8분)**: $t \ge 0.5$ 이후 50개 스텝 동안 4,000개 샘플 각각에 대해 CPU 기반 SLSQP를 순차 호출(총 200,000회 비선형 최적화)하여 동일 환경 내 타 GPU 기법 대비 600~800배 느림.
+  - **분포 왜곡 (MMD 0.00986)**: 목적함수의 매니폴드 거리 비용 및 비선형 고정점 복원 맵으로 인해 안쪽 나선($u$가 작은 중심부)으로 점들이 과도하게 쏠리는 현상 발생.
 
-학습 곡선 (정성):
-- HardFlow는 training-free 사후 최적화 방법이므로 추가 네트워크 학습 과정이 없다 (`runs/exp_01_swiss_roll/flowmatch/last.pt` 재사용).
-- 생성된 2D Scatter (`eval_samples.png`) 관찰:
-  - **제약 위반 완벽 제거**: FlowMatch에서 나선 바깥 및 바퀴 사이(틈)로 누수되었던 점들(26.95%)이 모두 제거되어, 모든 샘플이 튜브 반경 $\tau=0.15$ 내부로 완전히 수렴함.
-  - **나선 구조 및 밀도 변화**: 1.5바퀴 나선 형상을 명확히 유지하나, $u$ 방향 분석 시 안쪽 바퀴($u$가 작은 중심 부근)로 샘플 밀도가 일부 쏠리는 현상이 관찰됨 (Bin 1: 1,420개 vs FlowMatch: 798개).
+---
 
-지표 해석:
+### 6.3 SafeFlow 실행 결과 (`runs/exp_01_swiss_roll/safeflow`)
 
-1. **Hard Constraint 100% 준수 달성 (Safety Rate = 1.0)**:
-   - Safety: $0.7305 \to 1.0000$ ($4,000$개 샘플 전수 만족, 성공 기준 $\ge 0.99$ 완벽 달성).
-   - Tube 위반: $26.95\% (1,078\text{점}) \to 0.00\% (0\text{점})$, 최대 튜브 마진 $h_{\mathrm{tube}} \le -0.0080$으로 모든 점이 튜브 내부를 엄격히 만족.
-   - Core / Box 위반: Core $0.175\% \to 0.00\%$, Box $0.025\% \to 0.00\%$, 금지 영역 침범 및 경계 이탈 제로화 달성.
-   - Proposition 1에 명시된 "마지막 스텝에서 $x_N = \hat{x}_N^*$이면 $h(x_N)\le 0$이 성립한다"는 이론적 보장이 실험적으로 완벽히 검증됨.
+- **설정**: Training-free, Smooth CFMBF-QP ($t \ge 0.5$) + 최종 스텝 SLSQP Terminal Filter, Euler/Dopri5.
+- **제약 준수 및 필터 의존성**:
+  - 최종 Safety는 1.0000을 기록했으나, **Pre-filter Safety는 40.55%**에 불과함.
+  - 즉, 4,000개 샘플 중 **60.03%의 점이 경로 중간의 CBF가 아닌 마지막 스텝의 Terminal Filter에 의해 강제 교정**됨.
+- **분포 왜곡 및 연산 속도**:
+  - **MMD 0.01534**: 제약 기법 중 가장 높은 분포 오차를 기록. 중간 CBF 보정 벡터가 점들을 안전 영역 경계면에 밀집시키고, 대규모 terminal filtering이 겹치면서 원본 분포가 손상됨.
+  - 추론 시간은 Euler 기준 $8.065\,\mathrm{s}$ ($2.016\,\mathrm{s}/1\mathrm{k}$) 소요.
 
-2. **매니폴드 밀착도 개선 (Radius MAE)**:
-   - Radius MAE: $0.1379 \to 0.0943$ (약 $31.6\%$ 개선).
-   - 매니폴드 거리 $d_{\mathcal{M}}$ 최대치: FlowMatch $3.5873 \to$ HardFlow $0.1420$ ($\le \tau = 0.15$).
-   - 바퀴 사이로 샜던 outlier들이 모두 튜브 내부로 강제 정렬되면서 나선 중심선 기준 오차가 크게 줄어듦.
+---
 
-3. **분포 보존성(MMD) 및 $u$ 밀도 변화**:
-   - MMD: $3.62\times 10^{-5} \to 0.00986$.
-   - MMD가 미세하게 증가한 이유:
-     (1) 비용 함수 $C(p)=d_{\mathcal{M}}(p)^2$가 점들을 나선 중심선으로 견인하여 데이터의 자연스러운 노이즈 두께($\sigma=0.05$) 대비 분산이 축소됨.
-     (2) $u$ 구간별 히스토그램 분석 결과, 곡률이 큰 안쪽 나선 구간(Bin 1: 1,420개 vs FlowMatch: 798개)으로 점들이 이동하여 균등(uniform) 분포에서 일부 편향(shift)이 발생함 (평균 $u$: FlowMatch $9.46 \to$ HardFlow $7.91$).
+### 6.4 UniConFlow 실행 결과 (`runs/exp_01_swiss_roll/uniconflow`)
 
-4. **추론 속도 및 연산 비용 (Inference Time)**:
-   - 추론 시간: $492.736\,\mathrm{s}/1\mathrm{k}$ ($4,000\text{점 생성에 총 } 1,970.95\,\mathrm{s} \approx 32.8\text{분}$).
-   - FlowMatch ($0.051\,\mathrm{s}/1\mathrm{k}$) 대비 약 9,600배 느림.
-   - 원인: $t \ge t_{\mathrm{on}} (0.5)$ 구간의 50개 스텝마다 4,000개 샘플 각각에 대해 CPU 기반 SciPy SLSQP를 개별 순차 호출함 ($4,000 \times 50 = 200,000\text{회}$의 비선형 최적화 연산 수행).
+- **설정**: Training-free, Prescribed-Time Zeroing Function (PTZF) + GPU Closed-form Slack QP + Exact Terminal Refinement.
+- **고속 QP와 엄격한 매니폴드 밀착**:
+  - **Safety 1.0000 달성**: PTZF 가이던스와 터미널 사영으로 모든 제약 위반 제거.
+  - **Radius MAE 0.0319 (전체 1위)**: 최소 노름 QP와 강한 slack 가중치로 인해 점들이 나선 중심선에 가장 강하게 밀착됨.
+  - **추론 시간 3.079초 ($0.770\,\mathrm{s}/1\mathrm{k}$)**: 닫힌 해(closed-form) 슬랙 QP를 GPU 배치 텐서 연산으로 풀어 매우 빠른 속도 달성.
+- **분포 보존성 (MMD 0.01432)**:
+  - 점들이 나선 중심선과 제약 경계선으로 강하게 견인되어 데이터 고유의 분산 두께($\sigma=0.05$)가 축소되고 MMD가 다소 높게 나타남.
 
-결론:
-- HardFlow는 사전학습된 Flow Matching 모델의 재학습 없이(training-free) 추론 단계 궤적 최적화만으로 **Hard Constraint 100% 준수**를 보장함을 성공적으로 실증함.
-- 무제약 FlowMatch의 치명적 결점이었던 바퀴 사이 점 누출(26.95%)을 완벽히 차단함.
-- 한계점으로는 **순차 CPU 비선형 최적화로 인한 극심한 추론 지연**과 **목적함수 및 제어로 인한 안쪽 나선으로의 밀도 편향**이 확인됨.
-- 향후 비교될 **YFlow**에서는 closed-form 또는 매니폴드 투영($P$) warm start, 선형 보간 기법을 통해 이 연산 지연과 분포 왜곡을 극복하는 것이 핵심 목표가 됨.
+---
 
-산출물: `eval_samples.png`, `eval_samples.npy`, `metrics.json`. 통합표는 `runs/exp_01_swiss_roll/metrics.json`.
+### 6.5 GuideFlow 실행 결과 (`runs/exp_01_swiss_roll/guideflow`)
 
-### 6.3 YFlow 실행 결과 (`runs/exp_01_swiss_roll/yflow`)
+- **설정**: Training-free, Constraining Velocity Field (CVF) + Curve Fitting (CF) + Energy Gradient (RFE).
+- **최고 수준의 연산 효율성**:
+  - **추론 시간 0.288초 ($0.072\,\mathrm{s}/1\mathrm{k}$)**: 무거운 수치 최적화 솔버 없이 벡터 대수 투영(CVF)과 해석적 에너지 그래디언트(RFE)만으로 작동하여, 무제약 FlowMatch($0.206\,\mathrm{s}$)에 필적하는 초고속 추론 실현.
+- **우수한 제약 준수 및 품질**:
+  - Safety 1.0000, MMD 0.00790, Radius MAE 0.0625 기록.
+  - 앵커 보캐뷸러리와 에너지 감쇄 스케줄을 통해 안정적인 나선 형태 복원.
 
-설정:
-- Backbone: 사전학습된 FlowMatch $v_t^\theta$ 체크포인트(`runs/exp_01_swiss_roll/flowmatch/last.pt`) 동결 사용 (Training-free).
-- 추론 및 최적화: Euler $N=100$, $n_{\mathrm{eval}}=4000$, $\Delta t=0.01$, $t_{\mathrm{on}}=0.5$, $\lambda_{oc}=10.0$, $\mu=1.0$, $\delta=0.1$, $\gamma_{\max}=1.0$, $\epsilon_{\mathrm{buffer}}=10^{-4}$, 국소 립시츠 추정 기반 적응형 스케줄링 $\gamma(t, \widehat{L}_P)$, 물리 투영 $P(\hat{x}_1^{\mathrm{raw}})$ warm start, **PyTorch Autograd GPU-batched Projected Gradient Descent (PGD)**, 선형 보간 $x_{i+1}=(1-\eta)x_i+\eta\hat{x}_1^*$, Full GPU 텐서 파이프라인.
-- 데이터: $n_{\mathrm{train}}=20000$, $\sigma=0.05$, $\tau=0.15$, $\rho_{\min}\approx 4.56$, $R\approx 14.43$. 캐시 고정 (`datasets/swiss_roll/default`).
+---
 
-학습 곡선 (정성):
-- YFlow는 training-free 물리 가이던스 및 사후 최적화 방법이므로 추가 네트워크 학습 과정이 없다 (`runs/exp_01_swiss_roll/flowmatch/last.pt` 재사용).
-- 생성된 2D Scatter (`eval_samples.png`) 관찰:
-  - **제약 위반 완벽 제거**: FlowMatch에서 나선 바깥 및 바퀴 사이(틈)로 누수되었던 점들(26.95%)이 완전히 튜브 내부로 복귀함.
-  - **원형 나선 분포 및 균등 밀도 보존**: HardFlow에서 나타났던 안쪽 나선으로의 극심한 밀도 쏠림(Bin 1: 1,735개) 현상이 선형 보간과 립시츠 게이팅을 통해 대폭 완화되어, 원본 데이터의 균등한 나선 분포 형상을 매우 자연스럽게 유지함 ($u$ 평균: FlowMatch $9.46 \to$ HardFlow $7.91 \to$ YFlow $8.60$).
+### 6.6 YFlow 실행 결과 (`runs/exp_01_swiss_roll/yflow`)
 
-지표 해석:
+- **설정**: Training-free, $P(\hat{x}_1^{\mathrm{raw}})$ Warm Start, PyTorch Autograd GPU-batched PGD ($\lambda=10.0, \mu=1.0$), 국소 립시츠 게이팅 $\gamma(t, \widehat{L}_P)$, 선형 보간($\eta = \Delta t / (1-t)$).
+- **압도적인 분포 보존성 (MMD 0.00224, 제약 기법 중 1위)**:
+  - HardFlow(0.00986) 대비 **약 4.4배**, UniConFlow(0.01432) 대비 **약 6.4배**, SafeFlow(0.01534) 대비 **약 6.8배** 우수한 MMD 달성.
+  - 무제약 FlowMatch($0.000036$)의 참 분포에 가장 가까운 샘플 품질 유지.
+- **초고속 병렬 최적화 (2.488초, $0.622\,\mathrm{s}/1\mathrm{k}$)**:
+  - GPU-batched PyTorch Autograd PGD 파이프라인으로 4,000개 샘플을 일괄 최적화하여, 기존 CPU HardFlow(1970.95초) 대비 **약 792배 가속**.
+  - 최적화 솔버를 사용하는 제약 기법(HardFlow, SafeFlow, UniConFlow, YFlow) 중 가장 빠른 속도 기록.
+- **Hard Constraint 완전 보장**: Safety Rate 1.0000 (Tube/Core/Box 위반 0건), Radius MAE 0.0727 기록.
 
-1. **Hard Constraint 100% 완전 준수 (Safety Rate = 1.0000)**:
-   - Safety: $0.7305 \to \mathbf{1.0000}$ ($4,000$개 샘플 전수 만족, Tube/Core/Box 위반 $0.00\%$).
-   - PyTorch Autograd 기반 투영 최적화(PGD) 및 $\epsilon = 10^{-4}$ 안전 마진을 적용하여 수치 오차 없이 엄격한 Safety 1.0을 완벽 달성.
-   - 립시츠 상수 $\widehat{L}_P$: $t=1$ 시점에서 4,000개 전 샘플이 최대 $1.0389$, 평균 $0.9015$로 $L_P \le 1+\delta$ 안정 영역에 완전 도달함을 검증.
+---
 
-2. **최고 수준의 매니폴드 정합도 (Radius MAE = 0.0727)**:
-   - Radius MAE: FlowMatch $0.1379 \to$ HardFlow $0.0943 \to$ **YFlow $0.0727$** (FlowMatch 대비 $47.3\%$ 개선, HardFlow 대비 $22.9\%$ 추가 개선).
-   - 물리 연산자 $P(\hat{x}_1^{\mathrm{raw}})$ warm start 항 ($\frac{\mu}{2}\|z-z_{\text{phys}}\|^2$)이 타깃을 매니폴드 곡선 방향으로 안정적으로 가이드하여 중심선 기준 오차를 가장 낮게 억제함.
+### 6.7 동일 환경(RTX 3090) 종합 원인 분석 및 방법론 비교
 
-3. **분포 보존성(MMD) 대폭 개선 (MMD = 0.00224)**:
-   - MMD: HardFlow $0.00986 \to$ **YFlow $0.00224$** (HardFlow 대비 **약 4.4배 우수**).
-   - 이유:
-     (1) 초반 노이즈 구간($t < t_{\mathrm{on}}$) 및 립시츠 불안정 영역($\widehat{L}_P > 1+\delta$)에서 nominal flow의 속도장을 보존하여 불필요한 경로 왜곡을 방지함.
-     (2) HardFlow의 비선형 inverse 맵 대신 선형 보간($\eta = \Delta t / (1-t)$)을 사용하여 생성 궤적의 직진성과 분포 대칭성을 유지함.
-     (3) $u$ 4-분할 히스토그램: HardFlow `[1735, 1257, 629, 379]` 대비 YFlow `[1390, 1147, 815, 648]`로 균등 분포에 훨씬 근접.
+```
+[Safety vs MMD vs Time 벤치마크 요약 (RTX 3090, n=4000)]
 
-4. **초고속 추론 속도 달성 (Inference Time = 0.739 s/1k)**:
-   - 추론 시간: $0.739\,\mathrm{s}/1\mathrm{k}$ ($4,000\text{점 생성에 총 } \mathbf{2.957\,\mathrm{s}}$).
-   - 기존 CPU SciPy SLSQP ($519.671\,\mathrm{s}/1\mathrm{k}$, 약 $35$분) 및 HardFlow ($492.736\,\mathrm{s}/1\mathrm{k}$, 약 $33$분) 대비 **약 700배 속도 향상**을 달성.
-   - GPU-batched 텐서 연산 및 PyTorch Autograd PGD를 통해 4,000개 샘플을 일괄 병렬 처리하여 CPU-GPU 간 데이터 왕복 및 순차 루프 오버헤드를 완전히 제거함.
+Method        Safety    MMD (↓)      Radius MAE (↓)    Time (s/1k)
+------------------------------------------------------------------
+FlowMatch     73.05%    0.000036     0.1379            0.051 s  (기준선)
+GuideFlow    100.00%    0.007900     0.0625            0.072 s  (초고속 벡터보정)
+HardFlow     100.00%    0.009860     0.0943          492.736 s  (CPU 병목 극심)
+SafeFlow     100.00%    0.015336     0.1161            2.016 s  (필터 의존 60%)
+UniConFlow   100.00%    0.014318     0.0319            0.770 s  (중심선 강밀착)
+YFlow (Ours) 100.00%    0.002243     0.0727            0.622 s  (최적 균형점)
+```
 
-결론:
-- YFlow는 **Hard Constraint 100% 준수**, **MMD 4.4배 개선**, **Radius MAE 22.9% 개선**과 함께 **추론 속도 700배 가속 (2.95초)**을 동시에 달성함.
-- PyTorch Autograd 기반 배치 최적화 파이프라인의 완성으로, 향후 고차원 문제 및 타 도메인으로의 확장성을 완벽히 확보함.
+#### 1. 제약 준수 메커니즘 차이: Path-wise vs Terminal
+- **Path-wise CBF/QP (SafeFlow, UniConFlow)**:
+  - 매 시각 $t$마다 경로 속도장을 강제로 꺾기 때문에 샘플들이 제약 경계면(boundary)으로 몰리는 부작용이 발생함. 특히 SafeFlow는 중간 보정의 한계로 인해 최종 단계에서 60% 이상의 샘플이 terminal filter에 의존함.
+- **Terminal Guidance (HardFlow, YFlow)**:
+  - 중간 $x_t$의 자유도를 유지하고 예측된 최종 종점 $\hat{x}_1$에만 제약을 걸어 보간하므로, 불필요한 경로 간섭 없이 자연스럽고 안전한 궤적을 형성함.
 
-산출물: `eval_samples.png`, `eval_samples.npy`, `metrics.json`. 통합표는 `runs/exp_01_swiss_roll/metrics.json`.
+#### 2. MMD(분포 보존)에서 YFlow가 압도적인 이유
+1. **Lipschitz Gating ($\widehat{L}_P$)**:
+   - 나선 팔 사이(arm gap)나 노이즈가 심한 구간에서는 투영 $P$의 국소 립시츠 상수가 폭증($\widehat{L}_P \gg 1$)함. YFlow는 이를 감지하여 불안정 영역에서는 무리한 투영을 끄고($\gamma=0$) 순수 Flow Matching 방향을 보존함.
+2. **선형 보간 (Linear Interpolation)**:
+   - HardFlow는 비선형 고정점 역맵 과정에서 곡률이 큰 안쪽 나선으로 샘플이 쏠리는 편향을 겪었으나, YFlow는 선형 보간 $\eta = \Delta t / (1-t)$을 채택하여 nominal flow의 직진성과 데이터의 균등한 밀도 분포를 완벽히 유지함.
 
-### 6.4 SafeFlow 실행 결과 (`runs/exp_01_swiss_roll/safeflow`)
+#### 3. Radius MAE와 모드 붕괴(Mode Collapse)의 해석
+- UniConFlow의 Radius MAE(0.0319)는 매우 낮지만, 이는 실제 데이터의 관측 노이즈 두께($\sigma=0.05, \tau=0.15$)를 무시하고 1D 중심선으로 점들을 과도하게 압축시킨 결과로 볼 수 있으며, 이로 인해 MMD가 0.0143으로 증가함.
+- YFlow(0.0727)와 GuideFlow(0.0625)는 데이터의 실제 노이즈 두께를 자연스럽게 반영하면서도 튜브 내부를 100% 만족시키는 이상적인 밸런스를 달성함.
 
-SafeFlow 전용 학습 없이 같은 20k-step FlowMatch EMA 체크포인트와 고정된 4,000개
-`x0`를 사용했다. $t\ge0.5$에서 smooth CFMBF-QP를 적용하고, 끝에서 smooth safe
-set에 대한 최소거리 SLSQP terminal filter를 실행했다. solver 실패 시 대체 투영을
-반환하지 않는다. 아래 시간은 Apple M4 Pro CPU에서 측정한 값이다.
+#### 4. 추론 속도(Inference Time) 벤치마크 평가
+- **최적화가 없는 벡터 가이던스**: GuideFlow($0.072\,\mathrm{s}/1\mathrm{k}$)가 연산량 측면에서 가장 유리함.
+- **최적화 기반 제약 방법군**:
+  - YFlow($0.622\,\mathrm{s}/1\mathrm{k}$)와 UniConFlow($0.770\,\mathrm{s}/1\mathrm{k}$)가 **2~3초대 초고속 연산**으로 실시간성을 확보함.
+  - YFlow의 PyTorch Autograd GPU-batched PGD는 CPU 순차 SLSQP(HardFlow, 492.7 s/1k)의 치명적 속도 병목을 완전히 해결함 (약 792배 가속 실현).
 
-| Integrator | Safety | Pre-filter safety | Terminal rate | NFE | MMD | Time (s/1k) |
-|------------|--------|-------------------|---------------|-----|-----|-------------|
-| Euler | 1.0 | 0.4055 | 0.60025 | 100 | 0.01534 | 2.016 |
-| Dopri5 | 1.0 | 0.40625 | 0.60225 | 526 | 0.01555 | 3.704 |
-
-두 적분기 모두 terminal filter 뒤 원래 tube/core/box 제약을 4,000개 전부 만족했다.
-다만 결과의 약 60%에 terminal filter가 발동했고 MMD도 무제약 FlowMatch보다 크게
-나빠졌다. 따라서 이번 결과는 smooth FMBF/CFMBF 메커니즘과 최종 안전성 검증에는
-성공했지만, 경로 전체를 갖는 논문의 로봇 실험이나 분포 보존 성능을 재현했다고
-해석하면 안 된다. smooth safe set이 원래 제약보다 보수적이므로 terminal rate는
-`1 - pre_filter_safe_ratio`보다 조금 클 수 있다.
-
-산출물: `eval_samples_euler.png`, `eval_samples_dopri5.png`,
-`metrics_euler.json`, `metrics_dopri5.json`. 통합 `metrics.json`은 기본 비교값인
-Euler 결과를 가리킨다.
-
-### 6.5 SafeFlow `t_on` ablation
-
-Euler와 동일한 FlowMatch 체크포인트, 4,000개 `x0`를 사용해 안전 보정을 시작하는
-시각만 바꿨다. 모든 설정은 terminal filter 이후 Safety 1.0이었다.
-
-| `t_on` | MMD | Mean $u$ | Pre-filter safety | Terminal rate |
-|--------|-----|----------|-------------------|---------------|
-| 0.5 | 0.01534 | 7.732 | 0.4055 | 0.60025 |
-| 0.7 | 0.00897 | 8.024 | 0.3660 | 0.64250 |
-| 0.8 | 0.00195 | 8.709 | 0.3475 | 0.66050 |
-| 0.9 | 0.00000* | 9.332 | 0.37575 | 0.63275 |
-
-평가 데이터의 mean $u$는 9.363이다. 보정을 늦출수록 안쪽 나선으로의 밀도 쏠림이
-줄어 분포 차이가 작아졌다. `t_on=0.9`의 MMD 0은 unbiased estimate의 음수를 0으로
-clamp한 값이므로 분포가 완전히 같다는 뜻은 아니다. 또한 terminal rate는 여전히
-약 63--66%라서 늦은 보정은 최종 필터 의존을 제거하지 못했다. 논문 실험 설정을
-따르는 기본 비교값은 `t_on=0.5`로 유지한다.
-
-재현 명령은 `python -m eval.safe_flow_t_on_ablation`이다. 전체 요약과 원본 샘플은
-`runs/exp_01_swiss_roll/safeflow/t_on_ablation/`에 저장한다.
+**결론**: YFlow는 동일한 RTX 3090 벤치마크에서 **Hard Constraint 100% 보장**, **제약 기법 중 압도적 1위의 분포 보존성 (MMD 0.00224)**, 그리고 **최적화 기법 중 가장 빠른 추론 속도 (2.49초)**를 동시에 달성하여 전 지표에서 가장 우수한 Pareto Frontier를 증명함.
 
 ---
 

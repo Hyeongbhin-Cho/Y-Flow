@@ -16,8 +16,8 @@ import numpy as np
 import torch
 from omegaconf import DictConfig
 
-from constraints.swiss_roll import SwissRollConstraint
-from data.swiss_roll import build_swiss_roll, nearest_u
+from data.base import BaseConstraint, build_dataset
+from data.swiss_roll import nearest_u
 from eval._backbone import load_frozen_velocity
 
 _H_NAMES = ("tube", "core", "box")
@@ -26,28 +26,16 @@ _EPS = 1e-12
 
 def build_anchor_vocabulary(
     train_raw: np.ndarray,
-    constraint: SwissRollConstraint,
+    constraint: BaseConstraint,
     n_anchors: int,
     seed: int,
 ) -> np.ndarray:
-    p = np.asarray(train_raw, dtype=np.float64)
-    h = constraint.h(p)
-    feasible = np.stack([h[name] for name in _H_NAMES], axis=-1).max(axis=-1) <= 0.0
-    pool = p[feasible] if bool(feasible.any()) else constraint.project(p).astype(np.float64)
-    n = int(min(max(n_anchors, 1), pool.shape[0]))
-    rng = np.random.default_rng(int(seed))
-    picked = [int(rng.integers(pool.shape[0]))]
-    d2 = ((pool - pool[picked[0]]) ** 2).sum(axis=-1)
-    for _ in range(n - 1):
-        j = int(d2.argmax())
-        picked.append(j)
-        d2 = np.minimum(d2, ((pool - pool[j]) ** 2).sum(axis=-1))
-    return pool[np.asarray(picked, dtype=np.int64)]
+    return constraint.build_anchor_vocabulary(train_raw, n_anchors=n_anchors, seed=seed)
 
 
 def energy_grad(
     p: np.ndarray,
-    constraint: SwissRollConstraint,
+    constraint: BaseConstraint,
     w_tube: float,
     w_core: float,
     w_box: float,
@@ -74,28 +62,15 @@ def energy_grad(
 
 def energy_torch(
     p: torch.Tensor,
-    constraint: SwissRollConstraint,
+    constraint: BaseConstraint,
     w_tube: float,
     w_core: float,
     w_box: float,
     w_cost: float,
     slack: float,
 ) -> torch.Tensor:
-    meta = constraint.meta
-    proj = torch.from_numpy(constraint.project(p.detach().cpu().numpy())).to(
-        device=p.device, dtype=p.dtype
-    )
-    diff = p - proj
-    d = diff.norm(dim=-1)
-    r = p.norm(dim=-1)
-    tube = (d - (meta.tau - slack)).clamp_min(0.0)
-    core = ((meta.rho_min + slack) - r).clamp_min(0.0)
-    box = (p.abs() - (meta.R - slack)).clamp_min(0.0)
-    return (
-        w_tube * tube.square()
-        + w_cost * d.square()
-        + w_core * core.square()
-        + w_box * box.square().sum(dim=-1)
+    return constraint.energy(
+        p, w_tube=w_tube, w_core=w_core, w_box=w_box, w_cost=w_cost, slack=slack
     )
 
 
@@ -122,17 +97,12 @@ def energy_weight(t: float, tau_star: float, eta_max: float) -> float:
     return float(eta_max) * (t - tau_star) / max(1.0 - tau_star, _EPS)
 
 
-def command_bins(p: np.ndarray, constraint: SwissRollConstraint, n_commands: int) -> np.ndarray:
-    meta = constraint.meta
-    u = nearest_u(np.asarray(p, dtype=np.float64), meta.a, meta.u_min, meta.u_max)
-    frac = (u - meta.u_min) / max(meta.u_max - meta.u_min, _EPS)
-    return np.clip((frac * n_commands).astype(np.int64), 0, int(n_commands) - 1)
+def command_bins(p: np.ndarray, constraint: BaseConstraint, n_commands: int) -> np.ndarray:
+    return constraint.command_bins(p, n_commands)
 
 
-def ego_progress(p: np.ndarray, constraint: SwissRollConstraint) -> np.ndarray:
-    meta = constraint.meta
-    u = nearest_u(np.asarray(p, dtype=np.float64), meta.a, meta.u_min, meta.u_max)
-    return np.clip((u - meta.u_min) / max(meta.u_max - meta.u_min, _EPS), 0.0, 1.0)
+def ego_progress(p: np.ndarray, constraint: BaseConstraint) -> np.ndarray:
+    return constraint.progress(p)
 
 
 def one_hot(idx: torch.Tensor, n: int, like: torch.Tensor) -> torch.Tensor:
@@ -209,8 +179,8 @@ def _load_guideflow_backbone(cfg: DictConfig, device: torch.device):
 
 @torch.no_grad()
 def sample(cfg: DictConfig, device: torch.device, x0: torch.Tensor) -> torch.Tensor:
-    bundle = build_swiss_roll(cfg)
-    constraint = SwissRollConstraint(bundle["meta"])
+    bundle = build_dataset(cfg)
+    constraint = bundle["constraint"]
     gf = cfg.guideflow
 
     use_cvf = bool(gf.get("cvf", True))

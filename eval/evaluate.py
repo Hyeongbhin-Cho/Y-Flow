@@ -13,8 +13,7 @@ import numpy as np
 import torch
 from omegaconf import DictConfig
 
-from constraints.swiss_roll import SwissRollConstraint
-from data.swiss_roll import build_swiss_roll, denormalize
+from data.base import build_dataset, denormalize
 from eval.metrics import evaluate_points
 from eval.sample_result import SampleResult
 from utils.device import get_device
@@ -63,7 +62,7 @@ def make_eval_x0(cfg: DictConfig, device: torch.device) -> torch.Tensor:
 def run_eval(cfg: DictConfig, method: str, device: torch.device | None = None) -> dict:
     sample = _sample_fn(method)
     device = device or get_device(cfg)
-    bundle = build_swiss_roll(cfg)
+    bundle = build_dataset(cfg)
     x0 = make_eval_x0(cfg, device)
 
     if device.type == "cuda":
@@ -81,7 +80,7 @@ def run_eval(cfg: DictConfig, method: str, device: torch.device | None = None) -
     elapsed = time.perf_counter() - t0
 
     p = denormalize(z, bundle["mean"], bundle["std"]).detach().cpu().numpy()
-    constraint = SwissRollConstraint(bundle["meta"])
+    constraint = bundle["constraint"]
     metrics = evaluate_points(p, bundle["eval_raw"], constraint)
     metrics.update(
         {

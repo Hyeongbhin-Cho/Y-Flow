@@ -132,6 +132,24 @@ $${
 
 다음 상태로의 복원은 HardFlow inverse가 아니라 **선형 보간**.
 
+### 3.1 $h(x) \le 0$과 $P(x)$의 차이점 및 도메인별 예시
+
+- **$h(x) \le 0$ (Hard Constraint / Feasible Set)**:
+  - 시스템/도메인이 허용하는 **실행 가능 영역(Feasible Region)** $\mathcal{S} = \{x \mid h(x) \le 0\}$을 규정한다.
+  - 경계(boundary) 및 안전 영역의 개념으로, 제약 조건을 만족하는 영역 내부라면 어디에 있든 동등하게 feasible한 것으로 간주된다.
+- **$P(x)$ (Physical Projection Operator / Manifold Prior)**:
+  - 임의의 상태를 물리 법칙이나 부분다양체(Submanifold) 상의 **이상적인 상태(Ideal Target Point)**로 사영하는 **점 대 점 매핑 연산자(Mapping Operator)**이다.
+  - 최적화 서브문제에서 좋은 초기점을 제공하는 **Warm Start**이자, 엉뚱한 해로 튀지 않도록 잡아주는 **정규화 유도 항(Loss Regularizer)** 역할을 한다.
+
+#### 도메인별 구체적 예시
+
+| 도메인 | 물리 연산자 $P(x)$ (이상적 상태로의 사영) | Hard 제약 $h(x) \le 0$ (안전/허용 영역) |
+| :--- | :--- | :--- |
+| **Swiss Roll (Exp-01)** | 1D 중심 나선 곡선으로의 수직 투영 $P(x) = \Pi_{\mathcal{M}}(x)$ | 튜브 허용 반경 ($d_{\mathcal{M}}(x) - \tau \le 0$), 코어 회피 ($\rho_{\min} - \|x\|_2 \le 0$), 바운딩 박스 ($\|x\|_\infty - R \le 0$) |
+| **로보틱스 / 궤적 계획** | 역기구학(IK) 해석적 투영 또는 매니폴드 사영 | 장애물 충돌 회피 ($r_{\mathrm{safe}} - d_{\mathrm{obs}}(x) \le 0$), 관절 각도/속도/가속도 한계 |
+| **유체역학 / SciML (PDE)** | Helmholtz-Hodge 분해를 통한 발산 자유 속도장 투영 ($P(v) = v - \nabla \phi$) | 질량/밀도 비음수성 ($-\rho \le 0$), 물리 경계 조건 허용 오차 ($\|u_{\mathrm{bd}} - u_{\mathrm{target}}\| - \epsilon \le 0$) |
+| **분자 / 단백질 생성** | 1-step force-field energy relaxation (물리적 완화) | 원자 간 steric clash 방지 ($r_{\mathrm{vdw}} - \|r_i - r_j\|_2 \le 0$) |
+
 ---
 
 ## 4. 한 스텝 공식
@@ -187,6 +205,25 @@ $${
 $${
 g(\hat x_1)=0 \quad\Rightarrow\quad \pm g(\hat x_1)\le\epsilon
 }$$
+
+#### 4.3.1 이상적인 물리 연산자 $P$의 부재 시 대처 ($\mu = 0$ 설정)
+
+자연어, 고해상도 자연 이미지처럼 데이터 매니폴드가 매우 복잡하고 고차원 비선형 공간에 있어 명시적인 물리 투영 연산자 $P(\cdot)$를 수학적으로 정의하기 어렵거나 계산 불가능한 경우가 있다.
+
+이때는 **$\mu = 0$**으로 설정하여 $P$ 의존성을 완전히 제거한다:
+
+1. **HardFlow 형태로의 자연스러운 퇴화(환원)**:
+   $\mu = 0$으로 두면 최적화 목적함수는 다음과 같이 순수 제약 최적화 문제로 바뀐다:
+   $${
+   \hat x_1^* = \arg\min_{\hat x_1}\quad C(\hat x_1) + \frac{\lambda}{2}\|\hat x_1 - \hat x_1^{\mathrm{raw}}\|_2^2 \quad \text{s.t.} \quad h(\hat x_1) \le 0
+   }$$
+   이는 HardFlow의 Problem 6 목적함수와 완벽히 일치한다.
+2. **Warm Start 및 스케줄링 간소화**:
+   - Warm start는 $P(\hat x_1^{\mathrm{raw}})$ 대신 $\hat x_1^{(0)} = \hat x_1^{\mathrm{raw}}$(또는 feasible projection)를 그대로 사용한다.
+   - $P$ 연산자가 없으므로 국소 립시츠 추적($\widehat L_P$) 단계를 생략하고, 시간 기반 스케줄($t \ge t_{\mathrm{on}}$)만으로 제약 활성화를 제어한다.
+3. **도메인별 유연성**:
+   - **물리적/기하학적 사전 지식 $P$가 존재하는 도메인(Swiss roll, 유체역학 등)**: $\mu > 0$으로 두어 warm start 및 정규화 효과로 최적화 속도와 수렴 안정성을 극대화한다.
+   - **명시적 $P$가 없고 제약 $h$만 정의된 일반 도메인**: $\mu = 0$으로 두어 순수 terminal constraint optimization으로 안전성을 보장한다.
 
 ### 4.4 Lipschitz 상수 추적 및 적응형 스케줄 (Lipschitz Gating & Scheduling)
 
@@ -387,10 +424,10 @@ x_{i+1}=\alpha_{t_{i+1}}\hat x_1^*+\beta_{t_{i+1}}\mathcal{W}_{t_i}^\theta(x_i)
 | 항목 | 기존 YFlow | HardFlow | Improved YFlow |
 |------|----------|----------|----------------|
 | Target 예측 | $x_t+(1-t)v_t$ | $\mathcal{M}_t^\theta$ | 동일 (linear면 같음) |
-| 제약 | $P(\hat x_1)$ | $h(\hat x_1)\le 0$ 최적화 | $h$ 최적화 + $P$ warm start |
+| 제약 | $P(\hat x_1)$ | $h(\hat x_1)\le 0$ 최적화 | $h$ 최적화 + $P$ warm start ($\mu=0$ 시 HardFlow형) |
 | 비용 $C$ | 없음 | 있음 | 있음 |
 | 다음 상태 | 선형 보간 | $\mathcal{F}\approx T^y(\bar x_{i+1})$ | 선형 보간 (기본) |
-| 적용 시점 | 매 스텝 | 후반 권장 | $t$ + $L_P$ 스케줄 |
+| 적용 시점 | 매 스텝 | 후반 권장 | $t$ + $L_P$ 스케줄 ($P$ 없을 시 $t$ 스케줄) |
 | Training | free | free | free |
 
 ---
@@ -399,7 +436,7 @@ x_{i+1}=\alpha_{t_{i+1}}\hat x_1^*+\beta_{t_{i+1}}\mathcal{W}_{t_i}^\theta(x_i)
 ## 8. 구현 목표
 
 - [x] 사전학습 $v_t^\theta$로 raw target $\hat x_1^{\mathrm{raw}}=x_t+(1-t)v_t$를 계산한다.
-- [x] 물리 연산자 $P$는 해 자체가 아니라 warm start다. $P$는 1-Lipschitz, $P(X_1)=X_1$을 가정한다.
+- [x] 물리 연산자 $P$는 해 자체가 아니라 warm start다. $P$는 1-Lipschitz, $P(X_1)=X_1$을 가정한다. (이상적인 $P$가 없는 도메인은 $\mu=0$으로 두어 HardFlow형으로 유연하게 전환)
 - [x] $\hat x_1$에서 $h(\hat x_1)\le 0$과 비용 $C$를 푼 뒤, 현재 상태와 **선형 보간**으로 $x_{t+\Delta t}$를 만든다. HardFlow inverse map은 쓰지 않는다.
 - [x] $\gamma=0$이면 제약을 끈 원본 flow와 같은 궤적이 나온다.
 - [x] $t$와 추정 Lipschitz $\widehat L_P$로 제약 강도를 스케줄한다. 초반 노이즈 구간에서 과도한 투영을 피한다.

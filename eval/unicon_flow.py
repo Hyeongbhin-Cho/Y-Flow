@@ -15,25 +15,30 @@ import math
 import torch
 from omegaconf import DictConfig
 
-from data.swiss_roll import build_swiss_roll
+from data.base import BaseConstraint, build_dataset
 from eval._backbone import load_frozen_velocity
-from eval.y_flow import project_feasible, torch_nearest_u, torch_spiral
 
 
 def constraint_values(
     z: torch.Tensor,
     mean: torch.Tensor,
     std: torch.Tensor,
+    constraint: BaseConstraint | None = None,
     *,
-    a: float,
-    u_min: float,
-    u_max: float,
-    tau: float,
-    rho_min: float,
-    radius: float,
+    a: float | None = None,
+    u_min: float | None = None,
+    u_max: float | None = None,
+    tau: float | None = None,
+    rho_min: float | None = None,
+    radius: float | None = None,
 ) -> torch.Tensor:
-    """Return [tube, core, box] constraints in the paper's h <= 0 form."""
+    """Return constraints in the paper's h <= 0 form."""
     p = z * std + mean
+    if constraint is not None:
+        h_dict = constraint.h(p)
+        return torch.stack(list(h_dict.values()), dim=-1)
+    from data.swiss_roll import torch_nearest_u, torch_spiral
+
     u = torch_nearest_u(p, a, u_min, u_max)
     curve = torch_spiral(u, a)
     tube = torch.linalg.vector_norm(p - curve, dim=-1) - tau
@@ -104,27 +109,33 @@ def terminal_refinement(
     z: torch.Tensor,
     mean: torch.Tensor,
     std: torch.Tensor,
+    constraint: BaseConstraint | None = None,
     *,
-    a: float,
-    u_min: float,
-    u_max: float,
-    tau: float,
-    rho_min: float,
-    radius: float,
-    buffer: float,
+    buffer: float = 1e-4,
+    a: float | None = None,
+    u_min: float | None = None,
+    u_max: float | None = None,
+    tau: float | None = None,
+    rho_min: float | None = None,
+    radius: float | None = None,
 ) -> torch.Tensor:
-    """Exact 2D analogue of UniConFlow's terminal constraint refinement."""
+    """Exact analogue of UniConFlow's terminal constraint refinement."""
     p = z * std + mean
-    p = project_feasible(
-        p, a, u_min, u_max, tau, rho_min, radius, buffer=buffer
-    )
+    if constraint is not None:
+        p = constraint.project_feasible(p, buffer=buffer)
+    else:
+        from data.swiss_roll import project_feasible
+
+        p = project_feasible(
+            p, a, u_min, u_max, tau, rho_min, radius, buffer=buffer
+        )
     return (p - mean) / std
 
 
 def sample(cfg: DictConfig, device: torch.device, x0: torch.Tensor) -> torch.Tensor:
     model, method = load_frozen_velocity(cfg, device)
-    bundle = build_swiss_roll(cfg)
-    meta = bundle["meta"]
+    bundle = build_dataset(cfg)
+    constraint = bundle["constraint"]
     mean = bundle["mean"].to(device=device, dtype=x0.dtype)
     std = bundle["std"].to(device=device, dtype=x0.dtype)
 
@@ -137,14 +148,6 @@ def sample(cfg: DictConfig, device: torch.device, x0: torch.Tensor) -> torch.Ten
     terminal = bool(uc.get("terminal_refinement", True))
     safety_buffer = float(uc.get("safety_buffer", 1e-4))
 
-    kwargs = {
-        "a": float(meta.a),
-        "u_min": float(meta.u_min),
-        "u_max": float(meta.u_max),
-        "tau": float(meta.tau),
-        "rho_min": float(meta.rho_min),
-        "radius": float(meta.R),
-    }
     steps = int(cfg.sample.n_steps)
     dt = 1.0 / steps
     x = x0
@@ -159,7 +162,7 @@ def sample(cfg: DictConfig, device: torch.device, x0: torch.Tensor) -> torch.Ten
 
         with torch.enable_grad():
             z = x.detach().requires_grad_(True)
-            h = constraint_values(z, mean, std, **kwargs)
+            h = constraint_values(z, mean, std, constraint=constraint)
             eta = constraint_jacobian(h, z)
 
         if hbar0 is None:
@@ -183,6 +186,6 @@ def sample(cfg: DictConfig, device: torch.device, x0: torch.Tensor) -> torch.Ten
 
     if terminal:
         x = terminal_refinement(
-            x, mean, std, buffer=safety_buffer, **kwargs
+            x, mean, std, constraint=constraint, buffer=safety_buffer
         )
     return x.detach()
