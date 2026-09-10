@@ -1,0 +1,3722 @@
+[
+  {
+    "scenario_id": "ood_shifted_000",
+    "category": "SHIFTED_OBSTACLE",
+    "category_index": 0,
+    "task_id": 0,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.17776694019329625,
+        0.12011313802161674,
+        0.8000234299626784,
+        0.8277669401932963,
+        0.24011313802161674,
+        0.9750234299626784
+      ],
+      [
+        0.17776694019329625,
+        0.12011313802161674,
+        0.07502342996267838,
+        0.8277669401932963,
+        0.24011313802161674,
+        0.4550234299626784
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.28875780035020604,
+      "goal_clearance": 0.058174080441274145,
+      "known_reference_path_clearance": -0.03080483626979108,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_shifted_001",
+    "category": "SHIFTED_OBSTACLE",
+    "category_index": 1,
+    "task_id": 1,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.6934721690375458,
+        -0.20184517355300038,
+        0.5902599089704669,
+        1.25,
+        -0.08184517355300039,
+        0.7652599089704669
+      ],
+      [
+        0.6934721690375458,
+        -0.20184517355300038,
+        0.01,
+        1.25,
+        -0.08184517355300039,
+        0.2452599089704669
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.0306337936757346,
+      "goal_clearance": 0.23521506830500594,
+      "known_reference_path_clearance": -0.08917763665847105,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_shifted_002",
+    "category": "SHIFTED_OBSTACLE",
+    "category_index": 2,
+    "task_id": 2,
+    "severity": "hard",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.6975472970317319,
+        0.1449277142651926,
+        0.8328649885599861,
+        1.25,
+        0.26492771426519257,
+        1.0078649885599862
+      ],
+      [
+        0.6975472970317319,
+        0.1449277142651926,
+        0.10786498855998614,
+        1.25,
+        0.26492771426519257,
+        0.48786498855998617
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.6716706083319067,
+      "goal_clearance": 0.17042977299323625,
+      "known_reference_path_clearance": 0.17033541540990227,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_shifted_003",
+    "category": "SHIFTED_OBSTACLE",
+    "category_index": 3,
+    "task_id": 3,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 3,
+    "bboxes": [
+      [
+        0.6612265301902476,
+        0.07845320633380992,
+        0.8173438906337038,
+        1.25,
+        0.19845320633380992,
+        0.9923438906337039
+      ],
+      [
+        0.6612265301902476,
+        0.07845320633380992,
+        0.09234389063370388,
+        1.25,
+        0.19845320633380992,
+        0.47234389063370386
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.22818073476764805,
+      "goal_clearance": 0.2692629109689798,
+      "known_reference_path_clearance": 0.013665154902013164,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_shifted_004",
+    "category": "SHIFTED_OBSTACLE",
+    "category_index": 4,
+    "task_id": 4,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.17118288785760788,
+        -0.3264835833444484,
+        0.8220885818475615,
+        0.821182887857608,
+        -0.20648358334444838,
+        0.9970885818475616
+      ],
+      [
+        0.17118288785760788,
+        -0.3264835833444484,
+        0.09708858184756151,
+        0.821182887857608,
+        -0.20648358334444838,
+        0.47708858184756153
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.03843014773803524,
+      "goal_clearance": 0.24484600153971345,
+      "known_reference_path_clearance": -0.03962863385821411,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_shifted_005",
+    "category": "SHIFTED_OBSTACLE",
+    "category_index": 5,
+    "task_id": 5,
+    "severity": "hard",
+    "task_offset": 0,
+    "generation_attempt": 3,
+    "bboxes": [
+      [
+        0.7033834417204714,
+        0.13920395193793356,
+        0.5942892029459689,
+        1.25,
+        0.25920395193793355,
+        0.7692892029459689
+      ],
+      [
+        0.7033834417204714,
+        0.13920395193793356,
+        0.01,
+        1.25,
+        0.25920395193793355,
+        0.24928920294596893
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.2688445963513136,
+      "goal_clearance": 0.36635214500723984,
+      "known_reference_path_clearance": -0.10258496092479157,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_shifted_006",
+    "category": "SHIFTED_OBSTACLE",
+    "category_index": 6,
+    "task_id": 0,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.2682917229325631,
+        0.20283895837659288,
+        0.6665348858437873,
+        0.9182917229325632,
+        0.3228389583765929,
+        0.8415348858437873
+      ],
+      [
+        0.2682917229325631,
+        0.20283895837659288,
+        0.01,
+        0.9182917229325632,
+        0.3228389583765929,
+        0.3215348858437873
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.4181459589462687,
+      "goal_clearance": 0.008650793914354471,
+      "known_reference_path_clearance": -0.11284308352883558,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_shifted_007",
+    "category": "SHIFTED_OBSTACLE",
+    "category_index": 7,
+    "task_id": 1,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 1,
+    "bboxes": [
+      [
+        0.6800057553396812,
+        -0.19891832259286021,
+        0.6872334449549964,
+        1.25,
+        -0.07891832259286022,
+        0.8622334449549964
+      ],
+      [
+        0.6800057553396812,
+        -0.19891832259286021,
+        0.01,
+        1.25,
+        -0.07891832259286022,
+        0.34223344495499647
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.07235630816047985,
+      "goal_clearance": 0.21908931350052596,
+      "known_reference_path_clearance": -0.02415956571957073,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_shifted_008",
+    "category": "SHIFTED_OBSTACLE",
+    "category_index": 8,
+    "task_id": 2,
+    "severity": "hard",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.75323144532887,
+        -0.2726212968579604,
+        0.6754536199941581,
+        1.25,
+        -0.1526212968579604,
+        0.8504536199941581
+      ],
+      [
+        0.75323144532887,
+        -0.2726212968579604,
+        0.01,
+        1.25,
+        -0.1526212968579604,
+        0.3304536199941581
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.2961603876483815,
+      "goal_clearance": 0.4948110950566103,
+      "known_reference_path_clearance": 0.2502267520926611,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_shifted_009",
+    "category": "SHIFTED_OBSTACLE",
+    "category_index": 9,
+    "task_id": 3,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.7605683611883456,
+        0.10531965884679362,
+        0.6605825506063656,
+        1.25,
+        0.2253196588467936,
+        0.8355825506063657
+      ],
+      [
+        0.7605683611883456,
+        0.10531965884679362,
+        0.01,
+        1.25,
+        0.2253196588467936,
+        0.3155825506063656
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.30362553336252723,
+      "goal_clearance": 0.38048729699713024,
+      "known_reference_path_clearance": -0.034191773203375006,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_shifted_010",
+    "category": "SHIFTED_OBSTACLE",
+    "category_index": 10,
+    "task_id": 4,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.7213523810874263,
+        -0.24909189246206564,
+        0.7645608573337679,
+        1.25,
+        -0.12909189246206565,
+        0.9395608573337679
+      ],
+      [
+        0.7213523810874263,
+        -0.24909189246206564,
+        0.03956085733376785,
+        1.25,
+        -0.12909189246206565,
+        0.41956085733376786
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.4158822675972963,
+      "goal_clearance": 0.474662782740232,
+      "known_reference_path_clearance": 0.021663896124707344,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_shifted_011",
+    "category": "SHIFTED_OBSTACLE",
+    "category_index": 11,
+    "task_id": 5,
+    "severity": "hard",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.5770439945074644,
+        -0.22281211762126446,
+        0.6563308860886303,
+        1.2270439945074645,
+        -0.10281211762126446,
+        0.8313308860886304
+      ],
+      [
+        0.5770439945074644,
+        -0.22281211762126446,
+        0.01,
+        1.2270439945074645,
+        -0.10281211762126446,
+        0.31133088608863035
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.3356889676062874,
+      "goal_clearance": 0.006361213372541974,
+      "known_reference_path_clearance": -0.0719533741134493,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_shifted_012",
+    "category": "SHIFTED_OBSTACLE",
+    "category_index": 12,
+    "task_id": 0,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.605163770907133,
+        0.0721337229788932,
+        0.7760673284699988,
+        1.25,
+        0.1921337229788932,
+        0.9510673284699989
+      ],
+      [
+        0.605163770907133,
+        0.0721337229788932,
+        0.05106732846999883,
+        1.25,
+        0.1921337229788932,
+        0.43106732846999885
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.5728261023237632,
+      "goal_clearance": 0.17318202559397028,
+      "known_reference_path_clearance": 0.17132993711204964,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_shifted_013",
+    "category": "SHIFTED_OBSTACLE",
+    "category_index": 13,
+    "task_id": 1,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.6058666276375888,
+        -0.3466701754401127,
+        0.7677813696811282,
+        1.25,
+        -0.2266701754401127,
+        0.9427813696811282
+      ],
+      [
+        0.6058666276375888,
+        -0.3466701754401127,
+        0.042781369681128195,
+        1.25,
+        -0.2266701754401127,
+        0.4227813696811282
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.20358366522136845,
+      "goal_clearance": 0.04756020451687264,
+      "known_reference_path_clearance": -0.020683252141279702,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_shifted_014",
+    "category": "SHIFTED_OBSTACLE",
+    "category_index": 14,
+    "task_id": 2,
+    "severity": "hard",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.6808318992026277,
+        0.178355175803007,
+        0.8340460557196984,
+        1.25,
+        0.29835517580300697,
+        1.0090460557196983
+      ],
+      [
+        0.6808318992026277,
+        0.178355175803007,
+        0.10904605571969836,
+        1.25,
+        0.29835517580300697,
+        0.4890460557196984
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.7020164195335408,
+      "goal_clearance": 0.14716315680047076,
+      "known_reference_path_clearance": 0.14704066421307532,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_shifted_015",
+    "category": "SHIFTED_OBSTACLE",
+    "category_index": 15,
+    "task_id": 3,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 1,
+    "bboxes": [
+      [
+        0.5791402122733175,
+        0.10347175921276938,
+        0.6842693250916652,
+        1.2291402122733175,
+        0.22347175921276938,
+        0.8592693250916652
+      ],
+      [
+        0.5791402122733175,
+        0.10347175921276938,
+        0.01,
+        1.2291402122733175,
+        0.22347175921276938,
+        0.3392693250916652
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.16278460067081707,
+      "goal_clearance": 0.25646165122469167,
+      "known_reference_path_clearance": -0.010504998718075462,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_shifted_016",
+    "category": "SHIFTED_OBSTACLE",
+    "category_index": 16,
+    "task_id": 4,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.7158692894185326,
+        -0.32090039979676455,
+        0.819579518405661,
+        1.25,
+        -0.20090039979676455,
+        0.9945795184056611
+      ],
+      [
+        0.7158692894185326,
+        -0.32090039979676455,
+        0.09457951840566108,
+        1.25,
+        -0.20090039979676455,
+        0.4745795184056611
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.35717134791924576,
+      "goal_clearance": 0.509201595734184,
+      "known_reference_path_clearance": -0.0548962507633923,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_shifted_017",
+    "category": "SHIFTED_OBSTACLE",
+    "category_index": 17,
+    "task_id": 5,
+    "severity": "hard",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.7316809026461177,
+        0.09123375409168596,
+        0.6727211569144772,
+        1.25,
+        0.21123375409168596,
+        0.8477211569144772
+      ],
+      [
+        0.7316809026461177,
+        0.09123375409168596,
+        0.01,
+        1.25,
+        0.21123375409168596,
+        0.3277211569144773
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.3349947522940133,
+      "goal_clearance": 0.31925942179686523,
+      "known_reference_path_clearance": -0.046956133041769196,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_shifted_018",
+    "category": "SHIFTED_OBSTACLE",
+    "category_index": 18,
+    "task_id": 0,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.6389163955010743,
+        0.15924613418302683,
+        0.6691497620464866,
+        1.25,
+        0.2792461341830268,
+        0.8441497620464866
+      ],
+      [
+        0.6389163955010743,
+        0.15924613418302683,
+        0.01,
+        1.25,
+        0.2792461341830268,
+        0.32414976204648666
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.6526826740192397,
+      "goal_clearance": 0.15989589612713628,
+      "known_reference_path_clearance": 0.1537350635728941,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_shifted_019",
+    "category": "SHIFTED_OBSTACLE",
+    "category_index": 19,
+    "task_id": 1,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.6577354767757798,
+        -0.25038809406854684,
+        0.8377136814739397,
+        1.25,
+        -0.13038809406854684,
+        1.0127136814739397
+      ],
+      [
+        0.6577354767757798,
+        -0.25038809406854684,
+        0.11271368147393968,
+        1.25,
+        -0.13038809406854684,
+        0.4927136814739397
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.09377993261071725,
+      "goal_clearance": 0.14448649795871454,
+      "known_reference_path_clearance": 0.0020980730145621906,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_enlarged_000",
+    "category": "ENLARGED_OBSTACLE",
+    "category_index": 0,
+    "task_id": 0,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.4174999999999999,
+        -0.07059598822201324,
+        0.7162499999999999,
+        1.1325,
+        0.07059598822201324,
+        0.9087500000000001
+      ],
+      [
+        0.4174999999999999,
+        -0.07059598822201324,
+        0.01,
+        1.1325,
+        0.07059598822201324,
+        0.399
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.3454879025960076,
+      "goal_clearance": 0.24104556353111,
+      "known_reference_path_clearance": 0.040906363678171645,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_enlarged_001",
+    "category": "ENLARGED_OBSTACLE",
+    "category_index": 1,
+    "task_id": 1,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.37849999999999995,
+        -0.0856924817590554,
+        0.70575,
+        1.1715,
+        0.0856924817590554,
+        0.91925
+      ],
+      [
+        0.37849999999999995,
+        -0.0856924817590554,
+        0.01,
+        1.1715,
+        0.0856924817590554,
+        0.4218
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.00638039253846176,
+      "goal_clearance": 0.08665784004748095,
+      "known_reference_path_clearance": -0.006080126931138824,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_enlarged_002",
+    "category": "ENLARGED_OBSTACLE",
+    "category_index": 2,
+    "task_id": 2,
+    "severity": "hard",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.3362499999999999,
+        -0.09392851981937539,
+        0.694375,
+        1.21375,
+        0.09392851981937539,
+        0.930625
+      ],
+      [
+        0.3362499999999999,
+        -0.09392851981937539,
+        0.01,
+        1.21375,
+        0.09392851981937539,
+        0.4465
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.2893783502032903,
+      "goal_clearance": 0.15081106773104913,
+      "known_reference_path_clearance": -0.05137534026131439,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_enlarged_003",
+    "category": "ENLARGED_OBSTACLE",
+    "category_index": 3,
+    "task_id": 3,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.4174999999999999,
+        -0.07335074787671014,
+        0.7162499999999999,
+        1.1325,
+        0.07335074787671014,
+        0.9087500000000001
+      ],
+      [
+        0.4174999999999999,
+        -0.07335074787671014,
+        0.01,
+        1.1325,
+        0.07335074787671014,
+        0.399
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.2107066304000973,
+      "goal_clearance": 0.01997233708846048,
+      "known_reference_path_clearance": 0.011652741700272709,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_enlarged_004",
+    "category": "ENLARGED_OBSTACLE",
+    "category_index": 4,
+    "task_id": 4,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.37849999999999995,
+        -0.0877094709061479,
+        0.70575,
+        1.1715,
+        0.0877094709061479,
+        0.91925
+      ],
+      [
+        0.37849999999999995,
+        -0.0877094709061479,
+        0.01,
+        1.1715,
+        0.0877094709061479,
+        0.4218
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.26014801039852176,
+      "goal_clearance": 0.11111101837947857,
+      "known_reference_path_clearance": -0.012541125680857218,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_enlarged_005",
+    "category": "ENLARGED_OBSTACLE",
+    "category_index": 5,
+    "task_id": 5,
+    "severity": "hard",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.3362499999999999,
+        -0.08855529096634916,
+        0.694375,
+        1.21375,
+        0.08855529096634916,
+        0.930625
+      ],
+      [
+        0.3362499999999999,
+        -0.08855529096634916,
+        0.01,
+        1.21375,
+        0.08855529096634916,
+        0.4465
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.08050629961887892,
+      "goal_clearance": 0.021892359900591185,
+      "known_reference_path_clearance": -0.02991322201320272,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_enlarged_006",
+    "category": "ENLARGED_OBSTACLE",
+    "category_index": 6,
+    "task_id": 0,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.4174999999999999,
+        -0.07354997610590827,
+        0.7162499999999999,
+        1.1325,
+        0.07354997610590827,
+        0.9087500000000001
+      ],
+      [
+        0.4174999999999999,
+        -0.07354997610590827,
+        0.01,
+        1.1325,
+        0.07354997610590827,
+        0.399
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.3444872199506003,
+      "goal_clearance": 0.23809771376763328,
+      "known_reference_path_clearance": 0.0409063636781717,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_enlarged_007",
+    "category": "ENLARGED_OBSTACLE",
+    "category_index": 7,
+    "task_id": 1,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.37849999999999995,
+        -0.08803503619127953,
+        0.70575,
+        1.1715,
+        0.08803503619127953,
+        0.91925
+      ],
+      [
+        0.37849999999999995,
+        -0.08803503619127953,
+        0.01,
+        1.1715,
+        0.08803503619127953,
+        0.4218
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.00637721742363509,
+      "goal_clearance": 0.08527056478711273,
+      "known_reference_path_clearance": -0.006080126931138866,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_enlarged_008",
+    "category": "ENLARGED_OBSTACLE",
+    "category_index": 8,
+    "task_id": 2,
+    "severity": "hard",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.3362499999999999,
+        -0.08955718042748911,
+        0.694375,
+        1.21375,
+        0.08955718042748911,
+        0.930625
+      ],
+      [
+        0.3362499999999999,
+        -0.08955718042748911,
+        0.01,
+        1.21375,
+        0.08955718042748911,
+        0.4465
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.29093256295233083,
+      "goal_clearance": 0.15515570261894612,
+      "known_reference_path_clearance": -0.05137534026131439,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_enlarged_009",
+    "category": "ENLARGED_OBSTACLE",
+    "category_index": 9,
+    "task_id": 3,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.4174999999999999,
+        -0.07926302356629929,
+        0.7162499999999999,
+        1.1325,
+        0.07926302356629929,
+        0.9087500000000001
+      ],
+      [
+        0.4174999999999999,
+        -0.07926302356629929,
+        0.01,
+        1.1325,
+        0.07926302356629929,
+        0.399
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.20565126643469994,
+      "goal_clearance": 0.016150259888502397,
+      "known_reference_path_clearance": 0.011652741700272709,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_enlarged_010",
+    "category": "ENLARGED_OBSTACLE",
+    "category_index": 10,
+    "task_id": 4,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.37849999999999995,
+        -0.0821289781789827,
+        0.70575,
+        1.1715,
+        0.0821289781789827,
+        0.91925
+      ],
+      [
+        0.37849999999999995,
+        -0.0821289781789827,
+        0.01,
+        1.1715,
+        0.0821289781789827,
+        0.4218
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.2615830880582032,
+      "goal_clearance": 0.11495554078218925,
+      "known_reference_path_clearance": -0.012218531617911199,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_enlarged_011",
+    "category": "ENLARGED_OBSTACLE",
+    "category_index": 11,
+    "task_id": 5,
+    "severity": "hard",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.3362499999999999,
+        -0.08516771734759404,
+        0.694375,
+        1.21375,
+        0.08516771734759404,
+        0.930625
+      ],
+      [
+        0.3362499999999999,
+        -0.08516771734759404,
+        0.01,
+        1.21375,
+        0.08516771734759404,
+        0.4465
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.08292409717383403,
+      "goal_clearance": 0.02455271200047776,
+      "known_reference_path_clearance": -0.02991322201320283,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_enlarged_012",
+    "category": "ENLARGED_OBSTACLE",
+    "category_index": 12,
+    "task_id": 0,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.4174999999999999,
+        -0.07527115096558402,
+        0.7162499999999999,
+        1.1325,
+        0.07527115096558402,
+        0.9087500000000001
+      ],
+      [
+        0.4174999999999999,
+        -0.07527115096558402,
+        0.01,
+        1.1325,
+        0.07527115096558402,
+        0.399
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.34391236911867795,
+      "goal_clearance": 0.2363801681484809,
+      "known_reference_path_clearance": 0.0409063636781717,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_enlarged_013",
+    "category": "ENLARGED_OBSTACLE",
+    "category_index": 13,
+    "task_id": 1,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.37849999999999995,
+        -0.08756824813928697,
+        0.70575,
+        1.1715,
+        0.08756824813928697,
+        0.91925
+      ],
+      [
+        0.37849999999999995,
+        -0.08756824813928697,
+        0.01,
+        1.1715,
+        0.08756824813928697,
+        0.4218
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.00637721742363509,
+      "goal_clearance": 0.08554546757474688,
+      "known_reference_path_clearance": -0.006080126931138866,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_enlarged_014",
+    "category": "ENLARGED_OBSTACLE",
+    "category_index": 14,
+    "task_id": 2,
+    "severity": "hard",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.3362499999999999,
+        -0.09100758843939073,
+        0.694375,
+        1.21375,
+        0.09100758843939073,
+        0.930625
+      ],
+      [
+        0.3362499999999999,
+        -0.09100758843939073,
+        0.01,
+        1.21375,
+        0.09100758843939073,
+        0.4465
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.29041201159909047,
+      "goal_clearance": 0.15371404474708011,
+      "known_reference_path_clearance": -0.05137534026131439,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_enlarged_015",
+    "category": "ENLARGED_OBSTACLE",
+    "category_index": 15,
+    "task_id": 3,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.4174999999999999,
+        -0.07820386212860966,
+        0.7162499999999999,
+        1.1325,
+        0.07820386212860966,
+        0.9087500000000001
+      ],
+      [
+        0.4174999999999999,
+        -0.07820386212860966,
+        0.01,
+        1.1325,
+        0.07820386212860966,
+        0.399
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.20655450395545083,
+      "goal_clearance": 0.01682216503602804,
+      "known_reference_path_clearance": 0.01165274170027282,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_enlarged_016",
+    "category": "ENLARGED_OBSTACLE",
+    "category_index": 16,
+    "task_id": 4,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.37849999999999995,
+        -0.07743864129341489,
+        0.70575,
+        1.1715,
+        0.07743864129341489,
+        0.91925
+      ],
+      [
+        0.37849999999999995,
+        -0.07743864129341489,
+        0.01,
+        1.1715,
+        0.07743864129341489,
+        0.4218
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.2628530080440159,
+      "goal_clearance": 0.11824480813456043,
+      "known_reference_path_clearance": -0.011595543349314272,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_enlarged_017",
+    "category": "ENLARGED_OBSTACLE",
+    "category_index": 17,
+    "task_id": 5,
+    "severity": "hard",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.3362499999999999,
+        -0.09395401753260013,
+        0.694375,
+        1.21375,
+        0.09395401753260013,
+        0.930625
+      ],
+      [
+        0.3362499999999999,
+        -0.09395401753260013,
+        0.01,
+        1.21375,
+        0.09395401753260013,
+        0.4465
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.07671894605321888,
+      "goal_clearance": 0.01772983150603924,
+      "known_reference_path_clearance": -0.02991322201320272,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_enlarged_018",
+    "category": "ENLARGED_OBSTACLE",
+    "category_index": 18,
+    "task_id": 0,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.4174999999999999,
+        -0.07366618791933462,
+        0.7162499999999999,
+        1.1325,
+        0.07366618791933462,
+        0.9087500000000001
+      ],
+      [
+        0.4174999999999999,
+        -0.07366618791933462,
+        0.01,
+        1.1325,
+        0.07366618791933462,
+        0.399
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.34444821594791275,
+      "goal_clearance": 0.23798174576098496,
+      "known_reference_path_clearance": 0.0409063636781717,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_enlarged_019",
+    "category": "ENLARGED_OBSTACLE",
+    "category_index": 19,
+    "task_id": 1,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.37849999999999995,
+        -0.08309661731943623,
+        0.70575,
+        1.1715,
+        0.08309661731943623,
+        0.91925
+      ],
+      [
+        0.37849999999999995,
+        -0.08309661731943623,
+        0.01,
+        1.1715,
+        0.08309661731943623,
+        0.4218
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.006432107670137924,
+      "goal_clearance": 0.08821723997898154,
+      "known_reference_path_clearance": -0.006080126931138824,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_multi_000",
+    "category": "MULTI_OBSTACLE",
+    "category_index": 0,
+    "task_id": 0,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.5482291888502865,
+        0.24926328857596025,
+        0.6113845583428912,
+        0.7488399359043337,
+        0.46876284501792376,
+        0.8509424330300384
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.3814229675322609,
+      "goal_clearance": 0.13619908359821292,
+      "known_reference_path_clearance": 0.05211043572143788,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_multi_001",
+    "category": "MULTI_OBSTACLE",
+    "category_index": 1,
+    "task_id": 1,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.665320927666511,
+        0.31260814553958294,
+        0.3233547067004864,
+        0.7929919520006,
+        0.5312290990310756,
+        0.5486540988820766
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.006341058979076317,
+      "goal_clearance": 0.155696193737091,
+      "known_reference_path_clearance": -0.06001486453574187,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_multi_002",
+    "category": "MULTI_OBSTACLE",
+    "category_index": 2,
+    "task_id": 2,
+    "severity": "hard",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.14507469425822703,
+        0.6189985802920934,
+        0.5477998686528215,
+        0.27200307484851394,
+        0.7267216563202941,
+        0.7196879753623332
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.4078700042949769,
+      "goal_clearance": 0.19414974491241438,
+      "known_reference_path_clearance": 0.06659035678434792,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_multi_003",
+    "category": "MULTI_OBSTACLE",
+    "category_index": 3,
+    "task_id": 3,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.17598494630573136,
+        0.5962470866379986,
+        0.5492539218471524,
+        0.4128741714011891,
+        0.7432023570114658,
+        0.7338617512018821
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.16325570447887638,
+      "goal_clearance": 0.05479670229588962,
+      "known_reference_path_clearance": 0.020402741700272856,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_multi_004",
+    "category": "MULTI_OBSTACLE",
+    "category_index": 4,
+    "task_id": 4,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.9509342555899079,
+        0.09824669839961932,
+        0.3506037358793712,
+        1.0768237362719588,
+        0.1984566016151048,
+        0.6084546369747506
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.34475911262460734,
+      "goal_clearance": 0.18823991856498998,
+      "known_reference_path_clearance": 0.011366754743943525,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_multi_005",
+    "category": "MULTI_OBSTACLE",
+    "category_index": 5,
+    "task_id": 5,
+    "severity": "hard",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.5071213465358894,
+        0.23700699377890985,
+        0.6753056143329641,
+        0.6984952752377748,
+        0.40202207910982457,
+        0.8584723381305326
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.11601372572049214,
+      "goal_clearance": 0.11813423967657447,
+      "known_reference_path_clearance": -0.027980025708162472,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_multi_006",
+    "category": "MULTI_OBSTACLE",
+    "category_index": 6,
+    "task_id": 0,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.32437665223109924,
+        0.6593153587484257,
+        0.3370685312355759,
+        0.5571603672507202,
+        0.7729177412078936,
+        0.5105973313007146
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.3814229675322609,
+      "goal_clearance": 0.18652378472377595,
+      "known_reference_path_clearance": 0.07349201489481537,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_multi_007",
+    "category": "MULTI_OBSTACLE",
+    "category_index": 7,
+    "task_id": 1,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.5132467555847195,
+        -0.30549448898482756,
+        0.3440555429374016,
+        0.6468093624529223,
+        -0.09981881746774046,
+        0.5946554273161876
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.009469480040556838,
+      "goal_clearance": 0.009860317829281984,
+      "known_reference_path_clearance": -0.0713684224331274,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_multi_008",
+    "category": "MULTI_OBSTACLE",
+    "category_index": 8,
+    "task_id": 2,
+    "severity": "hard",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.1561626799527947,
+        0.5169073365972076,
+        0.5369024311492238,
+        0.36189602251952974,
+        0.6960736191084372,
+        0.8048830045791567
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.4078700042949769,
+      "goal_clearance": 0.12094553916445117,
+      "known_reference_path_clearance": 0.06659035678434792,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_multi_009",
+    "category": "MULTI_OBSTACLE",
+    "category_index": 9,
+    "task_id": 3,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.18727994028785927,
+        -0.7541776605717366,
+        0.4353655587348318,
+        0.4116249461993026,
+        -0.5404145038735441,
+        0.730295394506784
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.23726575943842415,
+      "goal_clearance": 0.05479670229588962,
+      "known_reference_path_clearance": 0.020402741700272856,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_multi_010",
+    "category": "MULTI_OBSTACLE",
+    "category_index": 10,
+    "task_id": 4,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.159105607252494,
+        -0.4691727216745686,
+        0.22391851987101125,
+        0.3631372061689141,
+        -0.25646371911122756,
+        0.3679581646405427
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.002601779048810454,
+      "goal_clearance": 0.18823991856498998,
+      "known_reference_path_clearance": 0.002601779048810454,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_multi_011",
+    "category": "MULTI_OBSTACLE",
+    "category_index": 11,
+    "task_id": 5,
+    "severity": "hard",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.8852601026279173,
+        -0.7321509784089248,
+        0.4608068491064079,
+        1.0262550102812562,
+        -0.5692159046619929,
+        0.6955767940758231
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.17151230965730987,
+      "goal_clearance": 0.11813423967657447,
+      "known_reference_path_clearance": 0.0007117779867972934,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_multi_012",
+    "category": "MULTI_OBSTACLE",
+    "category_index": 12,
+    "task_id": 0,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.2757930318492072,
+        0.12987148486746675,
+        0.779551661550363,
+        0.4789557833399464,
+        0.3494030455494345,
+        0.9707285570589241
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.3814229675322609,
+      "goal_clearance": 0.2533436218816418,
+      "known_reference_path_clearance": -0.033309232780057325,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_multi_013",
+    "category": "MULTI_OBSTACLE",
+    "category_index": 13,
+    "task_id": 1,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.28930648027077555,
+        0.4267798478207607,
+        0.17639792456160025,
+        0.4995263254540001,
+        0.5722076087090155,
+        0.3190990109809389
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.04126426042869907,
+      "goal_clearance": 0.155696193737091,
+      "known_reference_path_clearance": 0.03431689727183815,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_multi_014",
+    "category": "MULTI_OBSTACLE",
+    "category_index": 14,
+    "task_id": 2,
+    "severity": "hard",
+    "task_offset": 0,
+    "generation_attempt": 1,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.4139724971592401,
+        -0.4822113729270369,
+        0.4062236482391728,
+        0.5562114761219802,
+        -0.2723243252425053,
+        0.546624253618963
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.11429628858495584,
+      "goal_clearance": 0.19414974491241438,
+      "known_reference_path_clearance": -0.09046387240770185,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_multi_015",
+    "category": "MULTI_OBSTACLE",
+    "category_index": 15,
+    "task_id": 3,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 2,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.34445761112186807,
+        -0.07418913620001841,
+        0.5921435901183659,
+        0.5780159650319727,
+        0.13183951406558367,
+        0.7147018934745163
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.1121021044440048,
+      "goal_clearance": 0.038973202772846494,
+      "known_reference_path_clearance": -0.05870469288191105,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_multi_016",
+    "category": "MULTI_OBSTACLE",
+    "category_index": 16,
+    "task_id": 4,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 1,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.5720836109586588,
+        0.0795391079637928,
+        0.8078264303494587,
+        0.7141514470372919,
+        0.2892897153297911,
+        0.9564173615841449
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.34475911262460734,
+      "goal_clearance": 0.18823991856498998,
+      "known_reference_path_clearance": 0.011366754743943525,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_multi_017",
+    "category": "MULTI_OBSTACLE",
+    "category_index": 17,
+    "task_id": 5,
+    "severity": "hard",
+    "task_offset": 0,
+    "generation_attempt": 1,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.901318397302236,
+        0.5085321028993997,
+        0.48478843288731843,
+        1.0610267905200983,
+        0.6237435393993993,
+        0.6880033564047627
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.17151230965730987,
+      "goal_clearance": 0.11813423967657447,
+      "known_reference_path_clearance": 0.0007117779867972934,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_multi_018",
+    "category": "MULTI_OBSTACLE",
+    "category_index": 18,
+    "task_id": 0,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.848368465979201,
+        -0.48748782045215966,
+        0.5812664075618685,
+        1.0363500491732072,
+        -0.3118733734665664,
+        0.7610345677780925
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.258352473254405,
+      "goal_clearance": 0.2533436218816418,
+      "known_reference_path_clearance": 0.07349201489481537,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_multi_019",
+    "category": "MULTI_OBSTACLE",
+    "category_index": 19,
+    "task_id": 1,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.19554424528579567,
+        0.36044194742420044,
+        0.7510093478008971,
+        0.33835208408177925,
+        0.48980433581745575,
+        1.0058695182528454
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.04126426042869907,
+      "goal_clearance": 0.155696193737091,
+      "known_reference_path_clearance": 0.04126426042869907,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_narrow_000",
+    "category": "NARROW_PASSAGE",
+    "category_index": 0,
+    "task_id": 0,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.5639408417650392,
+        -0.1304561225418206,
+        0.7165741886108468,
+        1.2139408417650392,
+        0.10227960591526852,
+        0.9
+      ],
+      [
+        0.5639408417650392,
+        -0.1304561225418206,
+        0.0,
+        1.2139408417650392,
+        0.10227960591526852,
+        0.42128227776244337
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.3938776484013127,
+      "goal_clearance": 0.23094655057021507,
+      "known_reference_path_clearance": 0.15139050954040248,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_narrow_001",
+    "category": "NARROW_PASSAGE",
+    "category_index": 1,
+    "task_id": 1,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.4630764453991599,
+        -0.21019783675635034,
+        0.705990924351494,
+        1.11307644539916,
+        -0.06407777283020853,
+        0.9
+      ],
+      [
+        0.4630764453991599,
+        -0.21019783675635034,
+        0.0,
+        1.11307644539916,
+        -0.06407777283020853,
+        0.47956059227038084
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.028840759065580604,
+      "goal_clearance": 0.06787637190271625,
+      "known_reference_path_clearance": -0.016524671069952604,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_narrow_002",
+    "category": "NARROW_PASSAGE",
+    "category_index": 2,
+    "task_id": 2,
+    "severity": "hard",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.566652972773942,
+        -0.08860617059944105,
+        0.6824632279349013,
+        1.2166529727739421,
+        0.12385393616612413,
+        0.9
+      ],
+      [
+        0.566652972773942,
+        -0.08860617059944105,
+        0.0,
+        1.2166529727739421,
+        0.12385393616612413,
+        0.5015043855071678
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.42742004701768443,
+      "goal_clearance": 0.15506233664798208,
+      "known_reference_path_clearance": 0.047242965064341,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_narrow_003",
+    "category": "NARROW_PASSAGE",
+    "category_index": 3,
+    "task_id": 3,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.570082875895516,
+        -0.20617792596655388,
+        0.7086850745180875,
+        1.220082875895516,
+        0.021062693411991074,
+        0.9
+      ],
+      [
+        0.570082875895516,
+        -0.20617792596655388,
+        0.0,
+        1.220082875895516,
+        0.021062693411991074,
+        0.41547862885020703
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.31468490512206704,
+      "goal_clearance": 0.004118643743366526,
+      "known_reference_path_clearance": -0.00688273330964731,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_narrow_004",
+    "category": "NARROW_PASSAGE",
+    "category_index": 4,
+    "task_id": 4,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.37692048865813566,
+        -0.23290306489540213,
+        0.6426206300776243,
+        1.0269204886581358,
+        -0.09596967822788095,
+        0.9
+      ],
+      [
+        0.37692048865813566,
+        -0.23290306489540213,
+        0.0,
+        1.0269204886581358,
+        -0.09596967822788095,
+        0.41751054370773155
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.19978038642685994,
+      "goal_clearance": 0.22387991594035264,
+      "known_reference_path_clearance": -0.04449676834851385,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_narrow_005",
+    "category": "NARROW_PASSAGE",
+    "category_index": 5,
+    "task_id": 5,
+    "severity": "hard",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.5793397158992172,
+        0.08617135550745054,
+        0.5999088805855897,
+        1.2293397158992172,
+        0.2581734593500598,
+        0.9
+      ],
+      [
+        0.5793397158992172,
+        0.08617135550745054,
+        0.0,
+        1.2293397158992172,
+        0.2581734593500598,
+        0.4143404752728692
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.17070926721838972,
+      "goal_clearance": 0.26826238281668047,
+      "known_reference_path_clearance": -0.11045028502144096,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_narrow_006",
+    "category": "NARROW_PASSAGE",
+    "category_index": 6,
+    "task_id": 0,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.6232526219956908,
+        0.13799483111180727,
+        0.7282050529715791,
+        1.2732526219956908,
+        0.3548951137775494,
+        0.9
+      ],
+      [
+        0.6232526219956908,
+        0.13799483111180727,
+        0.0,
+        1.2732526219956908,
+        0.3548951137775494,
+        0.4302067264475389
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.6198959654664035,
+      "goal_clearance": 0.09849423462843636,
+      "known_reference_path_clearance": 0.09655202262179817,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_narrow_007",
+    "category": "NARROW_PASSAGE",
+    "category_index": 7,
+    "task_id": 1,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 1,
+    "bboxes": [
+      [
+        0.5147587659015571,
+        -0.2939040541942398,
+        0.6421456725786244,
+        1.1647587659015572,
+        -0.11119990579739711,
+        0.9
+      ],
+      [
+        0.5147587659015571,
+        -0.2939040541942398,
+        0.0,
+        1.1647587659015572,
+        -0.11119990579739711,
+        0.40169363589056795
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.022741572607885716,
+      "goal_clearance": 0.04771611670061325,
+      "known_reference_path_clearance": -0.10039619386054348,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_narrow_008",
+    "category": "NARROW_PASSAGE",
+    "category_index": 8,
+    "task_id": 2,
+    "severity": "hard",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.2621160509430393,
+        -0.24415293839216717,
+        0.630000131613602,
+        0.9121160509430394,
+        -0.008832073352392278,
+        0.9
+      ],
+      [
+        0.2621160509430393,
+        -0.24415293839216717,
+        0.0,
+        0.9121160509430394,
+        -0.008832073352392278,
+        0.4524687438299707
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.19117579794566367,
+      "goal_clearance": 0.17938794727661775,
+      "known_reference_path_clearance": -0.12550928931827499,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_narrow_009",
+    "category": "NARROW_PASSAGE",
+    "category_index": 9,
+    "task_id": 3,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.27088732774125635,
+        2.017790889885518e-05,
+        0.7231942696899992,
+        0.9208873277412565,
+        0.22070911285458517,
+        0.9
+      ],
+      [
+        0.27088732774125635,
+        2.017790889885518e-05,
+        0.0,
+        0.9208873277412565,
+        0.22070911285458517,
+        0.4359813440283814
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.05171652858523436,
+      "goal_clearance": 0.01617136991583136,
+      "known_reference_path_clearance": -0.026298837425087193,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_narrow_010",
+    "category": "NARROW_PASSAGE",
+    "category_index": 10,
+    "task_id": 4,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.5453366726845597,
+        0.13151367341394288,
+        0.667539991054449,
+        1.1953366726845598,
+        0.305796974760079,
+        0.9
+      ],
+      [
+        0.5453366726845597,
+        0.13151367341394288,
+        0.0,
+        1.1953366726845598,
+        0.305796974760079,
+        0.4367577501714045
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.4967615087534448,
+      "goal_clearance": 0.1121814960636795,
+      "known_reference_path_clearance": -0.05887487064424517,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_narrow_011",
+    "category": "NARROW_PASSAGE",
+    "category_index": 11,
+    "task_id": 5,
+    "severity": "hard",
+    "task_offset": 0,
+    "generation_attempt": 2,
+    "bboxes": [
+      [
+        0.514694186999489,
+        0.06526797530966227,
+        0.6797349186036656,
+        1.1646941869994891,
+        0.213303024890995,
+        0.9
+      ],
+      [
+        0.514694186999489,
+        0.06526797530966227,
+        0.0,
+        1.1646941869994891,
+        0.213303024890995,
+        0.5045572036382551
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.1287838012735349,
+      "goal_clearance": 0.2041423290016041,
+      "known_reference_path_clearance": -0.03994237135258087,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_narrow_012",
+    "category": "NARROW_PASSAGE",
+    "category_index": 12,
+    "task_id": 0,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.5200746513815776,
+        0.025492046071641294,
+        0.7134444558751954,
+        1.1700746513815776,
+        0.18844042837500902,
+        0.9
+      ],
+      [
+        0.5200746513815776,
+        0.025492046071641294,
+        0.0,
+        1.1700746513815776,
+        0.18844042837500902,
+        0.4225745802097217
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.47605644192323193,
+      "goal_clearance": 0.13483354850171547,
+      "known_reference_path_clearance": 0.10000813763471597,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_narrow_013",
+    "category": "NARROW_PASSAGE",
+    "category_index": 13,
+    "task_id": 1,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 12,
+    "bboxes": [
+      [
+        0.599928716933997,
+        -0.280327513302421,
+        0.705408186416484,
+        1.249928716933997,
+        -0.1447801049655302,
+        0.9
+      ],
+      [
+        0.599928716933997,
+        -0.280327513302421,
+        0.0,
+        1.249928716933997,
+        -0.1447801049655302,
+        0.45895657788113514
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.10104930294606816,
+      "goal_clearance": 0.0836764646245461,
+      "known_reference_path_clearance": -0.043254716962978876,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_narrow_014",
+    "category": "NARROW_PASSAGE",
+    "category_index": 14,
+    "task_id": 2,
+    "severity": "hard",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.45194113308656725,
+        -0.07049336394112207,
+        0.6529325731755826,
+        1.1019411330865674,
+        0.09634144445342999,
+        0.9
+      ],
+      [
+        0.45194113308656725,
+        -0.07049336394112207,
+        0.0,
+        1.1019411330865674,
+        0.09634144445342999,
+        0.48571656136512775
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.4062928885846171,
+      "goal_clearance": 0.1549374396549828,
+      "known_reference_path_clearance": 0.0015720832138977278,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_narrow_015",
+    "category": "NARROW_PASSAGE",
+    "category_index": 15,
+    "task_id": 3,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.48230830951146875,
+        0.09697804616661729,
+        0.7263859893275504,
+        1.1323083095114688,
+        0.2732613421351434,
+        0.9
+      ],
+      [
+        0.48230830951146875,
+        0.09697804616661729,
+        0.0,
+        1.1323083095114688,
+        0.2732613421351434,
+        0.4364980421298889
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.06517349381606305,
+      "goal_clearance": 0.17544933321449477,
+      "known_reference_path_clearance": 0.03161166551780954,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_narrow_016",
+    "category": "NARROW_PASSAGE",
+    "category_index": 16,
+    "task_id": 4,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.383574958519267,
+        -0.24825188038841672,
+        0.7079930271048984,
+        1.033574958519267,
+        -0.04211329290607263,
+        0.9
+      ],
+      [
+        0.383574958519267,
+        -0.24825188038841672,
+        0.0,
+        1.033574958519267,
+        -0.04211329290607263,
+        0.45778242566448557
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.21381442146262877,
+      "goal_clearance": 0.1891231942960069,
+      "known_reference_path_clearance": -0.016557672206010315,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_narrow_017",
+    "category": "NARROW_PASSAGE",
+    "category_index": 17,
+    "task_id": 5,
+    "severity": "hard",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.4032208343037497,
+        0.1719653656420749,
+        0.6257343643675759,
+        1.0532208343037497,
+        0.3162812907279148,
+        0.9
+      ],
+      [
+        0.4032208343037497,
+        0.1719653656420749,
+        0.0,
+        1.0532208343037497,
+        0.3162812907279148,
+        0.4540467584901098
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.023649062606294707,
+      "goal_clearance": 0.2576942749595146,
+      "known_reference_path_clearance": -0.08638426474773546,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_narrow_018",
+    "category": "NARROW_PASSAGE",
+    "category_index": 18,
+    "task_id": 0,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.43900564540014386,
+        -0.2804772123550811,
+        0.6860346221449627,
+        1.089005645400144,
+        -0.1316075549738034,
+        0.9
+      ],
+      [
+        0.43900564540014386,
+        -0.2804772123550811,
+        0.0,
+        1.089005645400144,
+        -0.1316075549738034,
+        0.379287710481528
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.26153267000142716,
+      "goal_clearance": 0.44413993438556437,
+      "known_reference_path_clearance": 0.03146260881959249,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_narrow_019",
+    "category": "NARROW_PASSAGE",
+    "category_index": 19,
+    "task_id": 1,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 11,
+    "bboxes": [
+      [
+        0.4485673964197118,
+        -0.3056245987875173,
+        0.66894417185365,
+        1.0985673964197118,
+        -0.08018287501497795,
+        0.9
+      ],
+      [
+        0.4485673964197118,
+        -0.3056245987875173,
+        0.0,
+        1.0985673964197118,
+        -0.08018287501497795,
+        0.4204348633757256
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.005554478741464669,
+      "goal_clearance": 0.006221026444060598,
+      "known_reference_path_clearance": -0.08265686277569044,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_goalnear_000",
+    "category": "GOAL_NEAR_OBSTACLE",
+    "category_index": 0,
+    "task_id": 0,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.5624803364557659,
+        0.32781846682452054,
+        0.04283549026463518,
+        0.6981387436696157,
+        0.456261101848781,
+        0.2571502128853112
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.3814229675322609,
+      "goal_clearance": 0.028259008766150978,
+      "known_reference_path_clearance": 0.025115247056843676,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_goalnear_001",
+    "category": "GOAL_NEAR_OBSTACLE",
+    "category_index": 1,
+    "task_id": 1,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.49813775200961824,
+        -0.39856431418659094,
+        0.09571372148328272,
+        0.62326331779198,
+        -0.28231173788090896,
+        0.20429553674458495
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.04126426042869907,
+      "goal_clearance": 0.03903091156350749,
+      "known_reference_path_clearance": 0.038820147832669044,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_goalnear_002",
+    "category": "GOAL_NEAR_OBSTACLE",
+    "category_index": 2,
+    "task_id": 2,
+    "severity": "hard",
+    "task_offset": 0,
+    "generation_attempt": 1,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.1749054312170857,
+        0.2752285606516787,
+        0.05413049435463259,
+        0.36370894227569417,
+        0.3890440421219475,
+        0.24581611770177836
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.4078700042949769,
+      "goal_clearance": 0.014100297851813465,
+      "known_reference_path_clearance": 0.011732927433790973,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_goalnear_003",
+    "category": "GOAL_NEAR_OBSTACLE",
+    "category_index": 3,
+    "task_id": 3,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.5031632091618907,
+        -0.43184635037929536,
+        0.04281914439994376,
+        0.6242719265540084,
+        -0.3115030008288568,
+        0.2585345289123092
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.23726575943842415,
+      "goal_clearance": 0.0008331865523051596,
+      "known_reference_path_clearance": -0.004578558099100825,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_goalnear_004",
+    "category": "GOAL_NEAR_OBSTACLE",
+    "category_index": 4,
+    "task_id": 4,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.42200029537867745,
+        0.30060949567759176,
+        0.07761803860702327,
+        0.5555930486768389,
+        0.43904263105090224,
+        0.2223703267701005
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.34475911262460734,
+      "goal_clearance": 0.027694212363416987,
+      "known_reference_path_clearance": 0.011366754743943525,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_goalnear_005",
+    "category": "GOAL_NEAR_OBSTACLE",
+    "category_index": 5,
+    "task_id": 5,
+    "severity": "hard",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.6103937682975072,
+        -0.3848285971856259,
+        0.01,
+        0.805363285483453,
+        -0.21797681687323753,
+        0.08189716339138461
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.17151230965730987,
+      "goal_clearance": 0.04810164703879877,
+      "known_reference_path_clearance": 0.0007117779867972934,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_goalnear_006",
+    "category": "GOAL_NEAR_OBSTACLE",
+    "category_index": 6,
+    "task_id": 0,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 1,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.3943366646944967,
+        0.5111345505094183,
+        0.05124035366068491,
+        0.501742929909078,
+        0.6596335534629303,
+        0.24874534948926147
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.3814229675322609,
+      "goal_clearance": 0.06655485787235935,
+      "known_reference_path_clearance": 0.06655485787235935,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_goalnear_007",
+    "category": "GOAL_NEAR_OBSTACLE",
+    "category_index": 7,
+    "task_id": 1,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.5034075127576577,
+        -0.4118707462252877,
+        0.08314152206608812,
+        0.6179935570439404,
+        -0.29232216870548317,
+        0.21686773616177957
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.04126426042869907,
+      "goal_clearance": 0.02573578607457424,
+      "known_reference_path_clearance": 0.02526953638203608,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_goalnear_008",
+    "category": "GOAL_NEAR_OBSTACLE",
+    "category_index": 8,
+    "task_id": 2,
+    "severity": "hard",
+    "task_offset": 0,
+    "generation_attempt": 2,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.3781991409784231,
+        0.05321030485672201,
+        0.0916524964960243,
+        0.5323783481290891,
+        0.23217650371499632,
+        0.20829411556038663
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.40724017106628574,
+      "goal_clearance": 0.03328166862809942,
+      "known_reference_path_clearance": 0.03325904673859871,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_goalnear_009",
+    "category": "GOAL_NEAR_OBSTACLE",
+    "category_index": 9,
+    "task_id": 3,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 2,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.640976375462724,
+        -0.424480472332281,
+        0.01,
+        0.7618357918675052,
+        -0.3188688788758712,
+        0.06765492724207556
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.23726575943842415,
+      "goal_clearance": 0.05479670229588962,
+      "known_reference_path_clearance": 0.020402741700272856,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_goalnear_010",
+    "category": "GOAL_NEAR_OBSTACLE",
+    "category_index": 10,
+    "task_id": 4,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 1,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.41057357762523305,
+        0.49267299479448934,
+        0.01,
+        0.5670197664302833,
+        0.6159748861004278,
+        0.020681714682141333
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.34475911262460734,
+      "goal_clearance": 0.10931215383330023,
+      "known_reference_path_clearance": 0.011366754743943525,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_goalnear_011",
+    "category": "GOAL_NEAR_OBSTACLE",
+    "category_index": 11,
+    "task_id": 5,
+    "severity": "hard",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.6120681687979681,
+        -0.35770480000311866,
+        0.01,
+        0.8036888849829922,
+        -0.24510061405574482,
+        0.09482658867769878
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.17151230965730987,
+      "goal_clearance": 0.0351722217524844,
+      "known_reference_path_clearance": 0.0007117779867972934,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_goalnear_012",
+    "category": "GOAL_NEAR_OBSTACLE",
+    "category_index": 12,
+    "task_id": 0,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.567169947402349,
+        0.31312828962579764,
+        0.04047659062705472,
+        0.7097737712734322,
+        0.4709512790475039,
+        0.25950911252289166
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.3814229675322609,
+      "goal_clearance": 0.032948619712734134,
+      "known_reference_path_clearance": 0.029804858003426832,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_goalnear_013",
+    "category": "GOAL_NEAR_OBSTACLE",
+    "category_index": 13,
+    "task_id": 1,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.4762542862145192,
+        -0.38008348997867775,
+        0.07813916895288232,
+        0.6451467835870789,
+        -0.21811225971094023,
+        0.22187008927498536
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.04126426042869907,
+      "goal_clearance": 0.057511735771420686,
+      "known_reference_path_clearance": 0.04126426042869907,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_goalnear_014",
+    "category": "GOAL_NEAR_OBSTACLE",
+    "category_index": 14,
+    "task_id": 2,
+    "severity": "hard",
+    "task_offset": 0,
+    "generation_attempt": 2,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.3592896084287689,
+        0.05463912360789566,
+        0.09197987548407052,
+        0.5512878806787433,
+        0.22819126726301617,
+        0.2079667365723404
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.3931693173849312,
+      "goal_clearance": 0.03726690508007954,
+      "known_reference_path_clearance": 0.03725086675794137,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_goalnear_015",
+    "category": "GOAL_NEAR_OBSTACLE",
+    "category_index": 15,
+    "task_id": 3,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 1,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.6322237286936513,
+        -0.6408947512975338,
+        0.052221021064872,
+        0.7705884386365779,
+        -0.4987192077704479,
+        0.249132652247381
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.23726575943842415,
+      "goal_clearance": 0.05479670229588962,
+      "known_reference_path_clearance": 0.020402741700272856,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_goalnear_016",
+    "category": "GOAL_NEAR_OBSTACLE",
+    "category_index": 16,
+    "task_id": 4,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 1,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.4100743942920279,
+        0.5025521145267444,
+        0.01,
+        0.5675189497634885,
+        0.6060957663681728,
+        0.0210598585867475
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.34475911262460734,
+      "goal_clearance": 0.10905611214793867,
+      "known_reference_path_clearance": 0.011366754743943525,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_goalnear_017",
+    "category": "GOAL_NEAR_OBSTACLE",
+    "category_index": 17,
+    "task_id": 5,
+    "severity": "hard",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.6475680190471128,
+        -0.3642548694552596,
+        0.01,
+        0.7681890347338475,
+        -0.23855054460360386,
+        0.028071297565205988
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.17151230965730987,
+      "goal_clearance": 0.10192751286497725,
+      "known_reference_path_clearance": 0.0007117779867972934,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_goalnear_018",
+    "category": "GOAL_NEAR_OBSTACLE",
+    "category_index": 18,
+    "task_id": 0,
+    "severity": "mild",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.5358999315187404,
+        0.30457182273057354,
+        0.05178960773066188,
+        0.6726179263068587,
+        0.479507745942728,
+        0.2481960954192845
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.3814229675322609,
+      "goal_clearance": 0.0016786038291253524,
+      "known_reference_path_clearance": -0.0014651578801819498,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  },
+  {
+    "scenario_id": "ood_goalnear_019",
+    "category": "GOAL_NEAR_OBSTACLE",
+    "category_index": 19,
+    "task_id": 1,
+    "severity": "medium",
+    "task_offset": 0,
+    "generation_attempt": 0,
+    "bboxes": [
+      [
+        0.45,
+        -0.06,
+        0.725,
+        1.1,
+        0.06,
+        0.9
+      ],
+      [
+        0.45,
+        -0.06,
+        0.0,
+        1.1,
+        0.06,
+        0.38
+      ],
+      [
+        0.5003967012293381,
+        -0.35724137058689,
+        0.0957039248602404,
+        0.62100436857226,
+        -0.21110085083343988,
+        0.20430533336762727
+      ]
+    ],
+    "validation": {
+      "start_clearance": 0.04126426042869907,
+      "goal_clearance": 0.08035385516320845,
+      "known_reference_path_clearance": 0.04126426042869907,
+      "goal_inside_obstacle": false,
+      "reason": "accepted"
+    }
+  }
+]

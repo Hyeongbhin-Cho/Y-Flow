@@ -1,0 +1,17 @@
+adaptive_method,reference_method,reference_state,adaptive_state,count
+POV_L05_ADAPTIVE,PLAIN_FM,safe,safe,163
+POV_L05_ADAPTIVE,PLAIN_FM,safe,collision,0
+POV_L05_ADAPTIVE,PLAIN_FM,collision,safe,29
+POV_L05_ADAPTIVE,PLAIN_FM,collision,collision,0
+POV_L05_ADAPTIVE,POV_L05_ALWAYS,safe,safe,192
+POV_L05_ADAPTIVE,POV_L05_ALWAYS,safe,collision,0
+POV_L05_ADAPTIVE,POV_L05_ALWAYS,collision,safe,0
+POV_L05_ADAPTIVE,POV_L05_ALWAYS,collision,collision,0
+POV_L025_ADAPTIVE,PLAIN_FM,safe,safe,163
+POV_L025_ADAPTIVE,PLAIN_FM,safe,collision,0
+POV_L025_ADAPTIVE,PLAIN_FM,collision,safe,25
+POV_L025_ADAPTIVE,PLAIN_FM,collision,collision,4
+POV_L025_ADAPTIVE,POV_L05_ALWAYS,safe,safe,188
+POV_L025_ADAPTIVE,POV_L05_ALWAYS,safe,collision,4
+POV_L025_ADAPTIVE,POV_L05_ALWAYS,collision,safe,0
+POV_L025_ADAPTIVE,POV_L05_ALWAYS,collision,collision,0

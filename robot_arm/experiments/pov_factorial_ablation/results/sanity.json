@@ -1,0 +1,85 @@
+{
+  "pass": true,
+  "checks": [
+    {
+      "task_id": 0,
+      "seed": 0,
+      "method": "L1_REPLACE",
+      "reference": "YFLOW_MAIN_PORT",
+      "max_abs_trajectory_difference": 0.0,
+      "collision_match": true,
+      "goal_error_difference": 0.0,
+      "pass": true
+    },
+    {
+      "task_id": 0,
+      "seed": 0,
+      "method": "L05_NO_REPLACE",
+      "reference": "HYBRID_LATE_DAMPED",
+      "max_abs_trajectory_difference": 0.0,
+      "collision_match": true,
+      "goal_error_difference": 0.0,
+      "pass": true
+    },
+    {
+      "task_id": 3,
+      "seed": 0,
+      "method": "L1_REPLACE",
+      "reference": "YFLOW_MAIN_PORT",
+      "max_abs_trajectory_difference": 0.0,
+      "collision_match": true,
+      "goal_error_difference": 0.0,
+      "pass": true
+    },
+    {
+      "task_id": 3,
+      "seed": 0,
+      "method": "L05_NO_REPLACE",
+      "reference": "HYBRID_LATE_DAMPED",
+      "max_abs_trajectory_difference": 0.0,
+      "collision_match": true,
+      "goal_error_difference": 0.0,
+      "pass": true
+    },
+    {
+      "task_id": 4,
+      "seed": 0,
+      "method": "L1_REPLACE",
+      "reference": "YFLOW_MAIN_PORT",
+      "max_abs_trajectory_difference": 0.0,
+      "collision_match": true,
+      "goal_error_difference": 0.0,
+      "pass": true
+    },
+    {
+      "task_id": 4,
+      "seed": 0,
+      "method": "L05_NO_REPLACE",
+      "reference": "HYBRID_LATE_DAMPED",
+      "max_abs_trajectory_difference": 0.0,
+      "collision_match": true,
+      "goal_error_difference": 0.0,
+      "pass": true
+    },
+    {
+      "task_id": 5,
+      "seed": 0,
+      "method": "L1_REPLACE",
+      "reference": "YFLOW_MAIN_PORT",
+      "max_abs_trajectory_difference": 0.0,
+      "collision_match": true,
+      "goal_error_difference": 0.0,
+      "pass": true
+    },
+    {
+      "task_id": 5,
+      "seed": 0,
+      "method": "L05_NO_REPLACE",
+      "reference": "HYBRID_LATE_DAMPED",
+      "max_abs_trajectory_difference": 0.0,
+      "collision_match": true,
+      "goal_error_difference": 0.0,
+      "pass": true
+    }
+  ]
+}

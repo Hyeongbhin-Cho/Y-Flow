@@ -1,0 +1,53 @@
+{
+  "pass": true,
+  "checks": [
+    {
+      "scenario_id": "ood_shifted_000",
+      "category": "SHIFTED_OBSTACLE",
+      "identical_noise": true,
+      "geometry_differs_from_id": true,
+      "collision_checker_matches_plot_bboxes": true,
+      "l05_no_replace_semantics": true,
+      "l05_replace_semantics": true,
+      "l1_replace_semantics": true,
+      "start_valid": true,
+      "goal_valid": true
+    },
+    {
+      "scenario_id": "ood_multi_000",
+      "category": "MULTI_OBSTACLE",
+      "identical_noise": true,
+      "geometry_differs_from_id": true,
+      "collision_checker_matches_plot_bboxes": true,
+      "l05_no_replace_semantics": true,
+      "l05_replace_semantics": true,
+      "l1_replace_semantics": true,
+      "start_valid": true,
+      "goal_valid": true
+    },
+    {
+      "scenario_id": "ood_narrow_000",
+      "category": "NARROW_PASSAGE",
+      "identical_noise": true,
+      "geometry_differs_from_id": true,
+      "collision_checker_matches_plot_bboxes": true,
+      "l05_no_replace_semantics": true,
+      "l05_replace_semantics": true,
+      "l1_replace_semantics": true,
+      "start_valid": true,
+      "goal_valid": true
+    },
+    {
+      "scenario_id": "ood_goalnear_000",
+      "category": "GOAL_NEAR_OBSTACLE",
+      "identical_noise": true,
+      "geometry_differs_from_id": true,
+      "collision_checker_matches_plot_bboxes": true,
+      "l05_no_replace_semantics": true,
+      "l05_replace_semantics": true,
+      "l1_replace_semantics": true,
+      "start_valid": true,
+      "goal_valid": true
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "experiment": "phase2_flow_preserving_goal_aware_endpoint_projection",
+  "tasks": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "seeds_per_task": 32,
+  "methods": [
+    "PLAIN_FM",
+    "GOAL_AWARE_FINAL_PROJECTION",
+    "NORMALIZED_POV_L1",
+    "DAMPED_POV_L05",
+    "DAMPED_POV_L025"
+  ],
+  "pov_lambdas": {
+    "NORMALIZED_POV_L1": 1.0,
+    "DAMPED_POV_L05": 0.5,
+    "DAMPED_POV_L025": 0.25
+  },
+  "epsilon": 0.001,
+  "checkpoint": "model_unsafe_vpsto",
+  "flow_steps": 7,
+  "horizon": 16,
+  "projection_formulation": "strong soft Cartesian cost at returned knot H-1: 1000 * ||FK(q_H)-x_goal||^2",
+  "goal_mode": "soft",
+  "goal_tolerance": 0.03,
+  "goal_weight": 1000.0,
+  "projection_iterations": 12,
+  "failure_policy": "failed projection -> vanilla FM velocity; unconverged iterate discarded",
+  "environment": {
+    "python": "3.12.14 | packaged by conda-forge | (main, Aug 21 2026, 22:48:28) [GCC 14.4.0]",
+    "pytorch": "2.10.0+cu128",
+    "torch_cuda": "12.8",
+    "gpu": "NVIDIA GeForce RTX 3090",
+    "cpu": "AMD Ryzen Threadripper 3970X 32-Core Processor",
+    "platform": "Linux-6.8.0-138-generic-x86_64-with-glibc2.39",
+    "safeflowmpc_commit": "3efe4d9522f4112b291a868866e7e4934697a261",
+    "acados_commit": "48e223e85f0408ebfd1d8c6d6fb0589e9c41b3aa",
+    "acados_version": "v0.5.1"
+  }
+}

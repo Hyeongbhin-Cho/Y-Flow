@@ -1,0 +1,9 @@
+reference_method,reference_state,yflow_state,count
+PLAIN_FM,safe,safe,99
+PLAIN_FM,safe,collision,64
+PLAIN_FM,collision,safe,29
+PLAIN_FM,collision,collision,0
+POV_L05_ALWAYS,safe,safe,127
+POV_L05_ALWAYS,safe,collision,64
+POV_L05_ALWAYS,collision,safe,1
+POV_L05_ALWAYS,collision,collision,0

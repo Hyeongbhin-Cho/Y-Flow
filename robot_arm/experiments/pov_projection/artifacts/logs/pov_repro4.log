@@ -1,0 +1,116 @@
+Warning: CasADi version 3.8.0 is not tested with acados yet.
+
+Tera template render executable not found, while looking in path:
+/workspace/acados-v0.5.1/bin/t_renderer
+In order to be able to render the templates, you need to download the tera renderer binaries from:
+https://github.com/acados/tera_renderer/releases
+
+Do you wish to set up Tera renderer automatically?
+y/N? (press y to download tera or any key for manual installation)
+Downloading https://github.com/acados/tera_renderer/releases/download/v0.2.0/t_renderer-v0.2.0-linux-amd64
+Successfully downloaded t_renderer.
+Successfully made t_renderer executable.
+Warning: CasADi version 3.8.0 is not tested with acados yet.
+rm -f libacados_ocp_solver_flow_safety_model.so
+rm -f flow_safety_model_constraints/flow_safety_model_constr_h_fun_jac_uxt_zt.o flow_safety_model_constraints/flow_safety_model_constr_h_fun_jac_uxt_zt_hess.o flow_safety_model_constraints/flow_safety_model_constr_h_fun.o acados_solver_flow_safety_model.o
+cc -fPIC -std=c99   -O2 -I/workspace/acados-v0.5.1/include -I/workspace/acados-v0.5.1/include/acados -I/workspace/acados-v0.5.1/include/blasfeo/include -I/workspace/acados-v0.5.1/include/hpipm/include  -c -o flow_safety_model_constraints/flow_safety_model_constr_h_fun_jac_uxt_zt.o flow_safety_model_constraints/flow_safety_model_constr_h_fun_jac_uxt_zt.c
+cc -fPIC -std=c99   -O2 -I/workspace/acados-v0.5.1/include -I/workspace/acados-v0.5.1/include/acados -I/workspace/acados-v0.5.1/include/blasfeo/include -I/workspace/acados-v0.5.1/include/hpipm/include  -c -o flow_safety_model_constraints/flow_safety_model_constr_h_fun_jac_uxt_zt_hess.o flow_safety_model_constraints/flow_safety_model_constr_h_fun_jac_uxt_zt_hess.c
+cc -fPIC -std=c99   -O2 -I/workspace/acados-v0.5.1/include -I/workspace/acados-v0.5.1/include/acados -I/workspace/acados-v0.5.1/include/blasfeo/include -I/workspace/acados-v0.5.1/include/hpipm/include  -c -o flow_safety_model_constraints/flow_safety_model_constr_h_fun.o flow_safety_model_constraints/flow_safety_model_constr_h_fun.c
+cc -fPIC -std=c99   -O2 -I/workspace/acados-v0.5.1/include -I/workspace/acados-v0.5.1/include/acados -I/workspace/acados-v0.5.1/include/blasfeo/include -I/workspace/acados-v0.5.1/include/hpipm/include  -c -o acados_solver_flow_safety_model.o acados_solver_flow_safety_model.c
+cc -fPIC -std=c99   -O2 -I/workspace/acados-v0.5.1/include -I/workspace/acados-v0.5.1/include/acados -I/workspace/acados-v0.5.1/include/blasfeo/include -I/workspace/acados-v0.5.1/include/hpipm/include  -c -o flow_safety_model_model/flow_safety_model_dyn_disc_phi_fun.o flow_safety_model_model/flow_safety_model_dyn_disc_phi_fun.c
+cc -fPIC -std=c99   -O2 -I/workspace/acados-v0.5.1/include -I/workspace/acados-v0.5.1/include/acados -I/workspace/acados-v0.5.1/include/blasfeo/include -I/workspace/acados-v0.5.1/include/hpipm/include  -c -o flow_safety_model_model/flow_safety_model_dyn_disc_phi_fun_jac.o flow_safety_model_model/flow_safety_model_dyn_disc_phi_fun_jac.c
+cc -fPIC -std=c99   -O2 -I/workspace/acados-v0.5.1/include -I/workspace/acados-v0.5.1/include/acados -I/workspace/acados-v0.5.1/include/blasfeo/include -I/workspace/acados-v0.5.1/include/hpipm/include  -c -o flow_safety_model_model/flow_safety_model_dyn_disc_phi_fun_jac_hess.o flow_safety_model_model/flow_safety_model_dyn_disc_phi_fun_jac_hess.c
+cc -shared flow_safety_model_constraints/flow_safety_model_constr_h_fun_jac_uxt_zt.o flow_safety_model_constraints/flow_safety_model_constr_h_fun_jac_uxt_zt_hess.o flow_safety_model_constraints/flow_safety_model_constr_h_fun.o acados_solver_flow_safety_model.o flow_safety_model_model/flow_safety_model_dyn_disc_phi_fun.o flow_safety_model_model/flow_safety_model_dyn_disc_phi_fun_jac.o flow_safety_model_model/flow_safety_model_dyn_disc_phi_fun_jac_hess.o -o libacados_ocp_solver_flow_safety_model.so -L/workspace/acados-v0.5.1/lib -lacados -lhpipm -lblasfeo -lm \
+-L -l
+acados was compiled without OpenMP.
+
+qpOASES -- An Implementation of the Online Active Set Strategy.
+Copyright (C) 2007-2015 by Hans Joachim Ferreau, Andreas Potschka,
+Christian Kirches et al. All rights reserved.
+
+qpOASES is distributed under the terms of the 
+GNU Lesser General Public License 2.1 in the hope that it will be 
+useful, but WITHOUT ANY WARRANTY; without even the implied warranty 
+of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+See the GNU Lesser General Public License for more details.
+
+ACADOS_SOLVER_BUILT
+Loading file 1 ...
+Using GPU
+[ models/temporal ] Channel dimensions: [(7, 32), (32, 64), (64, 128), (128, 256)]
+[(7, 32), (32, 64), (64, 128), (128, 256)]
+Attempting to load checkpoints/model_term_vpsto locally...
+Local weights not found. Downloading from Hugging Face Hub...
+Done
+acados was compiled without OpenMP.
+
+qpOASES -- An Implementation of the Online Active Set Strategy.
+Copyright (C) 2007-2015 by Hans Joachim Ferreau, Andreas Potschka,
+Christian Kirches et al. All rights reserved.
+
+qpOASES is distributed under the terms of the 
+GNU Lesser General Public License 2.1 in the hope that it will be 
+useful, but WITHOUT ANY WARRANTY; without even the implied warranty 
+of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+See the GNU Lesser General Public License for more details.
+
+
+qpOASES -- An Implementation of the Online Active Set Strategy.
+Copyright (C) 2007-2015 by Hans Joachim Ferreau, Andreas Potschka,
+Christian Kirches et al. All rights reserved.
+
+qpOASES is distributed under the terms of the 
+GNU Lesser General Public License 2.1 in the hope that it will be 
+useful, but WITHOUT ANY WARRANTY; without even the implied warranty 
+of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+See the GNU Lesser General Public License for more details.
+
+
+qpOASES -- An Implementation of the Online Active Set Strategy.
+Copyright (C) 2007-2015 by Hans Joachim Ferreau, Andreas Potschka,
+Christian Kirches et al. All rights reserved.
+
+qpOASES is distributed under the terms of the 
+GNU Lesser General Public License 2.1 in the hope that it will be 
+useful, but WITHOUT ANY WARRANTY; without even the implied warranty 
+of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+See the GNU Lesser General Public License for more details.
+
+t = 0.1: Distance to goal 0.799m, ||dq|| = 0.031rad/s
+t = 0.2: Distance to goal 0.801m, ||dq|| = 0.192rad/s
+t = 0.3: Distance to goal 0.804m, ||dq|| = 0.426rad/s
+t = 0.4: Distance to goal 0.803m, ||dq|| = 0.741rad/s
+t = 0.5: Distance to goal 0.791m, ||dq|| = 1.117rad/s
+t = 0.6: Distance to goal 0.764m, ||dq|| = 1.465rad/s
+t = 0.7: Distance to goal 0.723m, ||dq|| = 1.731rad/s
+t = 0.8: Distance to goal 0.670m, ||dq|| = 1.901rad/s
+t = 0.9: Distance to goal 0.612m, ||dq|| = 1.992rad/s
+t = 1.0: Distance to goal 0.552m, ||dq|| = 2.022rad/s
+t = 1.1: Distance to goal 0.497m, ||dq|| = 2.012rad/s
+t = 1.2: Distance to goal 0.449m, ||dq|| = 1.970rad/s
+t = 1.3: Distance to goal 0.411m, ||dq|| = 1.902rad/s
+t = 1.4: Distance to goal 0.379m, ||dq|| = 1.838rad/s
+t = 1.5: Distance to goal 0.351m, ||dq|| = 1.786rad/s
+t = 1.6: Distance to goal 0.323m, ||dq|| = 1.732rad/s
+t = 1.7: Distance to goal 0.292m, ||dq|| = 1.654rad/s
+t = 1.8: Distance to goal 0.259m, ||dq|| = 1.542rad/s
+t = 1.9: Distance to goal 0.224m, ||dq|| = 1.393rad/s
+t = 2.0: Distance to goal 0.190m, ||dq|| = 1.215rad/s
+t = 2.1: Distance to goal 0.158m, ||dq|| = 1.022rad/s
+t = 2.2: Distance to goal 0.130m, ||dq|| = 0.827rad/s
+t = 2.3: Distance to goal 0.106m, ||dq|| = 0.646rad/s
+t = 2.4: Distance to goal 0.087m, ||dq|| = 0.491rad/s
+t = 2.5: Distance to goal 0.073m, ||dq|| = 0.370rad/s
+t = 2.6: Distance to goal 0.062m, ||dq|| = 0.284rad/s
+t = 2.7: Distance to goal 0.054m, ||dq|| = 0.232rad/s
+t = 2.8: Distance to goal 0.048m, ||dq|| = 0.202rad/s
+t = 2.9: Distance to goal 0.042m, ||dq|| = 0.180rad/s
+t = 3.0: Distance to goal 0.037m, ||dq|| = 0.160rad/s
+t = 3.1: Distance to goal 0.033m, ||dq|| = 0.138rad/s
+t = 3.2: Distance to goal 0.029m, ||dq|| = 0.114rad/s
+t = 3.3: Distance to goal 0.026m, ||dq|| = 0.089rad/s
+t = 3.4: Distance to goal 0.023m, ||dq|| = 0.067rad/s
+t = 3.5: Distance to goal 0.021m, ||dq|| = 0.047rad/s
+Reached goal
+Closing viewer
+REPRO_EXIT=0
