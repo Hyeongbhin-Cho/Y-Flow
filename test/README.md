@@ -23,6 +23,7 @@
 * `test_unicon_flow.py`: PTZF 감소 성질, slack QP certificate 보정과 비활성 조건
 * `test_y_flow.py`: FlowMatch ckpt skip, 립시츠 상수 추정, PGD 가이던스 및 deterministic eval 재현성
 * `test_sample_result.py`: SampleResult 기본값, 불변성, 튜플 언패킹, with_diagnostics 헬퍼
+* `test_exp_04_robot_arm.py`: Exp-04 경로 격리, 데이터 연결, 보존 보고서, CPU-only POV 수학 무결성
 
 ---
 

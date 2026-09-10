@@ -31,6 +31,7 @@ from safe_flow_mpc.RobotModel import RobotModel
 from safe_flow_mpc.SafeFlowMPC import FlowMatchingField, PlannerConfig
 from safe_flow_mpc.SafeFlowMPC.ObstacleManager import ObstacleManager
 
+from experiments._layout import DATASET_ROOT, RUN_ROOT
 from .metrics import constraint_snapshot, trajectory_metrics
 from .projection import ProjectionDiagnostics, TrajectoryProjector
 from .sampling import primary_pov_euler_step
@@ -42,7 +43,6 @@ METHODS = (
     "CURRENT_STATE_PROJECTION",
     "POV_ENDPOINT_PROJECTION",
 )
-ROOT = Path(__file__).resolve().parents[2]
 
 
 def synchronize(device: str) -> None:
@@ -51,7 +51,7 @@ def synchronize(device: str) -> None:
 
 
 def load_task(task_id: int) -> dict[str, np.ndarray]:
-    data = np.load(ROOT / "data" / f"traj_example_{task_id}.npz", allow_pickle=True)
+    data = np.load(DATASET_ROOT / f"traj_example_{task_id}.npz", allow_pickle=True)
     return {name: data[name] for name in data.files}
 
 
@@ -595,7 +595,7 @@ reached its sampled goal and exited with status 0; its log is preserved separate
 
 ```bash
 export ACADOS_SOURCE_DIR=/workspace/acados-v0.5.1
-export LD_LIBRARY_PATH=/workspace/yflow-robot-arm/.venv/lib/python3.12/site-packages/cmeel.prefix/lib:/workspace/acados-v0.5.1/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/workspace/Y-Flow/experiments/exp_04_robot_arm/.venv/lib/python3.12/site-packages/cmeel.prefix/lib:/workspace/acados-v0.5.1/lib:$LD_LIBRARY_PATH
 python -m experiments.pov_projection.run_phase1 --seeds 32
 ```
 
@@ -623,7 +623,9 @@ def main() -> None:
         help="Comma-separated task IDs for an independent benchmark shard",
     )
     parser.add_argument("--bootstrap-samples", type=int, default=2000)
-    parser.add_argument("--output", type=Path, default=ROOT / "experiments" / "pov_projection" / "artifacts" / "phase1")
+    parser.add_argument(
+        "--output", type=Path, default=RUN_ROOT / "pov_projection" / "phase1"
+    )
     parser.add_argument("--build-solver", action="store_true")
     args = parser.parse_args()
     task_ids = (

@@ -25,6 +25,7 @@ from safe_flow_mpc.SafeFlowMPC import FlowMatchingField, PlannerConfig
 from safe_flow_mpc.SafeFlowMPC.ObstacleManager import ObstacleManager
 
 from experiments.pov_projection.metrics import constraint_snapshot, trajectory_metrics
+from experiments._layout import RUN_ROOT
 from experiments.pov_projection.run_phase1 import (
     build_condition,
     environment_record,
@@ -49,8 +50,7 @@ POV_LAMBDAS = {
     "DAMPED_POV_L05": 0.5,
     "DAMPED_POV_L025": 0.25,
 }
-ROOT = Path(__file__).resolve().parents[2]
-OUTPUT_ROOT = Path(__file__).resolve().parent
+OUTPUT_ROOT = RUN_ROOT / "pov_projection_phase2"
 EPSILON = 1e-3
 OLD_POV_GOAL_ERROR = 1.183202
 OLD_POV_DISTORTION = 6.548179

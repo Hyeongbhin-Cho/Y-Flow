@@ -21,6 +21,7 @@ from safe_flow_mpc.SafeFlowMPC import FlowMatchingField, PlannerConfig
 from safe_flow_mpc.SafeFlowMPC.ObstacleManager import ObstacleManager
 
 from experiments.pov_projection.metrics import constraint_snapshot, trajectory_metrics
+from experiments._layout import RUN_ROOT
 from experiments.pov_projection.run_phase1 import (
     build_condition,
     environment_record,
@@ -48,7 +49,7 @@ METHODS = (
     "YFLOW_MAIN_PORT",
     "GOAL_AWARE_FINAL_PROJECTION",
 )
-OUTPUT_ROOT = Path(__file__).resolve().parent
+OUTPUT_ROOT = RUN_ROOT / "pov_projection_phase15_yflow_main"
 REMOTE_MAIN_COMMIT = "eeee5d2fee03f6c0bb593148727f0a92b94d3c97"
 T_ON = 0.5
 LAMBDA_OC = 10.0

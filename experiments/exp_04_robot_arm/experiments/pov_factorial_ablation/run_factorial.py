@@ -17,6 +17,7 @@ import pandas as pd
 import torch
 
 from experiments.pov_projection.metrics import constraint_snapshot, trajectory_metrics
+from experiments._layout import RUN_ROOT
 from experiments.pov_projection.run_phase1 import (
     build_condition,
     environment_record,
@@ -55,7 +56,7 @@ FACTORS = {
     "L05_REPLACE": (0.5, True),
     "L05_NO_REPLACE": (0.5, False),
 }
-OUTPUT_ROOT = Path(__file__).resolve().parent
+OUTPUT_ROOT = RUN_ROOT / "pov_factorial_ablation"
 SAFETY_TOLERANCE = 1e-5
 SUMMARY_METRICS = (
     "collision",

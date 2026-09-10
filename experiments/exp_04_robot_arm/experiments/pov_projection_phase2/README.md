@@ -20,7 +20,7 @@ Run on the configured RTX 3090 host:
 
 ```bash
 export ACADOS_SOURCE_DIR=/workspace/acados-v0.5.1
-export LD_LIBRARY_PATH=/workspace/yflow-robot-arm/.venv/lib/python3.12/site-packages/cmeel.prefix/lib:/workspace/acados-v0.5.1/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/workspace/Y-Flow/experiments/exp_04_robot_arm/.venv/lib/python3.12/site-packages/cmeel.prefix/lib:/workspace/acados-v0.5.1/lib:$LD_LIBRARY_PATH
 python -m experiments.pov_projection_phase2.run_phase2 --build-solver --correctness-only
 python -m experiments.pov_projection_phase2.run_phase2 --skip-correctness
 ```

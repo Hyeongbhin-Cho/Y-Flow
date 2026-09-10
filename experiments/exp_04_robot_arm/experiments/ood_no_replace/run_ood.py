@@ -23,6 +23,7 @@ from experiments.ood_no_replace.scenarios import (
     geometry_checker_matches_bboxes,
     set_bboxes,
 )
+from experiments._layout import RUN_ROOT
 from experiments.pov_factorial_ablation.run_factorial import (
     REMOTE_MAIN_COMMIT,
     SUMMARY_METRICS,
@@ -47,7 +48,7 @@ from experiments.pov_projection_phase15_yflow_main.run_phase15 import (
 
 METHODS = ("PLAIN_FM", "L1_REPLACE", "L05_REPLACE", "L05_NO_REPLACE")
 PROJECTION_METHODS = METHODS[1:]
-OUTPUT_ROOT = Path(__file__).resolve().parent
+OUTPUT_ROOT = RUN_ROOT / "ood_no_replace"
 SAFETY_TOLERANCE = 1e-5
 BOOTSTRAP_SEED = 20260908
 
@@ -769,7 +770,7 @@ def main() -> None:
 
     raw=pd.DataFrame(raw_rows); raw["projection_failure_rate"]=np.where(raw.projection_calls>0,raw.failed_projection_solves/raw.projection_calls,0.0)
     steps=pd.DataFrame(step_rows); audit=pd.DataFrame(audit_rows); summary=bootstrap_summary(raw,args.bootstrap_samples)
-    id_raw=pd.read_csv(Path(__file__).resolve().parents[1]/"pov_factorial_ablation"/"results"/"raw.csv")
+    id_raw=pd.read_csv(RUN_ROOT/"pov_factorial_ablation"/"results"/"raw.csv")
     id_collision=id_raw.groupby("method").collision.mean().reindex(METHODS).to_dict()
     per_category=per_category_table(raw,id_collision); paired,diffs=paired_analysis(raw,args.bootstrap_samples); decision=decision_rule(raw,per_category,audit,diffs)
     cases=select_visualization_cases(raw,audit)

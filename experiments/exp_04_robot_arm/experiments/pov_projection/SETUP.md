@@ -1,7 +1,8 @@
 # Reproduction environment
 
-The verified server checkout is `/workspace/yflow-robot-arm` on branch
-`feature/robot-arm`, based on SafeFlowMPC commit
+The original verified server checkout was `/workspace/yflow-robot-arm` on branch
+`feature/robot-arm`. In the numbered Y-Flow layout, run from
+`/workspace/Y-Flow/experiments/exp_04_robot_arm`. Both are based on SafeFlowMPC commit
 `3efe4d9522f4112b291a868866e7e4934697a261`.
 
 The repository's Python requirements need two additional system/runtime pins on
@@ -20,7 +21,7 @@ SafeFlowMPC and does not reproduce the unmodified script.
 apt-get update
 apt-get install -y libcdd-dev xvfb
 
-cd /workspace/yflow-robot-arm
+cd /workspace/Y-Flow/experiments/exp_04_robot_arm
 uv venv --python /venv/main/bin/python .venv
 uv pip install --python .venv/bin/python -r requirements.txt
 uv pip install --python .venv/bin/python -e .
@@ -41,7 +42,7 @@ Every run uses:
 
 ```bash
 export ACADOS_SOURCE_DIR=/workspace/acados-v0.5.1
-export LD_LIBRARY_PATH=/workspace/yflow-robot-arm/.venv/lib/python3.12/site-packages/cmeel.prefix/lib:/workspace/acados-v0.5.1/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/workspace/Y-Flow/experiments/exp_04_robot_arm/.venv/lib/python3.12/site-packages/cmeel.prefix/lib:/workspace/acados-v0.5.1/lib:$LD_LIBRARY_PATH
 ```
 
 The unmodified upstream example was reproduced under `xvfb-run` after building
@@ -51,7 +52,7 @@ The full controlled run command is:
 ```bash
 python -m experiments.pov_projection.run_phase1 \
   --tasks 6 --seeds 32 --bootstrap-samples 2000 \
-  --output experiments/pov_projection/artifacts/phase1
+  --output /workspace/Y-Flow/runs/exp_04_robot_arm/pov_projection/phase1
 ```
 
 Task-disjoint shards can be run concurrently with `--task-ids 0,1` (and the
@@ -60,5 +61,5 @@ matching `2,3` / `4,5` shards). Merge them with:
 ```bash
 python -m experiments.pov_projection.merge_phase1 \
   --inputs artifacts/shard01 artifacts/shard23 artifacts/shard45 \
-  --output experiments/pov_projection/artifacts/phase1
+  --output /workspace/Y-Flow/runs/exp_04_robot_arm/pov_projection/phase1
 ```

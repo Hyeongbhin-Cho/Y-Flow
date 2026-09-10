@@ -17,6 +17,7 @@ import pandas as pd
 import torch
 
 from experiments.pov_projection.metrics import constraint_snapshot, trajectory_metrics
+from experiments._layout import RUN_ROOT
 from experiments.pov_projection.run_phase1 import (
     build_condition,
     environment_record,
@@ -56,7 +57,7 @@ HYBRID_METHODS = (
     "HYBRID_LATE_ADAPTIVE",
     "ADAPTIVE_ALLTIME_L05",
 )
-OUTPUT_ROOT = Path(__file__).resolve().parent
+OUTPUT_ROOT = RUN_ROOT / "pov_yflow_hybrid"
 LAMBDA_DAMP = 0.5
 SAFETY_TOLERANCE = 1e-5
 

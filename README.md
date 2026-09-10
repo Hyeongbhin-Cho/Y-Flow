@@ -4,6 +4,10 @@ Hard Constraint Flow-Matching for Trajectory Prediction.
 
 Exp-01은 2D Swiss roll **좌표점**에서 무제약 Flow Matching과 training-free 제약 방법을 같은 데이터·같은 $v_t^\theta$로 비교한다.
 
+Exp-04는 별도 SafeFlowMPC 기반 7-DoF robot arm 환경에서 Y-Flow/POV의
+local projection correction과 terminal replacement를 비교한다. 기존 Exp-01
+구현과 모델은 수정하지 않고 `experiments/exp_04_robot_arm/`에 격리한다.
+
 ---
 
 ## 1. 프로젝트 핵심 목표 (Objectives)
@@ -90,6 +94,12 @@ conda activate yflow
 ./run_exp_01_swiss_roll.sh
 ```
 
+Robot arm Exp-04는 별도 의존성 환경에서 실행한다.
+
+```bash
+COMMAND=ood ./run_exp_04_robot_arm.sh
+```
+
 기본 `COMMAND=yflow`, `RUN_NAME=exp_01_swiss_roll`. HardFlow/YFlow/SafeFlow/UniConFlow는 training-free라 `runs/{run_name}/flowmatch/last.pt`가 있으면 학습을 건너뛴다. 없으면 FlowMatch를 먼저 학습한다. GuideFlow도 기본은 같고, 옵션을 켰을 때만 자체 backbone을 학습한다.
 
 ```bash
@@ -157,7 +167,10 @@ Y-Flow/
 ├── main.py
 ├── run_exp_01_swiss_roll.sh
 ├── configs/exp_01_swiss_roll.yaml
+├── configs/exp_04_robot_arm.yaml
 ├── datasets/swiss_roll/default/   # train.npy, eval.npy, meta.json
+├── datasets/robot_arm/default/    # fixed six robot-arm tasks
+├── experiments/exp_04_robot_arm/  # isolated SafeFlowMPC-based implementation
 ├── data/
 ├── model/
 ├── train/
@@ -166,7 +179,8 @@ Y-Flow/
 ├── utils/
 ├── docs/
 ├── test/
-└── runs/{run_name}/{command}/
+├── runs/{run_name}/{command}/
+└── runs/exp_04_robot_arm/          # Exp-04 reports and raw artifacts
 ```
 
 * [Model](model/README.md)

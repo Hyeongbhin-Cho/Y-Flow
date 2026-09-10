@@ -35,9 +35,12 @@ Run from the repository root after building the upstream Acados solver:
 
 ```bash
 export ACADOS_SOURCE_DIR=/workspace/acados-v0.5.1
-export LD_LIBRARY_PATH=/workspace/yflow-robot-arm/.venv/lib/python3.12/site-packages/cmeel.prefix/lib:/workspace/acados-v0.5.1/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/workspace/Y-Flow/experiments/exp_04_robot_arm/.venv/lib/python3.12/site-packages/cmeel.prefix/lib:/workspace/acados-v0.5.1/lib:$LD_LIBRARY_PATH
 python -m experiments.pov_projection.run_phase1 --seeds 32
 ```
+
+The default output is `runs/exp_04_robot_arm/pov_projection/phase1/` relative
+to the Y-Flow repository root.
 
 Use `--tasks 1 --seeds 1` for a smoke test. Use `--build-solver` only when the
 matching `/tmp/acados_code` has not already been generated.

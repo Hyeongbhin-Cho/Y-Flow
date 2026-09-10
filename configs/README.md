@@ -12,6 +12,7 @@
 
 ## 2. 파일 목록 및 요약
 * `exp_01_swiss_roll.yaml`: Exp-01 Swiss roll. 데이터 캐시, MLP, CFM, HardFlow/YFlow/SafeFlow/GuideFlow/UniConFlow 설정
+* `exp_04_robot_arm.yaml`: Exp-04 robot arm. SafeFlowMPC 출처, 고정 태스크, no-replacement Y-Flow/POV 및 OOD 평가 설정
 
 ---
 
