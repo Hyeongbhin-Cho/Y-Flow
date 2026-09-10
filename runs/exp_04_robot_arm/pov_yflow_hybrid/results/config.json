@@ -1,0 +1,75 @@
+{
+  "experiment": "robot_arm_yflow_pov_hybrid",
+  "methods": [
+    "PLAIN_FM",
+    "POV_L05_ALWAYS",
+    "YFLOW_MAIN_PORT",
+    "HYBRID_LATE_DAMPED",
+    "HYBRID_LATE_ADAPTIVE",
+    "ADAPTIVE_ALLTIME_L05"
+  ],
+  "tasks": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "seeds_per_task": 32,
+  "checkpoint": "model_unsafe_vpsto",
+  "remote_main_commit": "eeee5d2fee03f6c0bb593148727f0a92b94d3c97",
+  "t_on": 0.5,
+  "lambda_oc": 10.0,
+  "lambda_damp": 0.5,
+  "mu": 0.0,
+  "safety_trigger": "true collision OR joint OR velocity OR acceleration; goal excluded",
+  "optional_alltime_included": true,
+  "decision_gates": {
+    "late_damped_success": {
+      "pass": true,
+      "checks": {
+        "collision_below_yflow": true,
+        "new_collisions_at_least_halved_vs_yflow": true,
+        "mean_calls_equal_3": true,
+        "goal_error_not_above_plain": true
+      },
+      "plain_safe_newly_broken": 0,
+      "yflow_plain_safe_newly_broken": 64
+    },
+    "late_adaptive_promising": {
+      "pass": true,
+      "checks": {
+        "collision_rate_le_5pct": true,
+        "plain_safe_newly_broken_le_2": true,
+        "mean_calls_le_3": true,
+        "planning_latency_lt_0p8_sec": true,
+        "goal_error_not_above_plain": true,
+        "solver_failures_explicitly_recorded": true
+      },
+      "plain_safe_newly_broken": 0
+    },
+    "late_adaptive_strong_success": {
+      "pass": true,
+      "checks": {
+        "collision_rate_le_2pct": true,
+        "zero_plain_safe_newly_broken": true,
+        "call_reduction_ge_50pct_vs_always": true,
+        "latency_reduction_ge_40pct_vs_always": true
+      },
+      "call_reduction_vs_always": 0.6071428571428572,
+      "latency_reduction_vs_always": 0.6688520691243545
+    }
+  },
+  "environment": {
+    "python": "3.12.14 | packaged by conda-forge | (main, Aug 21 2026, 22:48:28) [GCC 14.4.0]",
+    "pytorch": "2.10.0+cu128",
+    "torch_cuda": "12.8",
+    "gpu": "NVIDIA GeForce RTX 3090",
+    "cpu": "AMD Ryzen Threadripper 3970X 32-Core Processor",
+    "platform": "Linux-6.8.0-138-generic-x86_64-with-glibc2.39",
+    "safeflowmpc_commit": "3efe4d9522f4112b291a868866e7e4934697a261",
+    "acados_commit": "48e223e85f0408ebfd1d8c6d6fb0589e9c41b3aa",
+    "acados_version": "v0.5.1"
+  }
+}

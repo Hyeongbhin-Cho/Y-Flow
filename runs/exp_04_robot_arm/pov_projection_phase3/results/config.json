@@ -1,0 +1,54 @@
+{
+  "experiment": "phase3_adaptive_gate_then_ood",
+  "tasks": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "seeds_per_task": 32,
+  "methods": [
+    "PLAIN_FM",
+    "ORIGINAL_SAFEFLOWMPC",
+    "POV_L05_ALWAYS",
+    "POV_L05_ADAPTIVE",
+    "POV_L025_ADAPTIVE",
+    "GOAL_AWARE_FINAL_PROJECTION"
+  ],
+  "checkpoint": "model_unsafe_vpsto",
+  "adaptive_trigger": "collision OR joint OR velocity OR acceleration hard violation; goal excluded",
+  "safety_tolerance": 1e-05,
+  "pov_epsilon": 0.001,
+  "phase3a_gate": {
+    "collision_within_2pp": true,
+    "new_collisions_vs_always": 0,
+    "new_collision_rate_from_always_safe": 0.0,
+    "few_new_collisions": true,
+    "projection_call_reduction": 0.03199404761904756,
+    "calls_reduced_at_least_25pct": false,
+    "latency_reduction": 0.018925983929992563,
+    "latency_reduced_meaningfully": false,
+    "solver_runtime_reduction": 0.01913080158747449,
+    "goal_error_difference": 0.03582690862717314,
+    "goal_material_worsening_tolerance": 0.05,
+    "goal_not_materially_worse": true,
+    "passed": false
+  },
+  "phase3b_status": "not_run_phase3a_gate_failed",
+  "optional_no_last_diagnostic_run": true,
+  "optional_no_last_criterion": "final normalized correction >= 1.5 * max earlier mean",
+  "original_baseline": "headless matched one-shot extraction of upstream SafetyFilterAcados.step and _compute_guidance",
+  "environment": {
+    "python": "3.12.14 | packaged by conda-forge | (main, Aug 21 2026, 22:48:28) [GCC 14.4.0]",
+    "pytorch": "2.10.0+cu128",
+    "torch_cuda": "12.8",
+    "gpu": "NVIDIA GeForce RTX 3090",
+    "cpu": "AMD Ryzen Threadripper 3970X 32-Core Processor",
+    "platform": "Linux-6.8.0-138-generic-x86_64-with-glibc2.39",
+    "safeflowmpc_commit": "3efe4d9522f4112b291a868866e7e4934697a261",
+    "acados_commit": "48e223e85f0408ebfd1d8c6d6fb0589e9c41b3aa",
+    "acados_version": "v0.5.1"
+  }
+}

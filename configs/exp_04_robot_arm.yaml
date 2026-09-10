@@ -1,0 +1,45 @@
+# Exp-04. Robot-arm Y-Flow / POV evaluation manifest
+exp: exp_04_robot_arm
+task: robot_arm
+seed: 0
+
+source:
+  implementation_root: experiments/exp_04_robot_arm
+  upstream_repository: https://github.com/TU-Wien-ACIN-CDS/SafeFlowMPC.git
+  upstream_commit: 3efe4d9522f4112b291a868866e7e4934697a261
+
+data:
+  name: safeflow_mpc_robot_arm
+  cache_dir: datasets/robot_arm/default
+  task_count: 6
+  trajectory_horizon: 16
+  joint_dim: 7
+
+model:
+  name: pretrained_unsafe_flow_matching
+  retrain: false
+
+sample:
+  flow_steps: 7
+  matched_noise_seeds: 8
+
+yflow:
+  t_on: 0.5
+  lambda_oc: 10.0
+  lambda_pov: 0.5
+  mu: 0.0
+  terminal_replacement: false
+  projection_calls: 3
+  projection: acados_local_weighted_surrogate
+
+ood:
+  scenarios: 100
+  categories:
+    - shifted_obstacle
+    - enlarged_obstacle
+    - multi_obstacle
+    - narrow_passage
+    - goal_near_obstacle
+
+log:
+  out_dir: runs/exp_04_robot_arm

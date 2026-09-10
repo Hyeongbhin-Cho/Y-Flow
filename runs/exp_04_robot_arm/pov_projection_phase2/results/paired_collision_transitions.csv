@@ -1,0 +1,13 @@
+method,plain_state,pov_state,count
+NORMALIZED_POV_L1,safe,safe,124
+NORMALIZED_POV_L1,safe,collision,39
+NORMALIZED_POV_L1,collision,safe,28
+NORMALIZED_POV_L1,collision,collision,1
+DAMPED_POV_L05,safe,safe,163
+DAMPED_POV_L05,safe,collision,0
+DAMPED_POV_L05,collision,safe,28
+DAMPED_POV_L05,collision,collision,1
+DAMPED_POV_L025,safe,safe,163
+DAMPED_POV_L025,safe,collision,0
+DAMPED_POV_L025,collision,safe,25
+DAMPED_POV_L025,collision,collision,4

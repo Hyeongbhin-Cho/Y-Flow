@@ -1,0 +1,195 @@
+{
+  "experiment": "robot_arm_yflow_ood_no_replace",
+  "methods": [
+    "PLAIN_FM",
+    "L1_REPLACE",
+    "L05_REPLACE",
+    "L05_NO_REPLACE"
+  ],
+  "scenario_count": 100,
+  "categories": [
+    "SHIFTED_OBSTACLE",
+    "ENLARGED_OBSTACLE",
+    "MULTI_OBSTACLE",
+    "NARROW_PASSAGE",
+    "GOAL_NEAR_OBSTACLE"
+  ],
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "checkpoint": "model_unsafe_vpsto",
+  "t_on": 0.5,
+  "lambda_oc": 10.0,
+  "mu": 0.0,
+  "decision": {
+    "verdict": "LIMITED_SUPPORT",
+    "numeric_checks_verdict": "STRONG_SUPPORT",
+    "numeric_checks_predeclared_before_full_run": true,
+    "qualitative_bad_failure_threshold": 0.5,
+    "qualitative_bad_failure_threshold_predeclared": false,
+    "qualitative_protocol_override": "LIMITED_SUPPORT because at least half of L05_NO_REPLACE trajectories collide in a category",
+    "badly_failing_categories": [
+      "ENLARGED_OBSTACLE"
+    ],
+    "checks": {
+      "plain_reduction_ci_above_zero": true,
+      "improves_at_least_3_of_5_categories": true,
+      "replace_reduction_at_least_10pp_with_positive_ci": true,
+      "plain_safe_new_collision_rate_le_5pct": true,
+      "goal_error_within_plain_plus_0p15m": true,
+      "direction_not_solution_evidence": true
+    },
+    "plain_safe_new_collision_rate": 0.0,
+    "zstar_collision_final_safe_count": 201,
+    "categories_improved": 4
+  },
+  "paired_differences": {
+    "PLAIN_FM_minus_L1_REPLACE_OVERALL": {
+      "mean": -0.0575,
+      "ci95_low": -0.1025,
+      "ci95_high": -0.01125,
+      "n": 800
+    },
+    "PLAIN_FM_minus_L05_REPLACE_OVERALL": {
+      "mean": -0.06875,
+      "ci95_low": -0.11,
+      "ci95_high": -0.02496875000000017,
+      "n": 800
+    },
+    "PLAIN_FM_minus_L05_NO_REPLACE_OVERALL": {
+      "mean": 0.1075,
+      "ci95_low": 0.08625,
+      "ci95_high": 0.13,
+      "n": 800
+    },
+    "L05_REPLACE_minus_L05_NO_REPLACE_OVERALL": {
+      "mean": 0.17625,
+      "ci95_low": 0.13875,
+      "ci95_high": 0.21125,
+      "n": 800
+    },
+    "L05_REPLACE_minus_L05_NO_REPLACE_SHIFTED_OBSTACLE": {
+      "mean": 0.11875,
+      "ci95_low": 0.03125,
+      "ci95_high": 0.2125,
+      "n": 160
+    },
+    "L05_REPLACE_minus_L05_NO_REPLACE_ENLARGED_OBSTACLE": {
+      "mean": 0.25625,
+      "ci95_low": 0.175,
+      "ci95_high": 0.3375,
+      "n": 160
+    },
+    "L05_REPLACE_minus_L05_NO_REPLACE_MULTI_OBSTACLE": {
+      "mean": 0.0875,
+      "ci95_low": 0.0125,
+      "ci95_high": 0.15625,
+      "n": 160
+    },
+    "L05_REPLACE_minus_L05_NO_REPLACE_NARROW_PASSAGE": {
+      "mean": 0.11875,
+      "ci95_low": 0.01875,
+      "ci95_high": 0.21875,
+      "n": 160
+    },
+    "L05_REPLACE_minus_L05_NO_REPLACE_GOAL_NEAR_OBSTACLE": {
+      "mean": 0.3,
+      "ci95_low": 0.23125,
+      "ci95_high": 0.375,
+      "n": 160
+    }
+  },
+  "sanity": {
+    "pass": true,
+    "checks": [
+      {
+        "scenario_id": "ood_shifted_000",
+        "category": "SHIFTED_OBSTACLE",
+        "identical_noise": true,
+        "geometry_differs_from_id": true,
+        "collision_checker_matches_plot_bboxes": true,
+        "l05_no_replace_semantics": true,
+        "l05_replace_semantics": true,
+        "l1_replace_semantics": true,
+        "start_valid": true,
+        "goal_valid": true
+      },
+      {
+        "scenario_id": "ood_multi_000",
+        "category": "MULTI_OBSTACLE",
+        "identical_noise": true,
+        "geometry_differs_from_id": true,
+        "collision_checker_matches_plot_bboxes": true,
+        "l05_no_replace_semantics": true,
+        "l05_replace_semantics": true,
+        "l1_replace_semantics": true,
+        "start_valid": true,
+        "goal_valid": true
+      },
+      {
+        "scenario_id": "ood_narrow_000",
+        "category": "NARROW_PASSAGE",
+        "identical_noise": true,
+        "geometry_differs_from_id": true,
+        "collision_checker_matches_plot_bboxes": true,
+        "l05_no_replace_semantics": true,
+        "l05_replace_semantics": true,
+        "l1_replace_semantics": true,
+        "start_valid": true,
+        "goal_valid": true
+      },
+      {
+        "scenario_id": "ood_goalnear_000",
+        "category": "GOAL_NEAR_OBSTACLE",
+        "identical_noise": true,
+        "geometry_differs_from_id": true,
+        "collision_checker_matches_plot_bboxes": true,
+        "l05_no_replace_semantics": true,
+        "l05_replace_semantics": true,
+        "l1_replace_semantics": true,
+        "start_valid": true,
+        "goal_valid": true
+      }
+    ]
+  },
+  "visualization_cases": {
+    "rescue_case": [
+      "ood_goalnear_004",
+      0
+    ],
+    "replacement_failure_case": [
+      "ood_enlarged_003",
+      0
+    ],
+    "zstar_collision_final_safe": [
+      "ood_enlarged_003",
+      0
+    ],
+    "narrow_passage_case": [
+      "ood_narrow_000",
+      0
+    ],
+    "failure_case": [
+      "ood_enlarged_001",
+      0
+    ]
+  },
+  "environment": {
+    "python": "3.12.14 | packaged by conda-forge | (main, Aug 21 2026, 22:48:28) [GCC 14.4.0]",
+    "pytorch": "2.10.0+cu128",
+    "torch_cuda": "12.8",
+    "gpu": "NVIDIA GeForce RTX 3090",
+    "cpu": "AMD Ryzen Threadripper 3970X 32-Core Processor",
+    "platform": "Linux-6.8.0-138-generic-x86_64-with-glibc2.39",
+    "safeflowmpc_commit": "3efe4d9522f4112b291a868866e7e4934697a261",
+    "acados_commit": "48e223e85f0408ebfd1d8c6d6fb0589e9c41b3aa",
+    "acados_version": "v0.5.1"
+  }
+}

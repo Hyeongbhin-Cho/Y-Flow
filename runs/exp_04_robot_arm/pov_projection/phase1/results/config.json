@@ -1,0 +1,52 @@
+{
+  "experiment": "phase1_id_one_shot",
+  "tasks": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "seeds_per_task": 32,
+  "methods": [
+    "PLAIN_FM",
+    "FINAL_PROJECTION",
+    "CURRENT_STATE_PROJECTION",
+    "POV_ENDPOINT_PROJECTION"
+  ],
+  "checkpoint": "model_unsafe_vpsto",
+  "horizon": 16,
+  "dof": 7,
+  "flow_steps": 7,
+  "fm_dim": 32,
+  "fm_dim_mults": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "flow_times": [
+    0.0,
+    0.14285714285714285,
+    0.2857142857142857,
+    0.42857142857142855,
+    0.5714285714285714,
+    0.7142857142857143,
+    0.8571428571428571
+  ],
+  "pov_rule": "v_pov = P(x_t + (1-t)*v_theta) - x_t",
+  "projection": "upstream Acados weighted local projection surrogate",
+  "bootstrap_samples": 2000,
+  "environment": {
+    "python": "3.12.14 | packaged by conda-forge | (main, Aug 21 2026, 22:48:28) [GCC 14.4.0]",
+    "pytorch": "2.10.0+cu128",
+    "torch_cuda": "12.8",
+    "gpu": "NVIDIA GeForce RTX 3090",
+    "cpu": "AMD Ryzen Threadripper 3970X 32-Core Processor",
+    "platform": "Linux-6.8.0-138-generic-x86_64-with-glibc2.39",
+    "safeflowmpc_commit": "3efe4d9522f4112b291a868866e7e4934697a261",
+    "acados_commit": "48e223e85f0408ebfd1d8c6d6fb0589e9c41b3aa",
+    "acados_version": "v0.5.1"
+  }
+}
