@@ -23,6 +23,7 @@
 * `unicon_flow.py`: PTZF certificate, batched slack QP, terminal refinement
 * `hard_flow.py`: terminal $h,C$ SLSQP 후 affine 복원
 * `y_flow.py`: 물리 투영, terminal PGD, 선형 보간
+* `clevrer_recognition.py`: 비디오 조건 인식 FlowMatch eval (속성 F1, ADE, Safety)
 
 
 ---

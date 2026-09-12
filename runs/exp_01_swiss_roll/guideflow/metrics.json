@@ -2,16 +2,18 @@
   "safe_ratio": 1.0,
   "tube_viol_rate": 0.0,
   "tube_viol_mean": 0.0,
+  "rad_viol_rate": 0.0,
+  "rad_viol_mean": 0.0,
   "core_viol_rate": 0.0,
   "core_viol_mean": 0.0,
   "box_viol_rate": 0.0,
   "box_viol_mean": 0.0,
-  "mmd": 0.007900293528720681,
-  "radius_mae": 0.062495347250988174,
+  "mmd": 0.007900292529303576,
+  "radius_mae": 0.06249535003214956,
   "method": "guideflow",
   "run_name": "exp_01_swiss_roll",
   "n_samples": 4000,
   "n_steps": 100,
-  "inference_time_s": 0.28844308400039154,
-  "inference_time_s_per_1k": 0.07211077100009788
+  "inference_time_s": 0.791570714000045,
+  "inference_time_s_per_1k": 0.19789267850001124
 }

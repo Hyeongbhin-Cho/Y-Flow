@@ -226,3 +226,10 @@ runs/*/*/*.npy
 __pycache__/
 
 codex/
+
+# Model Checkpoints & Large Weights
+datasets/clevrer/
+checkpoints/
+*.safetensors
+*.pth
+*.bin

@@ -24,12 +24,25 @@ class ConditionalFlowMatching:
         ut = x1 - (1.0 - sigma) * x0
         return xt, ut
 
-    def training_losses(self, model: nn.Module, x1: torch.Tensor) -> torch.Tensor:
+    def training_losses(
+        self,
+        model: nn.Module,
+        x1: torch.Tensor,
+        cond: torch.Tensor | None = None,
+    ) -> torch.Tensor:
         t = torch.rand(x1.shape[0], device=x1.device, dtype=x1.dtype)
         x0 = torch.randn_like(x1)
         xt, ut = self.interpolant(x0, x1, t)
-        v = model(xt, t)
+        v = self.velocity(model, xt, t, cond=cond)
         return (v - ut).square().mean()
 
-    def velocity(self, model: nn.Module, x: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
-        return model(x, t)
+    def velocity(
+        self,
+        model: nn.Module,
+        x: torch.Tensor,
+        t: torch.Tensor,
+        cond: torch.Tensor | None = None,
+    ) -> torch.Tensor:
+        if cond is None:
+            return model(x, t)
+        return model(x, t, cond=cond)

@@ -36,4 +36,12 @@ def build_model(cfg: DictConfig) -> VelocityNet:
             hidden=tuple(int(h) for h in cfg.model.hidden),
             time_embed_dim=int(cfg.model.time_embed_dim),
         )
+    if name in ("wan2.1", "wan", "wan_transformer"):
+        from model.wan import build_wan_model
+
+        return build_wan_model(cfg)
+    if name in ("clevrer_flow", "clevrer_recognition"):
+        from model.clevrer_flow import build_clevrer_flow_model
+
+        return build_clevrer_flow_model(cfg)
     raise KeyError(f"unknown model {name!r}")

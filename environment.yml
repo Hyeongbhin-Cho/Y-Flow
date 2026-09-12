@@ -37,3 +37,10 @@ dependencies:
       - omegaconf
       - tensorboard
       - torchdiffeq
+      - huggingface_hub
+      - diffusers>=0.33.0
+      - accelerate
+      - transformers
+      - sentencepiece
+      - av                    # CLEVRER MP4 디코딩 (PyAV)
+      - gdown                 # CLEVRER PropNet Google Drive 아카이브

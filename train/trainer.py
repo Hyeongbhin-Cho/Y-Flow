@@ -36,6 +36,37 @@ def _save_scatter(path: Path, points: np.ndarray, reference: np.ndarray | None, 
     plt.close(fig)
 
 
+def setup_foundation_model(
+    cfg: DictConfig,
+    out_dir: Path,
+    device: torch.device,
+) -> Path:
+    """Prepare and verify frozen foundation flow-matching model (e.g. Wan2.1).
+    
+    Rather than training from scratch, it verifies local pretrained weights,
+    initializes the model architecture, and writes a checkpoint reference to out_dir / 'last.pt'.
+    This enables all downstream training-free methods (HardFlow, YFlow, SafeFlow, UniConFlow, GuideFlow)
+    to seamlessly reuse the backbone through ensure_flowmatch_ckpt(cfg).
+    """
+    print(f"[Y-Flow] Initializing frozen foundation model '{cfg.model.name}'...")
+    model = build_model(cfg).to(device)
+    ckpt_path = out_dir / "last.pt"
+    payload = {
+        "model_name": str(cfg.model.name),
+        "pretrained_path": str(cfg.model.get("pretrained_path", "")),
+        "local_dir": str(cfg.model.get("local_dir", "")),
+        "step": 0,
+        "cfg": OmegaConf.to_container(cfg, resolve=True),
+        "extra": {
+            "is_foundation_model": True,
+            "variant": str(cfg.model.get("variant", "1.3B")),
+        },
+    }
+    torch.save(payload, ckpt_path)
+    print(f"[Y-Flow] Foundation model verified. Checkpoint reference saved to: {ckpt_path}")
+    return ckpt_path
+
+
 def run_train(
     cfg: DictConfig,
     method: str = "flowmatch",
@@ -45,6 +76,14 @@ def run_train(
     out_dir = method_dir(cfg, method)
     out_dir.mkdir(parents=True, exist_ok=True)
     OmegaConf.save(cfg, out_dir / "config.yaml")
+
+    model_name = str(cfg.model.name).lower()
+    if model_name in ("wan2.1", "wan", "wan_transformer"):
+        return setup_foundation_model(cfg, out_dir, device)
+    if str(cfg.data.get("name", "")).lower() == "clevrer_recognition":
+        from train.clevrer_flow import run_train_recognition
+
+        return run_train_recognition(cfg, method=method, device=device)
 
     bundle = build_dataset(cfg)
     loader = DataLoader(

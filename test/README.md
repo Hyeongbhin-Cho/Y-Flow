@@ -11,6 +11,10 @@
 
 ## 2. 파일 목록 및 요약
 * `test_data.py`: npy+meta 쌍 저장/로드
+* `test_clevrer.py`: 실제 MP4 디코딩, 시간·주석 정렬, letterbox, 지연 로딩·배치, ZIP 안전성 및 다운로드 이어받기. 영상 테스트는 PyAV 필요.
+* `test_clevrer_eval.py`: CLEVRER 평가 artifact 카탈로그, ZIP/tar 안전 추출, 속성·충돌 매칭.
+* `test_clevrer_state.py`: packed 상태 왕복, GT $h\le 0$, 제약 autograd, 인식 Dataset 형상.
+* `test_clevrer_flow.py`: 비디오 조건 속도장, 조건부 CFM loss, Euler `cond`.
 * `test_model.py`: MLP shape
 * `test_flow_match.py`: CFM loss, Euler
 * `test_constraints.py`: 데이터 점 oracle safety

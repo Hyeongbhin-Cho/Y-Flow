@@ -1,0 +1,56 @@
+# configs/exp_02_sub_video_recognition.yaml
+exp: exp_02_sub_video_recognition
+seed: 42
+
+data:
+  name: clevrer_recognition
+  cache_dir: datasets/clevrer
+  train_split: train
+  eval_split: validation
+  n_train: null
+  n_eval: 100
+  n_frames: 33
+  fps: 16
+  start_time: 0.0
+  height: 160              # 원본 320x480과 같은 2:3. 원본 해상도는 null
+  width: 240
+  n_slots: 6
+  r_xy: 12.0
+  z0: 0.20
+  tau_z: 0.05
+  v_max: 3.2
+  tau_kin: 0.20
+  tau_acc: 0.60
+  d0: 0.45
+  d_min: 0.38
+  tau_col: 0.20
+  delta_v: 0.15
+  eps_ident: 0.05
+  eps_null: 1.0e-3
+
+model:
+  name: clevrer_flow
+  hidden: [256, 256, 256]
+  time_embed_dim: 64
+  cond_dim: 128
+
+method:
+  name: flow_matching
+  sigma_min: 0.0
+
+train:
+  batch_size: 4
+  steps: 2000
+  lr: 1.0e-3
+  ema_decay: 0.999
+  num_workers: 0
+
+sample:
+  n_samples: 100
+  n_steps: 50
+
+log:
+  out_dir: outputs/exp_02_sub_video_recognition
+  plot_every: 500
+
+device: cuda

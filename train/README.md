@@ -21,6 +21,7 @@
 * `unicon_flow.py`: training-free. `runs/{run_name}/flowmatch/last.pt`가 있으면 skip, 없으면 flowmatch 학습
 * `hard_flow.py`: training-free. `runs/{run_name}/flowmatch/last.pt`가 있으면 skip, 없으면 flowmatch 학습
 * `y_flow.py`: training-free. `runs/{run_name}/flowmatch/last.pt`가 있으면 skip, 없으면 flowmatch 학습
+* `clevrer_flow.py`: CLEVRER 인식 CFM. 비디오 조건 $E(V)$와 packed 상태 $S$로 linear CFM 학습
 
 ---
 

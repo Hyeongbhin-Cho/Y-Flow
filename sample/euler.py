@@ -21,6 +21,7 @@ class EulerSampler:
         method: ConditionalFlowMatching,
         x0: torch.Tensor,
         n_steps: int | None = None,
+        cond: torch.Tensor | None = None,
     ) -> torch.Tensor:
         steps = int(n_steps or self.n_steps)
         x = x0
@@ -29,7 +30,7 @@ class EulerSampler:
         model.eval()
         for i in range(steps):
             t = torch.full((x.shape[0],), i / steps, device=x.device, dtype=x.dtype)
-            v = method.velocity(model, x, t)
+            v = method.velocity(model, x, t, cond=cond)
             x = x + dt * v
         if was_training:
             model.train()
@@ -42,6 +43,7 @@ class EulerSampler:
         method: ConditionalFlowMatching,
         x0: torch.Tensor,
         n_steps: int | None = None,
+        cond: torch.Tensor | None = None,
     ) -> torch.Tensor:
         steps = int(n_steps or self.n_steps)
         xs = [x0]
@@ -51,7 +53,7 @@ class EulerSampler:
         model.eval()
         for i in range(steps):
             t = torch.full((x.shape[0],), i / steps, device=x.device, dtype=x.dtype)
-            v = method.velocity(model, x, t)
+            v = method.velocity(model, x, t, cond=cond)
             x = x + dt * v
             xs.append(x)
         if was_training:

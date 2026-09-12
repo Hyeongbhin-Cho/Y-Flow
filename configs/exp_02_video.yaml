@@ -1,0 +1,94 @@
+# configs/exp_02_video.yaml
+exp: exp_02_video
+seed: 42
+
+data:
+  name: clevrer
+  cache_dir: datasets/clevrer
+  eval_split: validation
+  train_split: null          # 데이터 로드만 수행; train split은 필요 시 명시
+  start_time: 0.0
+  load_questions: false      # true 사용 전 setup_clevrer.py --questions 실행
+  model_name: Wan2.1-T2V-1.3B
+  n_frames: 33
+  height: 480
+  width: 832
+  fps: 16
+  n_eval: 100
+  eps_first: 0.02             # 첫 프레임 최대 허용 픽셀 MSE
+  tau_box: 0.05               # 바운딩 박스 궤적 허용 오차 (정규화 좌표)
+  tau_acc: 0.10               # 시간적 가속도 최대 허용 노름
+  tau_bg: 0.03                # 배경 불변 영역 허용 오차
+
+model:
+  name: wan2.1
+  variant: 1.3B               # 1.3B | 14B
+  pretrained_path: Wan-AI/Wan2.1-T2V-1.3B-Diffusers
+  local_dir: checkpoints/Wan2.1-T2V-1.3B
+  dtype: bfloat16
+  offload_to_cpu: false       # RTX 3090 24GB 환경에서 1.3B는 온보드 GPU 메모리에 전량 적재 가능 (14B 사용 시 true 전환)
+  load_vae: true
+  auto_download: true
+
+train:
+  batch_size: 1
+  steps: 0                    # Foundation model은 스크래치 학습 불필요
+  lr: 0.0
+  ema_decay: 0.999
+
+method:
+  name: flow_matching
+  sigma_min: 0.0
+
+sample:
+  n_samples: 100
+  n_steps: 30
+  cfg_scale: 6.0
+
+log:
+  out_dir: outputs/exp_02_video
+  save_video: true
+
+yflow:
+  t_on: 0.5
+  lambda_oc: 10.0
+  mu: 1.0                     # 0.0이면 HardFlow형 순수 터미널 최적화로 환원
+  max_iter: 10
+  delta: 0.1
+  gamma_max: 1.0
+  safety_buffer: 1.0e-4
+  latent_proxy: true          # true: 잠재 공간 대리 제약으로 고속 PGD, false: VAE 디코더 역전파
+
+hardflow:
+  t_on: 0.5
+  lambda_oc: 10.0
+  max_iter: 10
+
+safeflow:
+  enabled: true
+  integrator: euler
+  t_on: 0.5
+  slack_weight: 1.0
+  terminal_filter:
+    enabled: true
+    max_iter: 20
+
+uniconflow:
+  free_until: 0.0
+  ptzf_rate: 1.0
+  gamma: 1.0
+  slack_weight: 100.0
+  terminal_refinement: true
+
+guideflow:
+  n_anchors: 64
+  cvf: true
+  lambda_cvf: 0.1
+  cf: true
+  k_c: 15
+  rfe: true
+  tau_star: 0.5
+  eta_max: 0.5
+  n_refine: 5
+
+device: cuda

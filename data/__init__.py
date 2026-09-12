@@ -23,6 +23,15 @@ from data.swiss_roll import (
     load_swiss_roll,
     save_swiss_roll,
 )
+from data.clevrer import CLEVRERDataset, VideoDataBundle, build_clevrer, collate_clevrer
+from data.clevrer_state import (
+    CLEVRERRecognitionDataset,
+    CLEVRERStateConstraint,
+    CLEVRERStateLayout,
+    annotation_to_state,
+    collate_clevrer_recognition,
+    unpack_state,
+)
 
 __all__ = [
     "BaseConstraint",
@@ -43,4 +52,14 @@ __all__ = [
     "build_swiss_roll",
     "load_swiss_roll",
     "save_swiss_roll",
+    "CLEVRERDataset",
+    "VideoDataBundle",
+    "build_clevrer",
+    "collate_clevrer",
+    "CLEVRERRecognitionDataset",
+    "CLEVRERStateConstraint",
+    "CLEVRERStateLayout",
+    "annotation_to_state",
+    "collate_clevrer_recognition",
+    "unpack_state",
 ]

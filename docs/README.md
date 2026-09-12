@@ -18,6 +18,8 @@
 * `HardFlow.md`: HardFlow 구현 목표 체크리스트
 * `YFlow.md`: YFlow 구현 목표 체크리스트
 * `exp/exp_01_swiss_roll.md`: Swiss roll 비교 실험 프로토콜. 데이터는 `datasets/swiss_roll/default/`에 고정
+* `exp/exp_02_video.md`: Wan2.1 기반 Hard-Constraint 비디오 생성 실험 계획. 첫 프레임, 공간 궤적, 시간 가속도 통일 제약
+* `exp/exp_02_sub_video_recognition.md`: Wan 생성 전 CLEVRER FlowMatch 인식 실험. 객체·경로·충돌 과제와 $h(S)\le 0$
 
 ---
 
@@ -46,3 +48,9 @@
 
 ### exp/exp_01_swiss_roll.md
 *   **설명**: 2D Swiss roll 포인트 생성 실험. 비교는 무제약 FlowMatch + HardFlow, SafeFlow, UniConFlow, GuideFlow, YFlow. 점과 meta는 dump 쌍을 쓴다.
+
+### exp/exp_02_video.md
+*   **설명**: Wan2.1 기반 제약 비디오 생성 실험. 통일된 $h(V) \le 0$ 규칙 하에서 training-free 제약 5개 기법과 Y-Flow의 Safety, FVD, 추론 속도를 비교한다.
+
+### exp/exp_02_sub_video_recognition.md
+*   **설명**: Wan 픽셀 생성 전에 CLEVRER 주석 공간에서 객체 인식·궤적·충돌을 FlowMatch로 복원하고, 과제별 hard constraint를 건다.

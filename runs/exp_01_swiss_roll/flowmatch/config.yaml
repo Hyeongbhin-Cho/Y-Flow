@@ -1,4 +1,4 @@
-exp: exp_01_swiss_roll
+exp: exp_01_swiss_roll_1
 seed: 0
 data:
   name: swiss_roll
@@ -35,6 +35,86 @@ sample:
 log:
   out_dir: outputs/exp_01_swiss_roll
   plot_every: 2000
+guideflow:
+  n_anchors: 256
+  cvf: true
+  lambda_cvf: 0.1
+  cvf_t_on: 0.0
+  cf: true
+  cf_mode: interp
+  k_c: 50
+  rfe: true
+  tau_star: 0.5
+  eta_max: 0.5
+  n_refine: 10
+  slack: 0.01
+  w_tube: 1.0
+  w_core: 1.0
+  w_box: 1.0
+  w_cost: 0.05
+  guidance:
+    enabled: false
+    signal: anchor
+    n_commands: 5
+    p_uncond: 0.2
+    gamma: 1.0
+    reward: true
+    ep: 1.0
+    cond_steps: 20000
+    cond_lr: 0.001
+    cond_batch_size: 256
+    cond_hidden:
+    - 128
+    - 128
+    - 128
+    cond_embed_dim: 32
+  rfe_train:
+    rfe_loss: false
+    lambda_rfe: 1.0
+    t_min: 0.5
+    rollout_steps: -1
+safeflow:
+  enabled: true
+  integrator: euler
+  t_on: 0.5
+  phi_schedule: paper_piecewise
+  phi0: 1.0
+  phi_gamma: 0.9
+  phi_omega: 3.0
+  slack_weight: 1.0
+  terminal_eps: 0.001
+  smooth_radius_eps: 0.01
+  smooth_tube_margin: 0.002
+  smooth_box_temperature: 0.001
+  qp_active_tol: 1.0e-06
+  dopri5:
+    rtol: 1.0e-05
+    atol: 1.0e-07
+  terminal_filter:
+    enabled: true
+    max_iter: 100
+    ftol: 1.0e-07
+    constraint_tol: 1.0e-07
+uniconflow:
+  free_until: 0.0
+  ptzf_rate: 1.0
+  gamma: 1.0
+  slack_weight: 100.0
+  max_guidance_norm: 20.0
+  terminal_refinement: true
+  safety_buffer: 0.0001
+hardflow:
+  t_on: 0.5
+  lambda_oc: 10.0
+  max_iter: 20
+yflow:
+  t_on: 0.5
+  lambda_oc: 10.0
+  mu: 0.0
+  max_iter: 20
+  delta: 0.1
+  gamma_max: 1.0
+  safety_buffer: 0.0001
 device: cuda
 run_name: exp_01_swiss_roll
 mode: train

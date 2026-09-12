@@ -60,6 +60,10 @@ def make_eval_x0(cfg: DictConfig, device: torch.device) -> torch.Tensor:
 
 
 def run_eval(cfg: DictConfig, method: str, device: torch.device | None = None) -> dict:
+    if str(cfg.data.get("name", "")).lower() == "clevrer_recognition":
+        from eval.clevrer_recognition import run_eval as run_recognition_eval
+
+        return run_recognition_eval(cfg, method, device)
     sample = _sample_fn(method)
     device = device or get_device(cfg)
     bundle = build_dataset(cfg)

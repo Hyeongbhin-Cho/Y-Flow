@@ -17,6 +17,10 @@ Exp-01 Swiss roll은 2D **좌표점**이므로 MLP를 쓴다. CNN/UNet은 이미
 * `time_embed.py`: scalar $t\in[0,1]$ sinusoidal embedding
 * `cond_mlp.py`: GuideFlow CFG용 조건부 속도장 (intent / reward 임베딩과 null 토큰)
 * `mlp.py`: 저차원 속도장 MLP
+* `download.py`: Hugging Face Wan2.1 가중치 및 CLEVRER 평가 artifact 다운로드
+* `clevrer_eval.py`: 공식 visual-mask / PropNet 예측 로더, COCO Mask R-CNN 추론, 속성·충돌 점수
+* `clevrer_flow.py`: 비디오 조건 인식 속도장 $v_\theta(S_t,t,E(V))$ (`CLEVRERVelocityNet`)
+* `wan.py`: Wan2.1 Flow-Matching Video Transformer (`WanTransformer3DModel`) 및 3D VAE 래퍼 (`WanVelocityNet`, `build_wan_model`)
 
 ---
 
@@ -25,10 +29,10 @@ Exp-01 Swiss roll은 2D **좌표점**이므로 MLP를 쓴다. CNN/UNet은 이미
 ### base.py
 
 #### VelocityNet
-*   **설명**: `forward(x, t) -> v`. `x, v`는 `[B, D]`, `t`는 `[B]` 또는 `[B, 1]`.
+*   **설명**: `forward(x, t) -> v`. `x, v`는 `[B, D]` (또는 고차원 `[B, C, T, H, W]`), `t`는 `[B]` 또는 `[B, 1]`.
 
 #### build_model
-*   **설명**: `cfg.model.name`으로 네트워크를 만든다. Exp-01은 `mlp`.
+*   **설명**: `cfg.model.name`으로 네트워크를 만든다. Exp-01은 `mlp`, Exp-02는 `wan2.1`, 인식 실험은 `clevrer_flow`.
 
 ### time_embed.py
 
@@ -44,3 +48,28 @@ Exp-01 Swiss roll은 2D **좌표점**이므로 MLP를 쓴다. CNN/UNet은 이미
 
 #### ConditionalVelocityMLP
 *   **설명**: GuideFlow CFG를 위한 조건부 속도장 $v_\theta(x,t,c)$. 의도(intent: 앵커 또는 커맨드)와 보상(reward: EP 진행도)을 임베딩하고, 독립 조건 마스킹과 null 토큰을 지원한다.
+
+### download.py
+
+#### download_wan_model
+*   **설명**: Hugging Face 허브(`Wan-AI/Wan2.1-T2V-1.3B-Diffusers`)에서 모델 가중치를 지정된 로컬 디렉터리(`checkpoints/Wan2.1-T2V-1.3B`)에 1회 다운로드하여 영구 저장한다. 이미 다운로드된 경우 네트워크 요청 없이 로컬 가중치를 재사용한다.
+*   서브컴포넌트 필터 지원: `core` (DiT+VAE, ~3GB), `transformer` (~2.6GB), `vae` (~400MB), `all` (전체 파이프라인, ~13GB).
+*   CLEVRER 평가 artifact: `download_clevrer_artifact(name)` → `checkpoints/clevrer/`. `visual_masks`, `propnet_preds`, `mask_rcnn`, `propnet`.
+
+### clevrer_eval.py
+
+*   공식 parser JSON과 PropNet 예측을 원본 주석과 비교한다. 속성 집합 F1, 가시 객체 수 MAE, 충돌 이벤트(프레임 허용오차)를 계산한다.
+*   `load_mask_rcnn` / `detect_mask_rcnn`: 다운로드한 COCO Mask R-CNN으로 임의 RGB 프레임을 검출한다. CLEVRER fine-tune 가중치가 아니다.
+
+### clevrer_flow.py
+
+#### CLEVRERVelocityNet
+*   **설명**: packed 장면 상태 $S\in\mathbb{R}^{D}$와 클립 $V$를 받아 $v_t^\theta(S_t,t,E(V))$를 낸다. $E(V)$는 프레임 CNN + 시간 평균.
+
+### wan.py
+
+#### WanVelocityNet
+*   **설명**: `VelocityNet` 인터페이스를 상속하여 Wan2.1 3D Transformer 속도장 $v_t^\theta(z_t, t)$ 및 3D Causal VAE 인코딩/디코딩 메서드를 제공한다.
+
+#### build_wan_model
+*   **설명**: `cfg.model` 설정을 참조하여 로컬 체크포인트를 로드하고, 미존재 시 자동 다운로드 옵션(`auto_download: true`)을 통해 가중치를 내려받아 모델을 빌드한다.

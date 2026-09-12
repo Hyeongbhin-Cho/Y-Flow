@@ -21,8 +21,10 @@ def load_frozen_velocity(
     if not ckpt_path.is_file():
         raise FileNotFoundError(f"missing flowmatch checkpoint: {ckpt_path}")
     model = build_model(cfg).to(device)
-    ema = EMA(model, decay=float(cfg.train.ema_decay))
-    load_checkpoint(ckpt_path, model, ema=ema, map_location=device)
-    ema.copy_to(model)
+    payload = torch.load(ckpt_path, map_location="cpu", weights_only=False)
+    if not payload.get("extra", {}).get("is_foundation_model", False):
+        ema = EMA(model, decay=float(cfg.train.ema_decay))
+        load_checkpoint(ckpt_path, model, ema=ema, map_location=device)
+        ema.copy_to(model)
     model.eval()
     return model, ConditionalFlowMatching(cfg)

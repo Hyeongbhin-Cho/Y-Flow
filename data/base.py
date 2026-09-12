@@ -6,12 +6,15 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
 import numpy as np
 import torch
 from omegaconf import DictConfig
 from torch.utils.data import Dataset
+
+if TYPE_CHECKING:
+    from data.clevrer import VideoDataBundle
 
 
 # =====================================================================
@@ -194,7 +197,7 @@ class DataBundle:
 # 3. Dynamic Registry & Routing Factory
 # =====================================================================
 
-_DATASET_REGISTRY: dict[str, Callable[[DictConfig], DataBundle]] = {}
+_DATASET_REGISTRY: dict[str, Callable[[DictConfig], DataBundle | VideoDataBundle]] = {}
 
 
 def register_dataset(name: str):
@@ -206,7 +209,7 @@ def register_dataset(name: str):
     return decorator
 
 
-def build_dataset(cfg_or_name: DictConfig | str, **kwargs) -> DataBundle:
+def build_dataset(cfg_or_name: DictConfig | str, **kwargs) -> DataBundle | VideoDataBundle:
     """Route and build dataset bundle by config or string name.
     
     Examples:
@@ -226,6 +229,10 @@ def build_dataset(cfg_or_name: DictConfig | str, **kwargs) -> DataBundle:
         # Lazy load built-in datasets if not yet imported
         if name == "swiss_roll":
             import data.swiss_roll  # noqa: F401
+        elif name == "clevrer":
+            import data.clevrer  # noqa: F401
+        elif name == "clevrer_recognition":
+            import data.clevrer_state  # noqa: F401
 
     if name not in _DATASET_REGISTRY:
         raise KeyError(
