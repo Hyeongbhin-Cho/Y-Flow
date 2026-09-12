@@ -20,4 +20,5 @@ echo "==> eval ${COMMAND}   run_name=${RUN_NAME}"
 
 echo "==> done"
 echo "    backbone: runs/${RUN_NAME}/flowmatch/last.pt"
+echo "    published: checkpoints/clevrer_flow/last.pt"
 echo "    metrics:  runs/${RUN_NAME}/flowmatch/metrics.json"

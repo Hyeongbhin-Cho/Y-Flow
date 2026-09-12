@@ -15,7 +15,7 @@ from tqdm import tqdm
 from data.base import build_dataset, denormalize
 from model import build_model
 from sample.euler import EulerSampler
-from train.checkpoint import save_checkpoint
+from train.checkpoint import maybe_publish_checkpoint, save_checkpoint
 from train.ema import EMA
 from train.flow_match import ConditionalFlowMatching
 from utils.device import get_device
@@ -121,14 +121,24 @@ def run_train(
 
         if step % plot_every == 0 or step == steps:
             _plot_ema_samples(cfg, model, ema, method, sampler, bundle, device, out_dir, step)
+            ckpt_path = out_dir / "last.pt"
             save_checkpoint(
-                out_dir / "last.pt",
+                ckpt_path,
                 model,
                 ema,
                 opt,
                 step,
                 cfg,
                 extra={"meta": bundle["meta_dict"]},
+            )
+            maybe_publish_checkpoint(
+                cfg,
+                ckpt_path,
+                extra={
+                    "step": step,
+                    "model": str(cfg.model.name),
+                    "run_name": str(cfg.get("run_name", "")),
+                },
             )
 
     return out_dir / "last.pt"

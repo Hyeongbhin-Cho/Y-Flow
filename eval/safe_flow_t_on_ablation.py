@@ -20,7 +20,7 @@ from eval.evaluate import _save_scatter, make_eval_x0
 from eval.metrics import evaluate_points
 from eval.safe_flow import sample
 from utils.device import get_device
-from utils.paths import ROOT, flowmatch_ckpt, method_dir, run_name_of
+from utils.paths import ROOT, method_dir, missing_ckpt_message, resolve_flowmatch_ckpt, run_name_of
 
 DEFAULT_T_ON = (0.5, 0.7, 0.8, 0.9)
 
@@ -107,9 +107,9 @@ def run_ablation(
         raise ValueError("t_on values must lie in [0, 1)")
 
     device = device or get_device(cfg)
-    checkpoint = flowmatch_ckpt(cfg)
+    checkpoint = resolve_flowmatch_ckpt(cfg)
     if not checkpoint.is_file():
-        raise FileNotFoundError(f"missing FlowMatch checkpoint: {checkpoint}")
+        raise FileNotFoundError(missing_ckpt_message(cfg))
 
     bundle = build_swiss_roll(cfg)
     meta = bundle["meta"]

@@ -12,6 +12,7 @@
 * `setup_wan.py`: Wan2.1 가중치 준비 및 로드 검증.
 * `setup_clevrer.py`: 공식 CLEVRER 영상·주석 다운로드, ZIP 압축 해제, split manifest 생성.
 * `setup_clevrer_eval.py`: Mask R-CNN / visual-mask / PropNet 평가 아티팩트 다운로드와 원본 클립 객체·상호작용 검토.
+* `export_clevrer_flow.py`: 이미 학습된 `runs/.../flowmatch/last.pt`를 `checkpoints/clevrer_flow/`로 복사.
 
 ## 3. 세부 명세
 
@@ -75,3 +76,17 @@ python scripts/setup_clevrer_eval.py --skip-download --eval
 | `propnet` | DCL 공개 `.pth`. 공식 CLEVRER 학습 체크포인트는 **미공개** | 불가(raw RGB). tube proposal 필요 |
 
 산출물: `checkpoints/clevrer/artifacts.json`, `eval_report.json`.
+
+### export_clevrer_flow.py
+
+학습이 `runs/{run_name}/flowmatch/last.pt`에만 있는 경우, 다른 실험이 읽을 고정 경로로 복사한다. 학습 루프는 `model.local_dir`이 있으면 매 저장마다 같은 복사를 한다.
+
+```bash
+# 기본 run_name과 yaml의 local_dir
+python scripts/export_clevrer_flow.py --run_name exp_02_sub_video_recognition
+
+# 경로를 직접 지정
+python scripts/export_clevrer_flow.py --src runs/exp_02_sub_video_recognition/flowmatch/last.pt --dst checkpoints/clevrer_flow
+```
+
+산출물: `checkpoints/clevrer_flow/last.pt`, `config.yaml`, `READY.json`.

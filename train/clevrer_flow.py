@@ -14,7 +14,7 @@ from tqdm import tqdm
 from data.base import build_dataset
 from data.clevrer_state import collate_clevrer_recognition
 from model import build_model
-from train.checkpoint import save_checkpoint
+from train.checkpoint import maybe_publish_checkpoint, save_checkpoint
 from train.ema import EMA
 from train.flow_match import ConditionalFlowMatching
 from utils.device import get_device
@@ -71,8 +71,9 @@ def run_train_recognition(
         ema.update(model)
         pbar.set_postfix(loss=f"{float(loss.item()):.4f}")
         if step % save_every == 0 or step == steps:
+            ckpt_path = out_dir / "last.pt"
             save_checkpoint(
-                out_dir / "last.pt",
+                ckpt_path,
                 model,
                 ema,
                 opt,
@@ -80,4 +81,15 @@ def run_train_recognition(
                 cfg,
                 extra={"meta": bundle.meta_dict},
             )
+            published = maybe_publish_checkpoint(
+                cfg,
+                ckpt_path,
+                extra={
+                    "step": step,
+                    "model": str(cfg.model.name),
+                    "run_name": str(cfg.get("run_name", "")),
+                },
+            )
+            if published is not None and step == steps:
+                print(f"published flowmatch model: {published}")
     return out_dir / "last.pt"

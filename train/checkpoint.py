@@ -3,6 +3,9 @@
 
 from __future__ import annotations
 
+import json
+import shutil
+from datetime import datetime, timezone
 from pathlib import Path
 
 import torch
@@ -10,6 +13,7 @@ from omegaconf import OmegaConf
 from torch import nn
 
 from train.ema import EMA
+from utils.paths import published_ckpt
 
 
 def save_checkpoint(
@@ -34,6 +38,53 @@ def save_checkpoint(
         },
         path,
     )
+
+
+def _is_foundation_weight_tree(directory: Path) -> bool:
+    return (directory / "transformer").exists() or (directory / "vae").exists()
+
+
+def publish_checkpoint(
+    src: str | Path,
+    dst: str | Path,
+    extra: dict | None = None,
+) -> Path:
+    """Copy a run-local last.pt into a stable checkpoints/ path for reuse."""
+    src = Path(src)
+    dst = Path(dst)
+    if not src.is_file():
+        raise FileNotFoundError(f"missing checkpoint to publish: {src}")
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    if src.resolve() != dst.resolve():
+        tmp = dst.with_name(dst.name + ".tmp")
+        shutil.copy2(src, tmp)
+        tmp.replace(dst)
+    cfg_src = src.parent / "config.yaml"
+    if cfg_src.is_file():
+        shutil.copy2(cfg_src, dst.parent / "config.yaml")
+    ready = {
+        "checkpoint": dst.name,
+        "source": str(src),
+        "exported_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }
+    if extra:
+        ready.update(extra)
+    (dst.parent / "READY.json").write_text(json.dumps(ready, indent=2) + "\n")
+    return dst
+
+
+def maybe_publish_checkpoint(
+    cfg,
+    src: str | Path,
+    extra: dict | None = None,
+) -> Path | None:
+    """Publish to model.local_dir/last.pt when set. Skip Wan HF weight trees."""
+    dst = published_ckpt(cfg)
+    if dst is None:
+        return None
+    if _is_foundation_weight_tree(dst.parent):
+        return None
+    return publish_checkpoint(src, dst, extra=extra)
 
 
 def load_checkpoint(

@@ -310,6 +310,15 @@ S_\tau=(1-\tau)S_0+\tau S_1,\qquad
 
 추론: 같은 $V$, 같은 $S_0$ 시드로 Euler 적분. 제약 다섯 방법은 이 $v_\theta$를 동결하고 샘플링만 교체한다.
 
+가중치 위치:
+
+| 경로 | 역할 |
+| :--- | :--- |
+| `runs/{run_name}/flowmatch/last.pt` | 해당 run의 학습 체크포인트 (optimizer 포함) |
+| `checkpoints/clevrer_flow/last.pt` | 다른 실험이 읽는 고정 경로 (`model.local_dir`) |
+
+학습이 끝나면 둘 다 갱신된다. 이미 `runs/`에만 있는 가중치는 `python scripts/export_clevrer_flow.py --run_name exp_02_sub_video_recognition`으로 복사한다. eval·training-free 방법은 run 파일이 없으면 published 경로를 쓴다.
+
 ---
 
 ## 7. 평가 지표

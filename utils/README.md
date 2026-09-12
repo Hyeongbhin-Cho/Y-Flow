@@ -12,7 +12,7 @@
 
 ## 2. 파일 목록 및 요약
 * `config.py`: YAML 로드, CLI 키가 yaml과 같으면 override
-* `paths.py`: `runs/{run_name}/{method}`, FlowMatch `last.pt`
+* `paths.py`: `runs/{run_name}/{method}`, FlowMatch `last.pt`, `model.local_dir` 재사용 경로
 * `seed.py`: `seed_everything`
 * `device.py`: `cuda` / `cpu`
 * `logging.py`: 자리만 있음 (헤더)
@@ -28,5 +28,5 @@
 
 ### paths.py
 
-#### method_dir / flowmatch_ckpt
-*   **설명**: 체크포인트는 항상 `runs/{run_name}/flowmatch/last.pt`. HardFlow, YFlow, SafeFlow, UniConFlow, training-free GuideFlow도 이 backbone을 공유한다.
+#### method_dir / flowmatch_ckpt / published_ckpt / resolve_flowmatch_ckpt
+*   **설명**: 학습 산출물은 `runs/{run_name}/flowmatch/last.pt`. `model.local_dir`이 있으면 같은 `last.pt`를 `checkpoints/...`에도 둔다. `resolve_flowmatch_ckpt`는 run 경로를 먼저 보고, 없으면 published 경로를 쓴다. HardFlow, YFlow, SafeFlow, UniConFlow, training-free GuideFlow도 이 backbone을 공유한다.

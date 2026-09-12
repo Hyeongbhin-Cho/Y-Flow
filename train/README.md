@@ -15,13 +15,13 @@
 * `trainer.py`: 공통 학습 루프. 체크포인트는 `runs/{run_name}/flowmatch/`
 * `flow_match.py`: 무제약 linear CFM loss
 * `ema.py`: exponential moving average
-* `checkpoint.py`: `last.pt` 저장/로드
+* `checkpoint.py`: `last.pt` 저장/로드. `model.local_dir`이 있으면 `checkpoints/`로 publish
 * `guide_flow.py`: 기본은 training-free. `guidance.enabled` 또는 `rfe_train.rfe_loss`이면 자체 backbone 학습
 * `safe_flow.py`: training-free. `runs/{run_name}/flowmatch/last.pt`가 있으면 skip, 없으면 flowmatch 학습
 * `unicon_flow.py`: training-free. `runs/{run_name}/flowmatch/last.pt`가 있으면 skip, 없으면 flowmatch 학습
 * `hard_flow.py`: training-free. `runs/{run_name}/flowmatch/last.pt`가 있으면 skip, 없으면 flowmatch 학습
 * `y_flow.py`: training-free. `runs/{run_name}/flowmatch/last.pt`가 있으면 skip, 없으면 flowmatch 학습
-* `clevrer_flow.py`: CLEVRER 인식 CFM. 비디오 조건 $E(V)$와 packed 상태 $S$로 linear CFM 학습
+* `clevrer_flow.py`: CLEVRER 인식 CFM. 비디오 조건 $E(V)$와 packed 상태 $S$로 linear CFM 학습. `runs/`와 `checkpoints/clevrer_flow/`에 `last.pt`를 같이 둔다.
 
 ---
 
@@ -30,7 +30,7 @@
 ### trainer.py
 
 #### run_train
-*   **설명**: Swiss roll 캐시를 읽고 CFM을 학습한다. 산출물은 `runs/{run_name}/{method}/last.pt`.
+*   **설명**: Swiss roll 캐시를 읽고 CFM을 학습한다. 산출물은 `runs/{run_name}/{method}/last.pt`. `model.local_dir`이 있으면 같은 `last.pt`를 그 디렉터리에도 둔다 (Wan HF 트리는 제외).
 
 ### flow_match.py
 
@@ -40,7 +40,7 @@
 ### hard_flow.py / y_flow.py / safe_flow.py / unicon_flow.py
 
 #### ensure_flowmatch_ckpt
-*   **설명**: 체크포인트가 있으면 경로를 출력하고 반환. 없으면 `run_train(..., method="flowmatch")`.
+*   **설명**: `runs/{run_name}/flowmatch/last.pt`가 있으면 그 경로를 반환. 없으면 `model.local_dir/last.pt`. 둘 다 없으면 `run_train(..., method="flowmatch")`.
 
 ### guide_flow.py
 

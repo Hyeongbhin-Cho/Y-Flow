@@ -30,6 +30,7 @@ data:
 
 model:
   name: clevrer_flow
+  local_dir: checkpoints/clevrer_flow
   hidden: [256, 256, 256]
   time_embed_dim: 64
   cond_dim: 128

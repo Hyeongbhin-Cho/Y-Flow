@@ -14,7 +14,7 @@
 ## 2. 파일 목록 및 요약
 * `evaluate.py`: 데이터, 시간 측정, metrics, scatter, JSON
 * `metrics.py`: `safe_ratio`, tube/core/box 위반, MMD, radius MAE
-* `_backbone.py`: frozen FlowMatch $v_t^\theta$ 로드
+* `_backbone.py`: frozen FlowMatch $v_t^\theta$ 로드. `runs/{run_name}/flowmatch/last.pt`가 없으면 `model.local_dir/last.pt`
 * `sample_result.py`: 방법별 추가 진단 지표를 공통 평가기로 전달
 * `flow_match.py`: unguided Euler
 * `guide_flow.py`: CVF / CF / RFE 제약 주입 샘플링, 옵션 CFG
@@ -34,6 +34,11 @@
 
 #### run_eval
 *   **설명**: `eval.{method}.sample(cfg, device, x0)`을 호출한다. 결과는 `runs/{run_name}/{command}/metrics.json`과 `runs/{run_name}/metrics.json`.
+
+### _backbone.py
+
+#### load_frozen_velocity
+*   **설명**: 동결 $v_t^\theta$를 로드한다. `runs/{run_name}/flowmatch/last.pt`를 먼저 보고, 없으면 `model.local_dir/last.pt`.
 
 ### flow_match.py
 

@@ -11,15 +11,15 @@ from model import build_model
 from train.checkpoint import load_checkpoint
 from train.ema import EMA
 from train.flow_match import ConditionalFlowMatching
-from utils.paths import flowmatch_ckpt
+from utils.paths import missing_ckpt_message, resolve_flowmatch_ckpt
 
 
 def load_frozen_velocity(
     cfg: DictConfig, device: torch.device
 ) -> tuple[nn.Module, ConditionalFlowMatching]:
-    ckpt_path = flowmatch_ckpt(cfg)
+    ckpt_path = resolve_flowmatch_ckpt(cfg)
     if not ckpt_path.is_file():
-        raise FileNotFoundError(f"missing flowmatch checkpoint: {ckpt_path}")
+        raise FileNotFoundError(missing_ckpt_message(cfg))
     model = build_model(cfg).to(device)
     payload = torch.load(ckpt_path, map_location="cpu", weights_only=False)
     if not payload.get("extra", {}).get("is_foundation_model", False):

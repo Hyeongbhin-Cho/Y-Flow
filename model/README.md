@@ -64,7 +64,7 @@ Exp-01 Swiss roll은 2D **좌표점**이므로 MLP를 쓴다. CNN/UNet은 이미
 ### clevrer_flow.py
 
 #### CLEVRERVelocityNet
-*   **설명**: packed 장면 상태 $S\in\mathbb{R}^{D}$와 클립 $V$를 받아 $v_t^\theta(S_t,t,E(V))$를 낸다. $E(V)$는 프레임 CNN + 시간 평균.
+*   **설명**: packed 장면 상태 $S\in\mathbb{R}^{D}$와 클립 $V$를 받아 $v_t^\theta(S_t,t,E(V))$를 낸다. $E(V)$는 프레임 CNN + 시간 평균. 학습 가중치는 `runs/{run_name}/flowmatch/last.pt`와 `checkpoints/clevrer_flow/last.pt`에 같이 둔다.
 
 ### wan.py
 
