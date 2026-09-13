@@ -46,6 +46,23 @@ class TestCLI(unittest.TestCase):
         self.assertEqual(args.command, "safeflow")
         self.assertEqual(str(cfg.safeflow.integrator), "dopri5")
 
+    def test_recognition_command_and_config(self) -> None:
+        args, cfg = parse_args(
+            [
+                "recognition",
+                "--mode",
+                "train",
+                "--run_name",
+                "recognition_unit",
+                "--config",
+                "configs/exp_02_sub_video_recognition.yaml",
+            ]
+        )
+        self.assertEqual(args.command, "recognition")
+        self.assertEqual(args.mode, "train")
+        self.assertEqual(str(cfg.data.name), "clevrer_recognition")
+        self.assertEqual(str(cfg.model.name), "clevrer_resnet34")
+
 
 if __name__ == "__main__":
     unittest.main()

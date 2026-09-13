@@ -18,6 +18,7 @@ from utils.seed import seed_everything
 
 COMMANDS = (
     "all",
+    "recognition",
     "flowmatch",
     "guideflow",
     "safeflow",
@@ -35,7 +36,7 @@ _METHOD_ORDER = (
     "yflow",
 )
 
-_TRAINABLE = frozenset({"flowmatch", "guideflow", "safeflow", "uniconflow", "hardflow", "yflow"})
+_TRAINABLE = frozenset({"recognition", "flowmatch", "guideflow", "safeflow", "uniconflow", "hardflow", "yflow"})
 
 
 def _not_ready(name: str, action: str):
@@ -49,6 +50,13 @@ def _train_flowmatch(cfg: DictConfig) -> None:
     from train.trainer import run_train
 
     ckpt = run_train(cfg, method="flowmatch")
+    print(f"saved {ckpt}")
+
+
+def _train_recognition(cfg: DictConfig) -> None:
+    from train.trainer import run_train
+
+    ckpt = run_train(cfg, method="recognition")
     print(f"saved {ckpt}")
 
 
@@ -109,6 +117,7 @@ def _eval_method(cfg: DictConfig, method: str) -> None:
 
 
 _TRAIN = {
+    "recognition": _train_recognition,
     "flowmatch": _train_flowmatch,
     "guideflow": _train_guideflow,
     "safeflow": _train_safeflow,
@@ -118,6 +127,7 @@ _TRAIN = {
 }
 
 _EVAL = {
+    "recognition": lambda cfg: _eval_method(cfg, "recognition"),
     "flowmatch": lambda cfg: _eval_method(cfg, "flowmatch"),
     "guideflow": lambda cfg: _eval_method(cfg, "guideflow"),
     "safeflow": lambda cfg: _eval_method(cfg, "safeflow"),
@@ -128,6 +138,26 @@ _EVAL = {
 
 
 def _run_all(cfg: DictConfig, mode: str) -> None:
+    if str(cfg.data.get("name", "")).lower() == "clevrer_recognition":
+        name = "recognition"
+        print(f"==> {mode} {name}")
+        (_TRAIN if mode == "train" else _EVAL)[name](cfg)
+        if mode == "eval":
+            from eval.evaluate import write_run_metrics
+
+            print(f"wrote {write_run_metrics(cfg)}")
+        return
+    if str(cfg.get("exp", "")) == "exp_02_video":
+        names = ("flowmatch", "yflow")
+        table = _TRAIN if mode == "train" else _EVAL
+        for name in names:
+            print(f"==> {mode} {name}")
+            table[name](cfg)
+        if mode == "eval":
+            from eval.evaluate import write_run_metrics
+
+            print(f"wrote {write_run_metrics(cfg)}")
+        return
     table = _TRAIN if mode == "train" else _EVAL
     names = _METHOD_ORDER if mode == "eval" else [m for m in _METHOD_ORDER if m in _TRAINABLE]
     for name in names:
@@ -176,6 +206,12 @@ def main(argv: list[str] | None = None) -> None:
     if args.command == "all":
         _run_all(cfg, args.mode)
         return
+    if str(cfg.get("exp", "")) == "exp_02_video" and args.command in {
+        "hardflow", "safeflow", "uniconflow", "guideflow"
+    }:
+        raise ValueError(
+            f"{args.command} is excluded from Exp-02; use flowmatch or yflow"
+        )
     table = _TRAIN if args.mode == "train" else _EVAL
     table[args.command](cfg)
 

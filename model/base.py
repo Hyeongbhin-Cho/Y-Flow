@@ -26,7 +26,7 @@ class VelocityNet(nn.Module):
         raise NotImplementedError
 
 
-def build_model(cfg: DictConfig) -> VelocityNet:
+def build_model(cfg: DictConfig) -> nn.Module:
     name = str(cfg.model.name)
     if name == "mlp":
         from model.mlp import VelocityMLP
@@ -44,4 +44,8 @@ def build_model(cfg: DictConfig) -> VelocityNet:
         from model.clevrer_flow import build_clevrer_flow_model
 
         return build_clevrer_flow_model(cfg)
+    if name in ("clevrer_resnet34", "clevrer_video_recognizer"):
+        from model.clevrer_recognition import build_clevrer_resnet34_model
+
+        return build_clevrer_resnet34_model(cfg)
     raise KeyError(f"unknown model {name!r}")

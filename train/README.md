@@ -1,6 +1,6 @@
 # train 패키지 (train/)
 
-이 패키지는 Flow Matching 학습과, 이후 training-free 방법의 진입점을 둔다.
+이 패키지는 Flow Matching 학습 루프와 Exp-02-sub의 직접 지도학습 루프를 둔다.
 
 ---
 
@@ -12,7 +12,8 @@
 ---
 
 ## 2. 파일 목록 및 요약
-* `trainer.py`: 공통 학습 루프. 체크포인트는 `runs/{run_name}/flowmatch/`
+* `trainer.py`: 설정에 따라 일반 CFM 또는 CLEVRER 직접 인식 학습기로 라우팅
+* `clevrer_recognition.py`: ResNet-34 비디오 인식기, Hungarian slot matching 손실, train/dev 분할, early stopping 및 임계값 보정
 * `flow_match.py`: 무제약 linear CFM loss
 * `ema.py`: exponential moving average
 * `checkpoint.py`: `last.pt` 저장/로드. `model.local_dir`이 있으면 `checkpoints/`로 publish
@@ -21,7 +22,7 @@
 * `unicon_flow.py`: training-free. `runs/{run_name}/flowmatch/last.pt`가 있으면 skip, 없으면 flowmatch 학습
 * `hard_flow.py`: training-free. `runs/{run_name}/flowmatch/last.pt`가 있으면 skip, 없으면 flowmatch 학습
 * `y_flow.py`: training-free. `runs/{run_name}/flowmatch/last.pt`가 있으면 skip, 없으면 flowmatch 학습
-* `clevrer_flow.py`: CLEVRER 인식 CFM. 비디오 조건 $E(V)$와 packed 상태 $S$로 linear CFM 학습. `runs/`와 `checkpoints/clevrer_flow/`에 `last.pt`를 같이 둔다.
+* `clevrer_flow.py`: 이전 CLEVRER conditional-flow 실험을 위한 legacy 구현. Exp-02-sub의 기본 설정과 학습 경로에서는 사용하지 않는다.
 
 ---
 
@@ -30,7 +31,20 @@
 ### trainer.py
 
 #### run_train
-*   **설명**: Swiss roll 캐시를 읽고 CFM을 학습한다. 산출물은 `runs/{run_name}/{method}/last.pt`. `model.local_dir`이 있으면 같은 `last.pt`를 그 디렉터리에도 둔다 (Wan HF 트리는 제외).
+*   **설명**: `data.name=clevrer_recognition`이면 `method=recognition`을 요구하고 직접 감독 학습기로 라우팅한다. 그 외 데이터는 기존 CFM 루프를 사용한다.
+
+### clevrer_recognition.py
+
+#### run_train_recognition
+*   **설명**: train scene을 고정 seed로 90/10 train/dev 분할한다. 가시 프레임만 사용해 위치·속도 통계와 train-only collision positive weight를 계산하고, backbone/head learning rate를 분리한 AdamW로 지도학습한다. 개발 손실 기준 early stopping으로 `best.pt`를 선택하고, dev split에서 objectness·visibility·collision threshold를 보정한다. `best.pt`와 `last.pt`, epoch history는 `runs/{run_name}/recognition/`에 두며, 선택된 best 모델을 `model.local_dir/last.pt`로 게시한다.
+
+실행:
+
+```bash
+python scripts/setup_resnet34.py
+python main.py recognition --mode train --run_name exp_02_sub_video_recognition --config configs/exp_02_sub_video_recognition.yaml
+python main.py recognition --mode eval --run_name exp_02_sub_video_recognition --config configs/exp_02_sub_video_recognition.yaml
+```
 
 ### flow_match.py
 

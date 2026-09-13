@@ -15,6 +15,8 @@
 * `test_clevrer_eval.py`: CLEVRER 평가 artifact 카탈로그, ZIP/tar 안전 추출, 속성·충돌 매칭.
 * `test_clevrer_state.py`: packed 상태 왕복, GT $h\le 0$, 제약 autograd, 인식 Dataset 형상.
 * `test_clevrer_flow.py`: 비디오 조건 속도장, 조건부 CFM loss, Euler `cond`.
+* `test_clevrer_methods.py`: 이전 CLEVRER conditional-flow 경로의 sampler 호환성 스모크 (Exp-02에서는 사용하지 않음).
+* `test_clevrer_recognition_model.py` / `test_clevrer_recognition_loss.py`: ResNet 출력 형상·gradient 및 clip-level Hungarian matching·multi-task loss 검증.
 * `test_checkpoint.py`: `checkpoints/` publish, run 경로 우선, published fallback, Wan 트리 보호.
 * `test_model.py`: MLP shape
 * `test_flow_match.py`: CFM loss, Euler

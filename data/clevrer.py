@@ -213,13 +213,14 @@ class VideoDataBundle:
     eval: Dataset
     meta: dict[str, Any]
     constraint: Any = None
+    train_raw: Any = None
 
     @property
     def meta_dict(self) -> dict[str, Any]:
         return self.meta
 
     def keys(self) -> list[str]:
-        return ["train", "eval", "meta", "meta_dict", "constraint"]
+        return ["train", "eval", "meta", "meta_dict", "constraint", "train_raw"]
 
     def __getitem__(self, key: str) -> Any:
         if key not in self.keys():

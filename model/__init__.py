@@ -36,11 +36,18 @@ def CLEVRERVelocityNet(*args, **kwargs):
     return _net(*args, **kwargs)
 
 
+def CLEVRERResNetRecognizer(*args, **kwargs):
+    from model.clevrer_recognition import CLEVRERResNetRecognizer as _net
+
+    return _net(*args, **kwargs)
+
+
 __all__ = [
     "SinusoidalTimeEmbedding",
     "VelocityMLP",
     "VelocityNet",
     "CLEVRERVelocityNet",
+    "CLEVRERResNetRecognizer",
     "WanVelocityNet",
     "build_model",
     "build_wan_model",

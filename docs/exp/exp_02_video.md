@@ -3,17 +3,15 @@
 비교 방법:
 
 - **FlowMatch** (무제약 baseline. 사전학습 동결 Wan2.1 $v_t^\theta$)
-- **HardFlow**
-- **SafeFlow** (SafeFlowMatcher)
-- **UniConFlow**
-- **GuideFlow**
 - **YFlow** (Physical Guidance Warm Start + Terminal PGD + 선형 보간)
+
+Exp-02 비교에는 FlowMatch와 YFlow만 포함한다. HardFlow, SafeFlow, UniConFlow, GuideFlow는 이 실험에서 제외한다.
 
 선행 실험: Wan 픽셀 생성 전에 주석 공간 인식을 먼저 둔다. [`exp_02_sub_video_recognition.md`](exp_02_sub_video_recognition.md).
 
 목적: 사전학습된 Flow Matching 비디오 파운데이션 모델인 **Wan2.1**을 동결(frozen) 백본으로 채택하여,  
 비디오를 밑바닥부터 대규모로 학습하지 않고 **training-free** 방식으로 제약 조건을 강제할 때,  
-무제약 Flow Matching 대비 5가지 제약 방법론이 **동일한 비디오 hard constraint 규칙을 실제로 엄격히 만족하는지**,  
+무제약 Flow Matching 대비 YFlow가 **동일한 비디오 hard constraint 규칙을 실제로 만족하는지**,
 그리고 비디오 품질(FVD, CLIP)과 연산 효율성(초/비디오, VRAM)의 Pareto Frontier를 체계적으로 검증한다.
 
 ---
@@ -35,11 +33,7 @@
    - 따라서 백본 가중치를 완전히 동결(frozen)하고, `eval/` 단에서 **training-free** 방식으로 속도장과 궤적을 제어함으로써 모델 본래의 풍부한 생성 능력을 보존하면서 제약 만족 여부를 공정하게 비교할 수 있다.
 
 3. **핵심 연구 가설**:
-   - 고차원 시공간 비디오 잠재 공간(${B \times C \times T' \times H' \times W'}$)에서는 기존 방법들의 한계가 극대화된다:
-     - **HardFlow**: $\mathcal{M}^{-1}$ 고정점 복원 시 고차원 비선형성으로 인한 궤적 드리프트가 발생하거나, 추가적인 Wan2.1 DiT 순전파가 필요하여 막대한 추론 지연과 메모리 병목이 유발된다.
-     - **SafeFlow**: 매 ODE 스텝마다 고차원 잠재 공간에 대한 제약 기울기를 계산하고 QP를 푸는 오버헤드가 극심하며, 경로 중간의 무리한 차단으로 비디오 시각적 품질이 저하된다.
-     - **GuideFlow**: 방대한 비디오 잠재 공간에서 의미 있는 앵커 어휘집($\mathcal{V}_a$)을 구축하기 어렵고, 에너지 하강(RFE)만으로는 엄밀한 종단 feasibility를 보장하기 어렵다.
-   - 반면 **Y-Flow**는:
+   - 본 실험은 FlowMatch와 Y-Flow 두 방법만 비교하며, 가설은 다음과 같다:
      - 예측된 종단 잠재 텐서 $\hat{z}_1^{\text{raw}}$에만 제약을 걸어 GPU 배치 PGD로 최적화하고,
      - **선형 보간 ($\eta = \Delta t / (1-t)$)**을 통해 자연스럽게 전진하므로 역맵 평가나 추가 DiT forward가 전혀 필요 없으며,
      - 국소 립시츠 게이팅을 통해 초반 노이즈 구간의 왜곡을 방지하여 **비디오 생성 품질(FVD/CLIP)을 보존하면서도 100% 제약 준수**를 달성할 것이다.
@@ -247,7 +241,7 @@ Wan2.1 기반 Hard-Constraint 비디오 생성 실험의 목적(물리적 안전
 
 ## 4. 통일된 Video Hard Constraint 정의
 
-모든 비교 방법론(FlowMatch, HardFlow, SafeFlow, UniConFlow, GuideFlow, YFlow)은 아래의 **동일한 제약 함수 집합**을 오라클로 공유한다.  
+FlowMatch와 YFlow는 아래의 **동일한 제약 함수 집합**을 평가 오라클로 공유한다.
 좌표 $V \in [-1, 1]^{3 \times T \times H \times W}$에 대해 성분별 $h_j(V) \le 0$을 만족해야 한다.
 
 ### 4.1 제약 부등식 $h(V) \le 0$
@@ -283,7 +277,7 @@ Wan2.1 기반 Hard-Constraint 비디오 생성 실험의 목적(물리적 안전
 
 ### 4.2 제약 위반 비용 함수 $C(V)$ (`cost`)
 
-HardFlow 및 YFlow 최적화에 사용되는 단일 스칼라 비용 함수:
+YFlow 최적화에 사용되는 단일 스칼라 비용 함수:
 $${
 C(V) = \frac{1}{2} w_{\text{first}} \max(0, h_{\text{first}}(V))^2 + \frac{1}{2} w_{\text{bbox}} \max(0, h_{\text{bbox}}(V))^2 + \frac{1}{2} w_{\text{acc}} \max(0, h_{\text{acc}}(V))^2 + \frac{1}{2} w_{\text{range}} \max(0, h_{\text{range}}(V))^2
 }$$
@@ -297,7 +291,7 @@ C(V) = \frac{1}{2} w_{\text{first}} \max(0, h_{\text{first}}(V))^2 + \frac{1}{2}
   2. 배경 마스크 바깥 픽셀을 $I_0$의 배경으로 클램핑: $P(V)_t \odot (1 - M) = I_0 \odot (1 - M)$
   3. 시간 축 Gaussian/Savitzky-Golay 스무딩 필터 적용으로 가속도 완화.
 - **$\mu = 0$ 설정 지원 (`docs/YFlow.md` 4.3.1절)**:
-  - 고해상도 비디오 매니폴드에서 엄밀한 물리 연산자 $P(V)$를 구성하기 어려운 일반 Text-to-Video 시나리오의 경우, $\mu = 0$으로 설정하여 순수 HardFlow형 터미널 최적화 문제로 유연하게 환원(graceful degradation)한다:
+  - 고해상도 비디오 매니폴드에서 엄밀한 물리 연산자 $P(V)$를 구성하기 어려운 일반 Text-to-Video 시나리오의 경우, $\mu = 0$으로 설정하여 물리 warm-start 항을 끈 terminal optimization ablation을 수행한다:
   $${
   \hat{z}_1^* = \arg\min_{\hat{z}_1} C(\mathcal{D}(\hat{z}_1)) + \frac{\lambda}{2} \|\hat{z}_1 - \hat{z}_1^{\text{raw}}\|_2^2 \quad \text{s.t.} \quad h(\mathcal{D}(\hat{z}_1)) \le 0
   }$$
@@ -311,17 +305,13 @@ C(V) = \frac{1}{2} w_{\text{first}} \max(0, h_{\text{first}}(V))^2 + \frac{1}{2}
 
 ---
 
-## 5. 비교 방법론의 비디오 확장 매핑
+## 5. FlowMatch와 YFlow의 비디오 확장 매핑
 
 모든 방법은 **동일한 사전학습 동결 Wan2.1 DiT 백본** $v_t^\theta(z_t, t, c)$과 동일한 초기 노이즈 $z_0 \sim \mathcal{N}(0, I)$를 사용한다.
 
 | 방법 | 유형 | 비디오 도메인 적응 방식 | 예상 특성 및 한계점 |
 | :--- | :---: | :--- | :--- |
 | **FlowMatch** | Unconstrained | Wan2.1 순수 Euler ODE 적분. 제약 전혀 개입 없음 ($h$는 평가에만 사용). | 생성 비디오 품질은 최상이지만, 첫 프레임 드리프트, 객체 탈출, 깜빡임 등 제약 위반율 높음. |
-| **HardFlow** | Training-free | $t \ge t_{\text{on}}$에서 예측 종단 $\hat{z}_1$에 대해 제약 최적화 후, 고정점 역맵 $\mathcal{F}_{t+\Delta t}(\hat{z}_1^*)$으로 다음 잠재 상태 계산. | 고차원 비디오 잠재 공간에서 $\mathcal{W}$ 계산을 위해 추가 DiT forward가 요구되어 메모리/시간 병목 극심. 역맵 오차로 인한 비디오 왜곡 위험. |
-| **SafeFlow** | Training-free | 매 적분 스텝마다 Control Barrier Function QP를 풀어 잠재 속도장 $v_t \leftarrow v_t + u_t$ 보정 + 최종 터미널 필터. | 30개 이상의 전 적분 스텝에서 VAE 디코더 역전파 또는 고차원 QP 솔버 호출로 추론 시간이 천문학적으로 증가. 경로 간섭으로 시각 품질 저하. |
-| **UniConFlow** | Training-free | Prescribed-Time Zeroing Function(PTZF)을 잠재 속도장에 적용하여 인증된 슬랙 QP 가이던스 수행. | 닫힌형 슬랙 QP로 SafeFlow보다 빠르나, 비디오 텐서 평탄화 시 큰 그래디언트 노름 제한 필요. |
-| **GuideFlow** | Training-free | 사전 추출된 비디오 앵커 어휘집 $\mathcal{V}_a$ 기반 CVF 속도 반사 + $k_c$ 잠재 리셋 + RFE 에너지 하강. | 비디오 도메인에서 의미 있는 256개 잠재 앵커 구축이 까다로우며, RFE 에너지 하강만으로는 엄밀한 종단 제약 보장 한계. |
 | **YFlow (Ours)** | Training-free | 예측 종단 $\hat{z}_1^{\text{raw}}$에 $P$ warm start 후 GPU-batched Autograd PGD 최적화 $\to$ **선형 보간 ($\eta = \Delta t / (1-t)$)**으로 전진. | 역맵/추가 DiT forward 불필요. 립시츠 게이팅으로 초반 안정성 보장. 최고 수준의 비디오 품질(FVD)과 100% 제약 준수, 실시간성 동시 달성. |
 
 ---
@@ -390,10 +380,9 @@ flowchart TD
    - §7.1의 artifact 확인, 원본 validation 측정, Wan FlowMatch 출력 domain-shift 점검을 완료한다.
    - 모델·threshold·판정 불가 처리 및 2D/3D 주장 범위를 고정한다.
 
-5. **Phase 5: 5개 제약 방법론 비교 추론 실행**
+5. **Phase 5: FlowMatch와 YFlow 비교 추론 실행**
    - 동일한 초기 가우시안 잠재 $z_0$ 시드 및 동일한 DiT 백본 고정.
    - Y-Flow: $\hat{z}_1^{\text{raw}}$ 계산 $\to$ PGD 최적화 $\to$ 선형 보간 전진.
-   - HardFlow, SafeFlow, UniConFlow, GuideFlow는 각각의 객체 상태 입력·미분 가능 oracle·연산 비용을 작은 smoke test로 확인한 뒤 동일 조건에서 실행한다.
 
 6. **Phase 6: 정량 분석 및 비교표 도출**
    - Safety Rate, FVD, CLIP Score, Latency, Peak VRAM 기록.
@@ -474,8 +463,6 @@ flowchart TD
    - 무제약 FlowMatch 대비 Y-Flow의 FVD 증가율 5% 이내 유지 (자연스러운 동역학 및 시각 품질 보존).
    - 텍스트 정렬도(CLIP Score) 손실 없음.
 3. **연산 및 메모리 효율성**:
-   - HardFlow 대비 추론 속도 **5배 이상 가속** (역맵 고정점 반복 및 추가 DiT forward 제거).
-   - SafeFlow 대비 추론 속도 **10배 이상 가속** (매 스텝 고차원 QP 배제).
    - 단일 GPU(24GB VRAM) 환경에서 OOM 없이 33프레임 비디오 추론 완주.
 
 ---

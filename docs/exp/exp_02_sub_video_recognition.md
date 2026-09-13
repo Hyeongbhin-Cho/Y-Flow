@@ -1,404 +1,309 @@
-# Exp-02-sub. CLEVRER FlowMatch 비디오 인식 실험
+# Exp-02-sub. CLEVRER ResNet-34 비디오 인식 실험
 
-Wan2.1 픽셀 생성(Exp-02) **앞**에 두는 중간 실험이다.  
-CLEVRER 원본 클립과 공개 정답 주석만 사용해, Flow Matching이 **장면을 구조화된 상태로 인식**하게 한다.
+Wan2.1 픽셀 생성(Exp-02) 전에 CLEVRER 클립에서 객체·궤적·충돌을 읽는 인식기를 학습한다. 본 실험은 확률적 상태 생성이나 제약 샘플링이 아니라, **사전학습된 ResNet-34의 공간 특징과 학습 가능한 시간·객체 헤드로 상태 \(S\)를 직접 예측하는 지도학습 실험**이다.
 
-비교 방법 (Exp-01과 동일, 인식용 $v_t^\theta$ 위에서 training-free):
+Exp-02의 방법 비교는 FlowMatch baseline과 Y-Flow를 중심으로 둔다. HardFlow, SafeFlow, UniConFlow, GuideFlow는 제외한다. 이 문서는 해당 방법들의 속도장 비교를 더 이상 계획하지 않는다. Wan VAE/DiT도 이 인식기의 입력 인코더로 사용하지 않는다.
 
-- **FlowMatch** (무제약 baseline)
-- **HardFlow**
-- **SafeFlow**
-- **UniConFlow**
-- **GuideFlow**
-- **YFlow**
+주요 목표는 다음 세 가지다.
 
-목적: Mask R-CNN / PropNet 가중치가 없는 상태에서, 프로젝트 본래 도구인 Flow Matching으로
-
-1. 객체 인식
-2. 경로(궤적) 파악
-3. 충돌 검출
-
-을 정의하고, 각 과제에 **동일한 $h(S)\le 0$ 규칙**을 건다. 픽셀 비디오를 생성하지 않는다.
+1. CLEVRER 비디오에서 객체 속성·개수·가시성을 인식한다.
+2. 객체별 world 위치와 속도를 프레임마다 추정하고, 클립 안의 충돌 이벤트를 찾는다.
+3. 예측된 상태를 Exp-02의 상태 스키마와 물리 타당성 평가에 연결한다.
 
 ---
 
-## 1. 왜 Wan 생성 전에 이 실험인가
+## 1. 과제 정의와 예측 상태
 
-Exp-02는 생성 영상에서 객체 궤적·충돌을 읽어 물리 제약을 평가해야 한다. 현재 상태:
+입력은 한 CLEVRER 클립 \(V\), 출력은 최대 \(K=6\)개 객체에 대한 고정 슬롯 상태 \(\hat S\)다. 상태의 좌표계는 CLEVRER 시뮬레이터 world 좌표이며, 이미지 픽셀 좌표를 world 좌표로 간주하지 않는다.
 
-| 도구 | 상태 | Wan 생성 영상에 |
-| :--- | :--- | :---: |
-| CLEVRER-finetuned Mask R-CNN | 가중치 미공개 | 불가 |
-| 공식 `derender_proposals` | 원본 클립 parser 산출물 | 불가 |
-| 공식 `propnet_preds` | 원본 클립 동역학 산출물 | 불가 |
-| COCO Mask R-CNN | 실행 가능 | 부적합 (원본에서도 cup/sports ball, 검출 수 부족) |
+클립 길이는 \(T=33\) 프레임이다. 속성은 클립 단위, 위치·속도·가시성은 프레임 단위, 충돌은 프레임 및 비순서 슬롯 쌍 단위로 예측한다.
 
-정답 주석은 validation에 이미 있다. 인식 모델을 **주석 공간**에서 먼저 학습·제약하면,
-
-- Exp-01과 같은 $h,C,P$ API를 비디오 픽셀 없이 검증하고
-- 이후 Exp-02의 `generated_tracks` 평가기를 같은 상태 표현으로 연결할 수 있다.
-
-생성 영상의 정확한 재현은 성공 조건이 아니다. 이 실험의 기본 모드는 **원본 CLEVRER 클립을 조건으로 상태 $S$를 인식**하는 것이다.
-
----
-
-## 2. 한 샘플은 픽셀이 아니다
-
-Exp-01이 2D 좌표점이었듯이, 이 실험의 한 샘플은 RGB 텐서가 아니라 **고정 슬롯 장면 상태** $S$이다.
-
-| 방식 | 쓰는가 | 설명 |
-| :--- | :---: | :--- |
-| 클립 조건 $V$에서 구조화 상태 $S$를 인식 | **예 (본실험)** | 객체 속성·궤적·충돌 |
-| Wan DiT로 33프레임 영상을 생성 | **아니오** | Exp-02 |
-| COCO Mask R-CNN으로 박스를 침 | **아니오** | 도메인 불일치가 이미 확인됨 |
-| 공식 visual-mask JSON을 Wan 오라클로 사용 | **아니오** | 원본 전용 산출물 |
-
-조건 영상 $V$는 인코더 입력이다. 제약 오라클 $h$는 $V$가 아니라 $S$에서 정의한다 (`data/NOTICE.md` 좌표계 분리).
-
----
-
-## 3. 상태 표현 $S$와 좌표계
-
-### 3.1 물리 공간
-
-CLEVRER 시뮬레이터 **world 좌표**를 물리 공간으로 둔다. 이미지 픽셀 좌표로 나누어 쓰지 않는다.
-
-eval 100 (scene 10000–10099)에서 관측된 범위. 임계값 확정은 **train/dev에서만** 하고 eval 100에는 맞추지 않는다.
-
-| 양 | 관측 | 설계에 쓰는 초안 |
+| 출력 | 형상 | 표현 |
 | :--- | :--- | :--- |
-| 객체 수 | 4–6 (평균 4.84) | 슬롯 $K=6$, 빈 슬롯은 비활성 |
-| 충돌 수 | 1–4 / 클립 | 이벤트 행렬 |
-| 색 | 8종 | `blue, brown, cyan, gray, green, purple, red, yellow` |
-| 재질 | 2종 | `metal, rubber` |
-| 모양 | 3종 | `cube, cylinder, sphere` |
-| 위치 $xy$ | 대략 $[-11,11]$ | 테이블 반경 $R_{xy}=12$ |
-| 높이 $z$ | $0.199$–$0.238$ (거의 상수) | 평면 운동, $z$는 보조 |
-| 속도 $\|v_{xy}\|$ | 최대 $\approx 3$ | $v_{\max}=3.2$ |
-| 충돌 시 중심 거리 | $0.40$–$0.48$ | 접촉 대역 $[0.38, 0.52]$ |
-| 25 fps 한 프레임 이동 | 평균 $0.023$, 최대 $0.083$ | 가시 구간에 텔레포트 금지 |
+| 색상 | \([K,8]\) | 8개 CLEVRER 색 클래스 로짓 |
+| 재질 | \([K,2]\) | metal / rubber 로짓 |
+| 모양 | \([K,3]\) | cube / cylinder / sphere 로짓 |
+| 객체 존재 | \([K]\) | 클립 안에 해당 객체 슬롯이 사용되는지에 대한 로짓 |
+| 가시성 | \([K,T]\) | 객체별 프레임 가시성 로짓 |
+| 위치 | \([K,T,3]\) | 시뮬레이터 world 좌표 \((x,y,z)\) |
+| 속도 | \([K,T,3]\) | 시뮬레이터 world 속도 \((u_x,u_y,u_z)\) |
+| 충돌 | \([T,\binom K2]\) | 각 비순서 객체 쌍의 프레임별 충돌 로짓 |
 
-시간 격자는 Exp-02와 맞춘다. 원본 128프레임 / 25 fps에서
+비활성 슬롯은 객체 존재 타깃 0으로 학습한다. 속성·궤적 타깃은 활성 슬롯에만 적용한다. 충돌 헤드는 \(i<j\) 쌍만 출력하므로 대칭과 자기 충돌 금지는 구조적으로 보장된다.
 
-$${
-s_k = k/16,\qquad k=0,\dots,32
-}$$
+---
 
-로 33프레임·16 fps·2초를 고르고, 가장 가까운 원본 `frame_id`의 주석을 쓴다. 전체 128프레임 인식은 ablation이다.
+## 2. 비디오 입력과 라벨 생성
 
-### 3.2 슬롯 텐서
+### 2.1 입력 텐서
 
-최대 객체 수 $K=6$, 클립 길이 $T=33$.
+기본 입력 해상도는 현재 실험 설정에 맞춰 \(H=160,\ W=240\)으로 둔다. 원본 CLEVRER 프레임 \(320\times480\)을 종횡비를 유지해 절반 크기로 리사이즈한다. 이 비율에서는 padding이 필요 없다.
 
-$${
-S=\big(a,\; m,\; q,\; \nu,\; p,\; u,\; c\big)
-}$$
+- 데이터 로더 출력: \([B,3,T,H,W]=[B,3,33,160,240]\), RGB, 값 범위 \([-1,1]\).
+- ResNet 프레임 입력: \([BT,3,H,W]=[33B,3,160,240]\).
+- 시간 격자: \(s_t=t/16,\ t=0,\ldots,32\). 원본 25fps 클립에서 각 요청 시각에 가장 가까운 프레임과 같은 frame_id의 simulator annotation을 사용한다.
+- frame_indices, 요청 시각, 실제 원본 시각을 함께 보존해 영상과 라벨 정렬을 검사한다.
+- 기본 설정에서 valid_region은 전부 유효하다. 다른 입력 해상도를 쓰거나 padding이 생기면 padding 영역을 마스킹한다.
 
-| 기호 | 형상 | 의미 |
+CLEVRER 로더는 영상 텐서를 \([-1,1]\)로 반환한다. ResNet-34 ImageNet 사전학습 입력을 위해 먼저 \([0,1]\)로 변환한 뒤, 채널별 ImageNet mean/std로 정규화한다. 정규화 상수는 모델 가중치와 함께 설정에 기록한다.
+
+### 2.2 상태 타깃
+
+기존 CLEVRER annotation parser를 사용해 색·재질·모양, 가시성, world 위치·속도, 충돌을 \(K=6,T=33\) 상태로 패킹한다. 객체 슬롯 순서는 annotation의 object_id 오름차순으로 만든다. 학습 시 예측 슬롯 순서는 고정되어 있지 않으므로, 손실 계산에서 클립별 Hungarian matching으로 GT 객체와 예측 슬롯을 일대일 대응한다. 프레임마다 따로 matching하지 않는다. 이 전역 매칭이 객체 ID가 시간에 따라 바뀌는 것을 막는다.
+
+world 위치·속도 손실의 정규화 통계는 train split에서만, 활성 객체의 유효 타깃을 사용해 계산한다. 빈 슬롯의 0 패딩이나 보이지 않는 프레임의 채움 값을 통계에 포함하지 않는다. 지표 및 제약 검사를 위해 출력은 원래 단위로 복원한다.
+
+충돌 손실은 두 객체가 해당 프레임에 모두 보이는 쌍을 학습 대상으로 삼는다. 한 객체라도 보이지 않는 충돌 이벤트는 영상에서 관측 불가능할 수 있으므로 학습 손실과 관측 가능 충돌 지표에서 제외하고 개수를 별도로 보고한다.
+
+### 2.3 데이터 분할
+
+- 학습 및 개발 데이터: CLEVRER train scene 0–9999. scene_id를 고정 seed로 분할해 90% 학습, 10% 개발에 사용한다.
+- 최종 평가: 기존 고정 eval 100 manifest의 scene 10000–10099.
+- 체크포인트와 임계값은 개발 데이터에서만 고른다. eval 100으로 하이퍼파라미터나 임계값을 조정하지 않는다.
+- 공식 visual-mask JSON은 본 실험의 입력과 평가 정답으로 사용하지 않는다. 정답은 simulator annotation에서 만든다.
+
+---
+
+## 3. ResNet-34 시각 인코더
+
+### 3.1 사용할 가중치와 절단 지점
+
+Torchvision의 ImageNet-1K 사전학습 ResNet-34 가중치 ResNet34_Weights.IMAGENET1K_V1을 사용한다. 실험 설정에 정확한 가중치 이름을 기록한다.
+
+**유지:** stem(conv1, bn1, relu, maxpool), layer1, layer2, layer3.
+
+**제거:** layer4, 전역 avgpool, ImageNet 분류용 fc.
+
+layer4부터는 32픽셀 간격의 저해상도 특징만 남아 여러 작은 도형의 위치를 구분하는 데 불리하다. 분류용 전역 pooling과 fc도 객체별 공간 위치를 없애므로 사용하지 않는다.
+
+### 3.2 텐서 크기
+
+ResNet은 시간을 접어 각 프레임을 독립 처리하고, 프레임별 특징을 다시 시간축으로 묶는다. 입력 크기 \(160\times240\)에서의 크기는 다음과 같다.
+
+| 지점 | 채널 | 공간 크기 | Reshape 전 형상 |
+| :--- | :---: | :---: | :--- |
+| 입력 | 3 | \(160\times240\) | \([BT,3,160,240]\) |
+| stem + maxpool | 64 | \(40\times60\) | \([BT,64,40,60]\) |
+| layer1 | 64 | \(40\times60\) | \([BT,64,40,60]\) |
+| layer2 | 128 | \(20\times30\) | \([BT,128,20,30]\) |
+| layer3 | 256 | \(10\times15\) | \([BT,256,10,15]\) |
+
+layer2의 공간 세부 정보와 layer3의 큰 문맥을 함께 쓴다. 각각을 256채널로 1×1 투영한 후 layer3를 2배 bilinear upsample하고 layer2 특징과 더한다. 3×3 convolution으로 융합해 프레임당 \(F_t\in\mathbb{R}^{256\times20\times30}\)을 얻는다. 이후 위치 인코딩을 더해 600개 위치 토큰, 각 256차원으로 만든다.
+
+전체 형상:
+
+\[
+F\in\mathbb{R}^{B\times T\times 600\times256}.
+\]
+
+이 공간 특징을 유지해야 객체 위치와 슬롯별 시각 단서를 헤드가 읽을 수 있다. 프레임 전체 평균 하나로 축약하지 않는다.
+
+### 3.3 학습 방식
+
+첫 학습 단계에서는 ResNet 전체를 고정하고 특징 융합층과 인식 헤드만 학습한다. 개발 성능이 정체되면 layer3만 낮은 learning rate로 풀어 fine-tuning한다. 주 비교는 다음 두 설정이다.
+
+1. ImageNet ResNet-34 고정 + 학습 가능한 융합층·헤드
+2. ImageNet ResNet-34의 layer3 미세조정 + 동일한 융합층·헤드
+
+layer4, avgpool, fc는 두 설정 모두 사용하지 않는다. 첫 기준선은 사전학습 특징만으로도 결과를 내야 하므로, 처음부터 전체 backbone을 풀지 않는다.
+
+---
+
+## 4. 시간·객체 인식 헤드
+
+헤드는 프레임별 공간 특징에서 객체별 표현을 뽑고, 각 객체의 표현을 시간축으로 연결한다.
+
+### 4.1 프레임별 객체 슬롯 추출
+
+각 프레임의 600개 공간 토큰을 key/value로 사용하고, \(K=6\)개의 학습 가능한 슬롯 query가 cross-attention한다. 두 층의 슬롯 decoder를 사용한다.
+
+초기 헤드 설정:
+
+- 차원 \(D=256\)
+- 슬롯 수 \(K=6\)
+- cross-attention decoder 2층
+- 각 층 8 attention head, FFN 차원 1024
+- 고정 2D sine-cosine 공간 위치 인코딩 + 학습 가능한 33-step 프레임 위치 인코딩
+- attention residual 뒤 LayerNorm, FFN은 256 → 1024 → 256, GELU
+
+출력은 프레임별 객체 토큰
+
+\[
+O\in\mathbb{R}^{B\times T\times K\times256}.
+\]
+
+슬롯 query는 모든 프레임에서 공유한다. 슬롯 번호 자체가 object_id라고 가정하지 않고, 학습 손실의 클립별 전역 matching으로 ID를 정렬한다.
+
+### 4.2 객체별 시간 인코더
+
+각 슬롯의 \(T=33\)개 토큰에 시간 위치 인코딩을 더하고, 같은 슬롯 안에서 시간 정보를 섞는 temporal Transformer에 넣는다. 다른 슬롯의 정보는 충돌 head의 쌍 표현에서 결합한다.
+
+초기 설정:
+
+- temporal Transformer 4층
+- 차원 256, attention head 8, FFN 차원 1024
+- 각 층은 Pre-LayerNorm self-attention 및 256 → 1024 → 256 GELU FFN
+- 입력/출력 형상 모두 \([B,T,K,256]\)
+
+이를 통해 속도 추정과 충돌 분류가 단일 프레임의 외형만이 아니라 시간 변화도 이용한다.
+
+### 4.3 출력 head
+
+시간 인코더 출력 \(O'\)에서 다음을 예측한다.
+
+- **존재:** 객체별 시간 토큰을 learned-query attention pooling한 뒤 MLP → \([B,K]\)
+- **속성:** 같은 clip-level pooled token에 각각 독립 MLP → 색상 \([B,K,8]\), 재질 \([B,K,2]\), 모양 \([B,K,3]\)
+- **가시성:** 프레임별 token MLP → \([B,K,T]\)
+- **위치·속도:** 프레임별 token에서 별도 MLP → 각각 \([B,K,T,3]\)
+- **충돌:** 각 \(i<j\) 쌍에 대해 \(O'_i+O'_j,\ |O'_i-O'_j|,\ O'_i\odot O'_j\)와 예측 상대 위치·속도를 결합한 pair MLP → \([B,T,15]\)
+
+충돌은 비순서 쌍 15개만 직접 출력해 \(c_{ij}=c_{ji}\), \(c_{ii}=0\)을 구조적으로 만족시킨다. 존재와 가시성은 별도 출력이다. 클립에 없는 슬롯의 속성·궤적은 지표 및 물리 제약 집계에서 제외한다.
+
+각 출력용 MLP의 기본 형태는 256 → 256 → 출력 차원이며, 은닉층은 GELU와 dropout 0.1을 쓴다. 충돌 pair MLP의 입력 차원은 슬롯 결합 특징 768과 상대 위치·속도 6을 합친 774, 은닉층은 512, 출력은 충돌 로짓 1이다.
+
+---
+
+## 5. 지도학습 손실
+
+모델은 정규분포 노이즈에서 상태를 생성하지 않는다. 예측 \(\hat S=f_\theta(V)\)와 simulator annotation 상태 \(S\) 사이의 직접 지도 손실을 학습한다. 각 항은 유효 슬롯·프레임·쌍 수로 나누어 평균한다.
+
+### 5.1 클립별 슬롯 대응
+
+각 예측 슬롯 \(k\)와 GT 객체 \(j\)의 matching 비용은 다음 항의 가중합이다.
+
+- 객체 존재 점수
+- 색·재질·모양 분류 비용
+- GT 가시 프레임에서의 위치 거리
+
+비용 행렬에 Hungarian assignment를 한 번 적용해 클립 전체 permutation \(\pi\)를 정한다. unmatched prediction은 빈 슬롯(no-object), unmatched GT는 누락 객체로 계산한다. GT 객체가 클립 전체에서 보이지 않아 위치 항의 유효 프레임이 없으면 그 항은 matching 비용에서 생략한다. matching은 학습의 손실 계산용이며, 평가 지표에서도 같은 속성/궤적 기반 Hungarian 기준을 명시해 사용한다.
+
+초기 matching 비용은
+
+\[
+C_{k,j}=\lambda_{\mathrm{obj}}(-\log \sigma(o_k))
++\lambda_{\mathrm{attr}}\sum_{r\in\{a,m,q\}}\mathrm{CE}(\hat y^r_k,y^r_j)
++\lambda_{\mathrm{pos}}\,\mathrm{mean}_{t:\nu_{j,t}=1}\|\hat p_{k,t}-p_{j,t}\|_1
+\]
+
+로 둔다. 객체 존재와 속성 항은 clip 단위, 위치 항은 GT 가시 프레임만 사용한다. matching 비용의 계수는 손실 계수와 같은 초기값에서 시작하고 개발 split에서 고정한다.
+
+### 5.2 손실 항
+
+\[
+\mathcal L =
+\lambda_{\mathrm{obj}}\mathcal L_{\mathrm{obj}}+
+\lambda_{\mathrm{attr}}\mathcal L_{\mathrm{attr}}+
+\lambda_{\mathrm{vis}}\mathcal L_{\mathrm{vis}}+
+\lambda_{\mathrm{pos}}\mathcal L_{\mathrm{pos}}+
+\lambda_{\mathrm{vel}}\mathcal L_{\mathrm{vel}}+
+\lambda_{\mathrm{col}}\mathcal L_{\mathrm{col}}+
+\lambda_{\mathrm{kin}}\mathcal L_{\mathrm{kin}}.
+\]
+
+- **존재 \(\mathcal L_{\mathrm{obj}}\):** 활성/빈 슬롯에 대한 binary cross-entropy. 빈 슬롯이 6개 중 일부뿐이므로 batch 평균 후 positive/negative imbalance를 기록하고 필요 시 train 기준 가중치를 쓴다.
+- **속성 \(\mathcal L_{\mathrm{attr}}\):** matching된 활성 객체에 대해 색·재질·모양별 categorical cross-entropy를 합산한다. 속성은 클립 단위 타깃이다.
+- **가시성 \(\mathcal L_{\mathrm{vis}}\):** matching된 객체의 프레임별 binary cross-entropy. 객체가 화면 밖으로 나가는 경우도 정상 타깃으로 포함한다.
+- **위치 \(\mathcal L_{\mathrm{pos}}\):** matching된 활성 객체의 GT 가시 프레임에 대해 정규화 좌표에서 Smooth L1. 비가시 프레임은 시각 입력만으로 위치를 복원할 수 없으므로 주 회귀 손실에서 제외한다.
+- **속도 \(\mathcal L_{\mathrm{vel}}\):** GT 가시 프레임에 대한 정규화 world 속도 Smooth L1.
+- **충돌 \(\mathcal L_{\mathrm{col}}\):** 두 객체가 모두 보이는 프레임/쌍에 대한 binary cross-entropy. 양성 충돌이 드물기 때문에 positive weight를 train split 빈도에서 계산하고 20 이하로 제한한다. 최종 threshold는 개발 split에서 고정한다. 충돌 허용 오차를 반영한 event F1도 함께 보고한다.
+- **운동학 정합 \(\mathcal L_{\mathrm{kin}}\):** 연속 두 프레임 모두 보이는 구간에서 예측 위치 차분과 예측 속도를 약하게 정합한다.
+
+\[
+\mathcal L_{\mathrm{kin}} =
+\operatorname{SmoothL1}\left(
+\frac{\hat p_{k,t+1}-\hat p_{k,t}}{\Delta s},\hat u_{k,t}
+\right), \qquad \Delta s=1/16.
+\]
+
+이 항은 충돌 전후 실제 속도 변화 자체를 평탄화하지 않는다. 가시 연속 구간의 위치와 속도 단위가 서로 맞도록 돕는 보조 손실이다.
+
+초기 손실 가중치 후보는 \(\lambda_{\mathrm{obj}}=1,\lambda_{\mathrm{attr}}=1,\lambda_{\mathrm{vis}}=1,\lambda_{\mathrm{pos}}=5,\lambda_{\mathrm{vel}}=2,\lambda_{\mathrm{col}}=2,\lambda_{\mathrm{kin}}=0.1\)이다. 좌표/속도 정규화 후 각 항의 크기를 개발 split에서 확인하고, 최종 값은 eval을 보기 전에 고정한다.
+
+### 5.3 물리 제약 사용 원칙
+
+물리 제약은 우선 학습 손실로 넣지 않고 **검증·평가 진단값**으로 사용한다. 우선순위는 GT 상태 복원이며, 작은 위반률을 얻기 위해 객체를 지우거나 궤적을 과도하게 평탄화하는 것을 막는다.
+
+보고할 constraint 그룹과 시작값은 다음과 같다. 현재 설정 파일의 값이며, GT sanity check 후 개발 split에서만 확정한다.
+
+| 그룹 | 검사 항목 | 시작값 |
 | :--- | :--- | :--- |
-| $a$ | $\{0,\dots,7\}^{K}$ | 색 |
-| $m$ | $\{0,1\}^{K}$ | 재질 |
-| $q$ | $\{0,1,2\}^{K}$ | 모양 |
-| $\nu$ | $[0,1]^{K\times T}$ | 가시성 (`inside_camera_view`) |
-| $p$ | $\mathbb{R}^{K\times T\times 3}$ | world 위치 |
-| $u$ | $\mathbb{R}^{K\times T\times 3}$ | world 속도 |
-| $c$ | $\{0,1\}^{T\times K\times K}$ | 프레임 $t$에서 슬롯 $i,j$ 충돌. 대칭, 대각 0 |
+| 객체 | vocab, count, 시간 불변 속성, 빈 슬롯 궤적 | \(K=6\), 색 8 / 재질 2 / 모양 3 |
+| 궤적 | table, plane, step, 위치-속도 정합, 비충돌 가속도 | \(R_{xy}=12, z_0=0.20, \tau_z=0.05, v_{\max}=3.2, \tau_{kin}=0.20, \tau_{acc}=0.60\) |
+| 충돌 | 대칭·대각, 가시성, 접촉 거리, 관통, 충돌 속도 변화 | \(d_0=0.45, d_{\min}=0.38, \tau_{col}=0.20, \delta_v=0.15\) |
 
-비활성 슬롯: $\nu_{k,t}=0$ 전부, 속성은 don't-care, 제약에서 제외.  
-활성 슬롯 수 $N_{\mathrm{obj}}=\lvert\{k:\max_t\nu_{k,t}>\tfrac12\}\rvert$.
+각 위반률은 원래 단위의 예측 상태에서 계산한다. 예측 속성을 강제로 투영하거나 예측 궤적을 보정한 값은 기본 결과에 섞지 않는다.
 
-Flow Matching은 이산 성분을 원-핫/로짓의 연속 완화로 두고, 터미널에서만 argmax로 되돌린다. $h$ 평가는 되돌린 뒤 **물리 공간**에서 한다.
-
-### 3.3 조건 영상
-
-$${
-V\in[-1,1]^{3\times T\times H\times W}
-}$$
-
-기본은 원본 해상도 $320\times 480$ (letterbox 없음). Exp-02와 같은 $480\times 832$ letterbox를 쓰면 `valid_region` 밖의 픽셀은 인코더에 넣지 않는다.
-
-기본 모드에서 모델은 **미래 주석을 생성 중 제약으로 쓰지 않는다.** 주석은 학습 타깃과 평가 전용이다.
+GT 자체가 제약을 만족하는지 먼저 검사한다. GT에서 위반이 발견되면 임계값 또는 frame sampling/annotation 정렬을 수정하고, 그 뒤 예측 상태의 경계 이탈·텔레포트·관통·충돌 정합 위반을 보고한다. 추후 물리 보조 손실을 시험한다면 이 supervised baseline이 고정된 뒤 별도 ablation으로 추가한다.
 
 ---
 
-## 4. 인식 과제와 제약
+## 6. 학습과 평가 프로토콜
 
-세 과제는 한 상태 $S$의 서로 다른 좌표다. 평가는 과제별로 끊고, Total Safety는 세 과제 제약을 동시에 만족한 비율이다.
+학습은 배치 비디오를 ResNet에 프레임별로 넣고, 위 손실의 합으로 end-to-end 수행한다. 기본 설정은 배치 4, 최대 30 epoch, AdamW head learning rate (3\times10^{-4}), weight decay (10^{-2}), gradient norm clip 1.0이다. ResNet backbone은 처음에는 고정하며, `backbone_mode: layer3` 비교에서는 layer3에만 (10^{-5}) learning rate를 쓴다.
 
-부호 규약: $h_j(S)\le 0$이면 만족. 비용은
+실행 전 `python scripts/setup_resnet34.py`로 고정된 `ResNet34_Weights.IMAGENET1K_V1` state dict를 로컬에 준비한다. 학습 명령은 `python main.py recognition --mode train --run_name exp_02_sub_video_recognition --config configs/exp_02_sub_video_recognition.yaml`, 최종 평가는 `python main.py recognition --mode eval --run_name exp_02_sub_video_recognition --config configs/exp_02_sub_video_recognition.yaml`이다. 개발 split은 train scene의 10%를 seed 42로 고정해 사용한다. epoch별 손실과 optimizer/scheduler state를 저장하고 dev total loss 기준으로 early stopping 및 `best.pt` 선택을 한다. 종료 시 dev 예측으로 objectness, visibility, collision의 F1 threshold를 각각 보정해 best checkpoint에 저장한다. `last.pt`는 마지막 epoch, `best.pt`는 dev에서 선택된 모델이며 `model.local_dir/last.pt`에는 best 모델을 게시한다.
 
-$${
-C(S)=\frac12\sum_j w_j\max\big(0,h_j(S)\big)^2
-}$$
+기본 손실 계수는 설정 파일에서 ((1,1,1,5,2,2,0.1))로 고정한다. matching은 detached 비용 행렬에 SciPy Hungarian assignment를 적용하며, 객체 존재 BCE는 전체 슬롯, 속성은 매칭 객체, 위치·속도는 가시 프레임, 운동학은 연속 가시 프레임, 충돌은 양 객체 가시 프레임에서 계산한다. 위치/속도 정규화 통계와 collision positive weight는 train subset에서만 산출해 checkpoint에 기록한다.
 
-로, $S$가 전부 可行이면 $C=0$이고 경계에서 $C^1$이다.
+### 주요 지표
 
-### 4.1 과제 A — 객체 인식
-
-**모델이 할 일**: 클립에 등장하는 강체의 **개수, 속성, 슬롯 정체성**을 맞춘다. ID는 속성과 궤적으로 대응하고, 임의로 다시 붙이지 않는다.
-
-**맞출 것 (지표, 제약이 아님)**:
-
-- 속성 집합 $\{(a_k,m_k,q_k)\}$ vs GT `object_property` (Hungarian, 활성 슬롯만)
-- 객체 수 $N_{\mathrm{obj}}$
-- 프레임별 가시 객체 수 vs `inside_camera_view`
-
-**Hard constraint $h\le 0$** (인식 결과가 CLEVRER 장면에 속할 것):
-
-1. **어휘**
-   $${
-   h_{\mathrm{vocab}}(S)=\max_k\Big(
-     [a_k\notin\mathcal{A}]+[m_k\notin\mathcal{M}]+[q_k\notin\mathcal{Q}]
-   \Big)\le 0
-   }$$
-   연속 완화에서는 원-핫이 심플렉스 안에 있게 두고, 터미널에서 최근접 어휘로 투영한다.
-
-2. **슬롯 수**
-   $${
-   h_{\mathrm{count}}(S)=\max\big(N_{\mathrm{obj}}-6,\; 3-N_{\mathrm{obj}}\big)\le 0
-   }$$
-   (전 validation은 3–6. eval 100은 4–6이었으나 제약은 데이터셋 전체를 따른다.)
-
-3. **속성 시간 불변**  
-   활성 슬롯의 $(a,m,q)$는 프레임마다 바뀌면 안 된다. 연속 상태에서는
-   $${
-   h_{\mathrm{ident}}(S)=\max_{k,t,t'}\nu_{k,t}\nu_{k,t'}\,\lVert \tilde e_{k,t}-\tilde e_{k,t'}\rVert_1-\epsilon_{\mathrm{ident}}\le 0
-   }$$
-   $\tilde e$는 속성 원-핫.
-
-4. **빈 슬롯**  
-   $\max_t\nu_{k,t}\le\tfrac12$인 슬롯은 충돌 행·열과 위치 제약에서 빠진다. 빈 슬롯이 궤적만 혼자 가지면 위반:
-   $${
-   h_{\mathrm{null}}(S)=\max_k\big((1-\max_t\nu_{k,t})\cdot \max_t\lVert p_{k,t}\rVert_2\big)-\epsilon_{\mathrm{null}}\le 0
-   }$$
-
-초안 허용: $\epsilon_{\mathrm{ident}}=0.05$, $\epsilon_{\mathrm{null}}=10^{-3}$.
-
-### 4.2 과제 B — 경로 파악
-
-**모델이 할 일**: 활성 객체마다 world 궤적 $p_{k,0:T-1}$과 속도 $u_{k,0:T-1}$, 가시성 $\nu_{k,t}$를 복원한다. CLEVRER의 **화면 진입·퇴장은 허용**한다. 화면 밖 구간에 저가속도를 전 구간에 강제하지 않는다.
-
-**맞출 것 (지표)**:
-
-- ADE / FDE (가시 프레임만, Hungarian 이후)
-- 가시성 F1
-- 속도 MAE (가시 프레임)
-
-**Hard constraint**:
-
-1. **테이블 평면 (박스)**
-   $${
-   h_{\mathrm{table}}(S)=\max_{k,t}\nu_{k,t}\big(\lVert p_{k,t,xy}\rVert_\infty-R_{xy}\big)\le 0
-   }$$
-   $R_{xy}=12$. $z$는 관측상 거의 $0.20$이므로
-   $${
-   h_{\mathrm{plane}}(S)=\max_{k,t}\nu_{k,t}\lvert p_{k,t,z}-z_0\rvert-\tau_z\le 0
-   }$$
-   $z_0=0.20$, $\tau_z=0.05$.
-
-2. **텔레포트 금지 (가시 연속 구간만)**  
-   $\nu_{k,t}=\nu_{k,t+1}=1$이면
-   $${
-   h_{\mathrm{step}}(S)=\max_{k,t}\nu_{k,t}\nu_{k,t+1}\big(\lVert p_{k,t+1}-p_{k,t}\rVert_2-v_{\max}\Delta s\big)\le 0
-   }$$
-   $\Delta s=1/16$, $v_{\max}=3.2$이면 한 스텝 상한 $0.20$. 원본 25 fps 최대 이동 $0.083$보다 넉넉하다.
-
-3. **위치–속도 정합**
-   $${
-   h_{\mathrm{kin}}(S)=\max_{k,t}\nu_{k,t}\nu_{k,t+1}\big(\lVert p_{k,t+1}-p_{k,t}-u_{k,t}\Delta s\rVert_2-\tau_{\mathrm{kin}}\big)\le 0
-   }$$
-   $\tau_{\mathrm{kin}}=0.05$.
-
-4. **비충돌 구간의 급가속 금지**  
-   충돌로 표시되지 않은 프레임에서
-   $${
-   h_{\mathrm{acc}}(S)=\max_{k,t}\omega_{k,t}\big(\lVert u_{k,t+1}-u_{k,t}\rVert_2-\tau_{\mathrm{acc}}\big)\le 0
-   }$$
-   $$\omega_{k,t}=\nu_{k,t-1}\nu_{k,t}\nu_{k,t+1}\prod_{j\neq k}(1-c_{t,k,j})$$
-   $\tau_{\mathrm{acc}}=0.40$ (충돌이 아닌 프레임의 속도 점프). 충돌 프레임은 이 항에서 뺀다.
-
-### 4.3 과제 C — 충돌 검출
-
-**모델이 할 일**: 어느 두 슬롯이 어느 시각에 충돌하는지 $c_{t,i,j}$를 예측한다. PropNet처럼 미래를 롤아웃하지 않는다. **관측된 클립 안의 충돌 사실**만 대상으로 한다.
-
-**맞출 것 (지표)**:
-
-- 이벤트 precision / recall (속성 쌍 + 프레임 허용 $\pm 5$ 원본 프레임, 16 fps면 $\pm 2$ 스텝)
-- 충돌 시각 MAE (매칭된 이벤트)
-
-**Hard constraint**:
-
-1. **대칭·자기충돌 금지**
-   $${
-   h_{\mathrm{sym}}(S)=\max_{t,i,j}\lvert c_{t,i,j}-c_{t,j,i}\rvert+\max_{t,i}c_{t,i,i}\le 0
-   }$$
-
-2. **둘 다 가시**
-   $${
-   h_{\mathrm{colvis}}(S)=\max_{t,i,j}c_{t,i,j}\big(2-\nu_{i,t}-\nu_{j,t}\big)\le 0
-   }$$
-
-3. **접촉 거리에서만 충돌**  
-   충돌이면 중심 거리가 접촉 대역 안에 있어야 한다.
-   $${
-   h_{\mathrm{contact}}(S)=\max_{t,i,j}c_{t,i,j}\big(\lvert \lVert p_{i,t}-p_{j,t}\rVert_2-d_0\rvert-\tau_{\mathrm{col}}\big)\le 0
-   }$$
-   $d_0=0.45$, $\tau_{\mathrm{col}}=0.07$ (관측 충돌 거리 $0.40$–$0.48$).
-
-4. **관통 금지 (비충돌 포함 전 가시 쌍)**
-   $${
-   h_{\mathrm{penetrate}}(S)=\max_{t,i<j}\nu_{i,t}\nu_{j,t}\big(d_{\min}-\lVert p_{i,t}-p_{j,t}\rVert_2\big)\le 0
-   }$$
-   $d_{\min}=0.38$. 가까워도 충돌이 아닐 수 있으므로, 근접만으로 $c=1$을 강제하지 않는다.
-
-5. **충돌 시 속도 점프**  
-   접촉만 있고 상대속도가 안 바뀌면 스침으로 본다.
-   $${
-   h_{\mathrm{impulse}}(S)=\max_{t,i,j}c_{t,i,j}\big(\delta_v-\lVert \Delta u_{i,t}\rVert_2-\lVert \Delta u_{j,t}\rVert_2\big)\le 0
-   }$$
-   $\Delta u_{k,t}=u_{k,t+1}-u_{k,t-1}$, $\delta_v=0.15$. 클립 양 끝 프레임은 제외.
-
-### 4.4 과제 요약
-
-| 과제 | 인식 대상 | 핵심 $h$ | GT 대응 필드 |
-| :--- | :--- | :--- | :--- |
-| A 객체 | 개수·색·재질·모양·슬롯 정체성 | vocab, count, ident, null | `object_property` |
-| B 경로 | world 위치·속도·가시성 | table, plane, step, kin, acc | `motion_trajectory` |
-| C 충돌 | 쌍·시각 | sym, colvis, contact, penetrate, impulse | `collision` |
-
-픽셀 MSE, FVD, CLIP은 이 실험의 지표가 아니다.
-
----
-
-## 5. $P(S)$와 `project_feasible`
-
-YFlow warm start $P(S)$ (1-Lipschitz를 목표로 하는 휴리스틱):
-
-1. 속성 로짓을 어휘 원-핫으로 양자화
-2. $p_{xy}$를 $\lVert p_{xy}\rVert_\infty\le R_{xy}$로 클램프, $p_z\leftarrow z_0$
-3. 가시 연속 구간만 짧은 시간 창으로 위치 스무딩 (충돌로 표시된 $t$는 건너뜀)
-4. $c\leftarrow \tfrac12(c+c^\top)$, 대각 0
-5. 비활성 슬롯 궤적·충돌을 0으로
-
-명시적 $P$가 불안정하면 $\mu=0$으로 HardFlow형 터미널 최적화만 쓴다 (`docs/YFlow.md` 4.3.1).
-
-`project_feasible`: 위 클램프 + 관통 쌍을 $d_{\min}$ 위로 밀어내기 + 어휘 양자화. 터미널에서만 쓰고, 경로 중간을 매 스텝 투영하지 않는다.
-
----
-
-## 6. FlowMatch 학습
-
-무제약 baseline은 **비디오 조건 Conditional Flow Matching**이다. Wan은 쓰지 않는다.
-
-$${
-S_\tau=(1-\tau)S_0+\tau S_1,\qquad
-\mathcal{L}=\mathbb{E}\big\lVert v_\theta(S_\tau,\tau,E(V))-(S_1-S_0)\big\rVert^2
-}$$
-
-- $S_1$: 위 33프레임 격자에 맞춘 GT 상태
-- $S_0\sim\mathcal{N}(0,I)$ (같은 형상)
-- $E(V)$: 작은 2D CNN + 시간 풀, 또는 프레임 독립 임베딩. 학습 대상
-- $h$는 학습에 쓰지 않는다 (Exp-01과 같음)
-
-데이터:
-
-- **학습**: CLEVRER train (scene 0–9999). 아직 내려받지 않았으면 `setup_clevrer.py --splits train`
-- **임계값/조기종료**: train에서 떼낸 dev, eval 100과 겹치지 않게
-- **평가**: 고정 eval 100 (scene 10000–10099, `datasets/clevrer/manifests/eval_100.json`)
-
-공식 visual-mask는 **학습 보조 손실에만** 쓸 수 있다 (2D 마스크 정렬). 평가 지표의 정답은 시뮬레이터 JSON이다. 테스트 시 공식 mask JSON을 읽으면 원본 전용 누수가 된다.
-
-추론: 같은 $V$, 같은 $S_0$ 시드로 Euler 적분. 제약 다섯 방법은 이 $v_\theta$를 동결하고 샘플링만 교체한다.
-
-가중치 위치:
-
-| 경로 | 역할 |
+| 지표 | 계산 |
 | :--- | :--- |
-| `runs/{run_name}/flowmatch/last.pt` | 해당 run의 학습 체크포인트 (optimizer 포함) |
-| `checkpoints/clevrer_flow/last.pt` | 다른 실험이 읽는 고정 경로 (`model.local_dir`) |
+| Object precision / recall / F1 | 존재 threshold 적용 후 clip-level Hungarian matching으로 GT 객체 검출 평가 |
+| Attribute set F1 | 활성 객체 속성의 색·재질·모양 분류 |
+| Count MAE | 예측 존재 슬롯 수와 GT 객체 수 차이 |
+| Visibility F1 | 프레임별 가시성 |
+| ADE / FDE | 가시 프레임 world 위치 오차 |
+| Velocity MAE | 가시 프레임 world 속도 오차 |
+| Collision event P/R/F1 | 객체 쌍 matching 후 허용 프레임 오차 적용 |
+| Constraint violation rate | 예측 상태의 물리 제약별 위반률, 진단 지표 |
+| Runtime | 초/클립, 프레임당 처리량, GPU 메모리 |
 
-학습이 끝나면 둘 다 갱신된다. 이미 `runs/`에만 있는 가중치는 `python scripts/export_clevrer_flow.py --run_name exp_02_sub_video_recognition`으로 복사한다. eval·training-free 방법은 run 파일이 없으면 published 경로를 쓴다.
+평가 때 모델은 deterministic direct forward 한 번으로 \(\hat S\)를 출력한다. 속도장 NFE, ODE 적분 스텝 수, training-free constraint sampling은 보고하지 않는다. 픽셀 FVD와 CLIP은 인식 실험 지표가 아니다.
 
----
-
-## 7. 평가 지표
-
-제약 만족 (Safety):
-
-- `attr_safe`, `track_safe`, `collision_safe`, `total_safe`
-- 제약별 viol. rate / mean $(h)_+$
-
-인식 품질 (GT 대비, Hungarian 슬롯 대응 후):
-
-| 지표 | 과제 | 방향 |
-| :--- | :---: | :---: |
-| Attribute set F1 | A | $\uparrow$ |
-| Count MAE | A | $\downarrow$ |
-| Visibility F1 | B | $\uparrow$ |
-| ADE / FDE (가시 프레임, world) | B | $\downarrow$ |
-| Collision event P/R/F1 ($\pm$ 허용 프레임) | C | $\uparrow$ |
-| Unassessable rate | 공통 | 빈 슬롯·전부 비가시 등은 안전으로 세지 않음 |
-
-시스템: 초/클립, NFE (속도장 평가 횟수). 픽셀 FVD는 보고하지 않는다.
-
-공식 `propnet_preds`는 **참고 열**로만 붙인다. 같은 원본 클립의 상한선이지, 이 실험의 학습 타깃이 아니다.
+공식 PropNet 출력이 있으면 참고 결과로 별도 표기할 수 있지만, 학습 타깃이나 동일 조건 모델 비교로 간주하지 않는다.
 
 ---
 
-## 8. Exp-02 (Wan 생성)과의 관계
+## 7. Exp-02 생성 실험과 연결
 
-```text
-본 실험:  V_clevrer  →  vθ  →  S_hat   (인식, 주석 공간)
-Exp-02:    z0, text  →  Wan →  V_gen  →  (추후) S_hat_gen
-```
+\[
+V_{\mathrm{CLEVRER}}\rightarrow
+\text{ResNet-34 spatial features}\rightarrow
+\text{temporal/object head}\rightarrow
+\hat S
+\]
 
-이 실험이 끝나면 $S$의 좌표, $h$, 슬롯 대응, 충돌 허용 오차가 고정된다. Exp-02의 `generated_tracks`는 같은 $S$ 스키마로 맞춘다.
+Exp-02에서는 생성 영상 \(V_{\mathrm{gen}}\)에도 같은 추론 경로를 적용해 generated_tracks를 만들 수 있다. 출력 좌표·속성·충돌 형식은 본 문서의 \(S\)와 일치시킨다.
 
-Wan 클립에 이 $v_\theta$를 그대로 적용하는 것은 **도메인 이동 점검**이며, 본 실험의 성공 조건이 아니다. COCO 검출 점수로 물리 안전을 주장하지 않는 규칙과 같다.
+다만 CLEVRER validation 성능은 Wan 생성 영상에 대한 일반화 보증이 아니다. 생성 영상에서 이 인식기를 평가할 때는 도메인 이동 결과를 별도로 기록하고, 이 인식기 자체가 Y-Flow의 물리 제약 판정을 유리하게 만드는 순환 평가가 되지 않도록 독립 오라클/수동 표본 검토를 병행한다.
 
----
-
-## 9. 단계와 완료 조건
-
-1. **상태 dump**  
-   train/eval 클립을 $S$ 텐서 + meta로 저장 (`datasets/clevrer/states/`). 좌표는 world, 시간은 33×16 fps 매핑.  
-   완료: eval 100의 $N_{\mathrm{obj}}$, 충돌 수가 JSON 주석과 일치. 짧은 클립·frame 밀림 없음.
-
-2. **무제약 FlowMatch 학습**  
-   $V\to S$ CFM. $h$는 평가만.  
-   완료: eval에서 attribute F1, ADE, collision F1을 기록. Safety는 제약 방법보다 낮을 것으로 본다.
-
-3. **제약 오라클**  
-   `CLEVRERStateConstraint`로 위 $h$를 구현, `test/test_constraints.py`에 GT 상태는 전부 $h\le 0$인지 확인.  
-   완료: eval 100의 GT dump가 `total_safe=1`. 원점 바깥·관통 합성 상태는 위반.
-
-4. **다섯 방법 비교**  
-   같은 $S_0$, 같은 $v_\theta$.  
-   완료: 표 + 궤적 그림. YFlow/HardFlow Safety 목표 아래.
-
-5. **(선택) Wan 도메인 이동**  
-   생성 클립이 생긴 뒤에만. 본 실험 게이트가 아니다.
-
-시작 하이퍼 (확정은 dump 이후):
-
-- $K=6$, $T=33$, fps $16$, $R_{xy}=12$, $v_{\max}=3.2$
-- $d_0=0.45$, $d_{\min}=0.38$, $\tau_{\mathrm{col}}=0.07$
-- `t_on=0.5`, Euler $N=50$, seed $42$
+Wan VAE는 본 인식 모델에서 쓰지 않는다. 이 실험은 CLEVRER가 Wan의 생성 조건 입력으로 가능한지를 판정하는 실험도 아니다.
 
 ---
 
-## 10. 성공 기준
+## 8. 구현 단계와 완료 조건
 
-Default eval 100, 같은 $S_0$:
+1. **입력·상태 정렬 검사**
+   train/dev/eval 샘플에서 영상 33프레임, frame_id, object_id, 위치·속도·충돌 시각이 맞는지 시각화한다. GT 상태에 대해 제약 오라클을 실행한다.
+2. **ResNet 공간 특징 검사**
+   ImageNet 가중치와 전처리를 고정하고, 입력·layer2·layer3·융합 특징의 실제 형상이 위 표와 맞는지 확인한다. 특징맵 overlay로 객체 위치 정보가 보존되는지 표본 검토한다.
+3. **시간 헤드 지도학습**
+   고정 backbone으로 학습하고 개발 결과를 기록한다. 먼저 시간 헤드를 제거한 per-frame 기준선과 비교한다.
+4. **제한적 fine-tuning ablation**
+   layer3를 풀어 동일 설정으로 재학습한다. 정확도, 안정성, 시간, 메모리를 비교해 고정 backbone 또는 미세조정 중 하나를 선택한다.
+5. **최종 eval 및 Exp-02 연결**
+   선택된 checkpoint를 한 번만 eval 100에서 평가한다. 같은 상태 스키마로 결과를 export하고, Wan 생성 영상 검증은 별도 도메인 이동 단계로 둔다.
 
-1. GT dump의 Total Safety $=1$ (오라클 자체 검사)
-2. 무제약 FlowMatch보다 제약 방법의 `collision_safe`, `track_safe`가 높음
-3. HardFlow 또는 YFlow **Total Safety $\ge 0.95$**
-4. 제약을 켠 뒤 attribute F1이 무제약 대비 **5%p 이상 떨어지지 않음** (인식 붕괴 방지)
-5. 3D 비관통을 픽셀 겹침만으로 주장하지 않음. 이 실험의 관통은 **world 중심 거리**다.
+첫 구현 완료 조건:
+
+- GT 변환 결과에서 객체 수 및 annotation 대응이 원본 JSON과 일치한다.
+- 모든 분류/회귀 출력 형상과 slot matching이 작은 batch에서 검증된다.
+- 시간 헤드가 없는 기준선과 비교해 궤적 ADE/FDE 또는 충돌 event F1 중 적어도 시간 의존 과제에서 개선되는지 확인한다.
+- 최종 표에는 인식 지표, 제약 위반 진단값, 추론 시간 및 사용한 ResNet 가중치를 함께 기록한다.
 
 ---
 
-## 11. 한 줄
+## 9. 한 줄
 
-Exp-02-sub는 Wan으로 영상을 만들기 전에, CLEVRER 주석 공간에서 Flow Matching이 **객체·경로·충돌을 인식**하게 하고, 그 인식 결과에 Swiss roll과 같은 hard constraint를 거는 실험이다.
+Exp-02-sub는 ImageNet 사전학습 ResNet-34의 layer2/layer3 공간 특징에 객체 슬롯 및 시간 Transformer 헤드를 붙여, CLEVRER 비디오에서 객체·궤적·충돌 상태를 직접 지도학습하는 인식 실험이다.

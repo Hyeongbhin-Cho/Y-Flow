@@ -23,7 +23,8 @@
 * `unicon_flow.py`: PTZF certificate, batched slack QP, terminal refinement
 * `hard_flow.py`: terminal $h,C$ SLSQP 후 affine 복원
 * `y_flow.py`: 물리 투영, terminal PGD, 선형 보간
-* `clevrer_recognition.py`: 비디오 조건 인식 FlowMatch eval (속성 F1, ADE, Safety)
+* `clevrer_recognition.py`: 직접 지도학습 ResNet 인식기의 deterministic eval. 객체 수/속성, 가시성, world-coordinate ADE/FDE·속도 오차, collision event F1 및 물리 constraint 진단을 계산한다.
+* `clevrer_hard_flow.py` / `clevrer_y_flow.py` / `clevrer_unicon_flow.py` / `clevrer_safe_flow.py` / `clevrer_guide_flow.py`: 이전 CFM 인식기 경로와의 호환용 legacy sampler. Exp-02-sub의 recognition 학습·평가에서는 호출하지 않는다.
 
 
 ---
@@ -34,6 +35,11 @@
 
 #### run_eval
 *   **설명**: `eval.{method}.sample(cfg, device, x0)`을 호출한다. 결과는 `runs/{run_name}/{command}/metrics.json`과 `runs/{run_name}/metrics.json`.
+
+### clevrer_recognition.py
+
+#### run_eval
+*   **설명**: `recognition/best.pt` (없으면 `last.pt`)의 ResNet 모델을 복원한 뒤 각 클립을 한 번 통과시킨다. dev에서 보정한 head threshold를 사용하고, GT object ID와 clip-level Hungarian matching을 적용해 추적 및 충돌 이벤트 지표를 계산한다. constraint safety는 별도의 진단 결과다.
 
 ### _backbone.py
 

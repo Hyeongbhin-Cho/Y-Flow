@@ -23,7 +23,7 @@
   * 유틸리티: `normalize_tensor`, `denormalize_tensor`, `build_anchor_vocabulary`.
 * `swiss_roll.py`: 2D spiral 데이터 생성, 캐시 저장/로드, `SwissRollConstraint`, `SwissRollFMBF`.
 * `clevrer.py`: CLEVRER MP4 지연 로딩, 원본 객체·운동·충돌 주석, `VideoDataBundle`, `collate_clevrer`.
-* `clevrer_state.py`: 인식용 packed 상태 $S$, `CLEVRERStateConstraint`, `CLEVRERRecognitionDataset`.
+* `clevrer_state.py`: 인식용 packed 상태 $S$, `CLEVRERStateConstraint` ($h$, $C$, $P$, `project_feasible`, 3장벽 FMBF), `CLEVRERRecognitionDataset`.
 * `../datasets/swiss_roll/default/`: Exp-01 기본 dump (`train.npy`, `eval.npy`, `meta.json`).
 
 ---

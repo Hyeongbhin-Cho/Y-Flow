@@ -1,6 +1,6 @@
 # Model 패키지 (model/)
 
-이 패키지는 Flow-Matching 속도장 $v_t^\theta(x,t)$ 구조를 정의한다.
+이 패키지는 Flow-Matching 속도장 $v_t^\theta(x,t)$과 CLEVRER 직접 인식 모델을 정의한다.
 
 Exp-01 Swiss roll은 2D **좌표점**이므로 MLP를 쓴다. CNN/UNet은 이미지 격자용이며 여기 쓰지 않는다.
 
@@ -20,6 +20,7 @@ Exp-01 Swiss roll은 2D **좌표점**이므로 MLP를 쓴다. CNN/UNet은 이미
 * `download.py`: Hugging Face Wan2.1 가중치 및 CLEVRER 평가 artifact 다운로드
 * `clevrer_eval.py`: 공식 visual-mask / PropNet 예측 로더, COCO Mask R-CNN 추론, 속성·충돌 점수
 * `clevrer_flow.py`: 비디오 조건 인식 속도장 $v_\theta(S_t,t,E(V))$ (`CLEVRERVelocityNet`)
+* `clevrer_recognition.py`: ImageNet 사전학습 ResNet-34 공간 인코더, 객체 슬롯 decoder, 시간 Transformer 및 상태 예측 head
 * `wan.py`: Wan2.1 Flow-Matching Video Transformer (`WanTransformer3DModel`) 및 3D VAE 래퍼 (`WanVelocityNet`, `build_wan_model`)
 
 ---
@@ -32,7 +33,7 @@ Exp-01 Swiss roll은 2D **좌표점**이므로 MLP를 쓴다. CNN/UNet은 이미
 *   **설명**: `forward(x, t) -> v`. `x, v`는 `[B, D]` (또는 고차원 `[B, C, T, H, W]`), `t`는 `[B]` 또는 `[B, 1]`.
 
 #### build_model
-*   **설명**: `cfg.model.name`으로 네트워크를 만든다. Exp-01은 `mlp`, Exp-02는 `wan2.1`, 인식 실험은 `clevrer_flow`.
+*   **설명**: `cfg.model.name`으로 네트워크를 만든다. Exp-01은 `mlp`, Exp-02는 `wan2.1`, CLEVRER CFM 인식 모델은 `clevrer_flow`, 직접 ResNet 인식 모델은 `clevrer_resnet34`.
 
 ### time_embed.py
 
@@ -65,6 +66,11 @@ Exp-01 Swiss roll은 2D **좌표점**이므로 MLP를 쓴다. CNN/UNet은 이미
 
 #### CLEVRERVelocityNet
 *   **설명**: packed 장면 상태 $S\in\mathbb{R}^{D}$와 클립 $V$를 받아 $v_t^\theta(S_t,t,E(V))$를 낸다. $E(V)$는 프레임 CNN + 시간 평균. 학습 가중치는 `runs/{run_name}/flowmatch/last.pt`와 `checkpoints/clevrer_flow/last.pt`에 같이 둔다.
+
+### clevrer_recognition.py
+
+*   **설명**: `[B,3,T,H,W]` RGB 클립에서 ImageNet 사전학습 ResNet-34의 stem–layer3 공간 특징을 뽑고, 객체 슬롯 및 temporal Transformer head로 속성·가시성·world 위치/속도·충돌 로짓을 직접 예측한다.
+*   사전학습 가중치는 `python scripts/setup_resnet34.py`로 `checkpoints/resnet34_imagenet1k_v1.pth`에 준비한다. 모델 생성 자체는 로컬 파일을 읽으며 자동 다운로드하지 않는다.
 
 ### wan.py
 

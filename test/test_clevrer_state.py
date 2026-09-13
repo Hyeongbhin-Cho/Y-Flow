@@ -150,6 +150,55 @@ class TestCLEVRERState(unittest.TestCase):
         cons = CLEVRERStateConstraint(_meta(layout), layout)
         self.assertGreater(float(cons.h(state)["count"]), 0.0)
 
+    def test_project_feasible_separates_and_clears(self) -> None:
+        from data.clevrer_state import pack_parts, unpack_state, task_safety
+
+        layout = CLEVRERStateLayout(n_slots=6, n_frames=4)
+        cons = CLEVRERStateConstraint(_meta(layout), layout)
+        color = np.zeros((6, 8), np.float32)
+        color[0, 0] = 1.0
+        color[1, 1] = 1.0
+        material = np.zeros((6, 2), np.float32)
+        material[0, 0] = 1.0
+        material[1, 1] = 1.0
+        shape = np.zeros((6, 3), np.float32)
+        shape[0, 0] = 1.0
+        shape[1, 1] = 1.0
+        vis = np.zeros((6, 4), np.float32)
+        vis[0] = 1.0
+        vis[1] = 1.0
+        pos = np.zeros((6, 4, 3), np.float32)
+        pos[0, :, 2] = 0.2
+        pos[1, :, 2] = 0.2
+        pos[2, :, 0] = 3.0
+        vel = np.zeros((6, 4, 3), np.float32)
+        coll = np.zeros((4, 6, 6), np.float32)
+        packed = pack_parts(color, material, shape, vis, pos, vel, coll, layout)
+        self.assertGreater(float(cons.h(packed)["penetrate"]), 0.0)
+        projected = cons.project_feasible(torch.from_numpy(packed), buffer=1e-3)
+        parts = unpack_state(projected.numpy(), layout)
+        dist = np.linalg.norm(parts["pos"][0] - parts["pos"][1], axis=-1)
+        self.assertTrue(np.all(dist >= 0.38 - 1e-4))
+        self.assertLess(float(np.linalg.norm(parts["pos"][2])), 1e-5)
+        flags = task_safety(cons.h(projected.numpy()))
+        self.assertTrue(bool(flags["collision"]))
+
+    def test_fmbf_shapes_and_gt_projection(self) -> None:
+        layout = CLEVRERStateLayout(n_slots=6, n_frames=8)
+        state = annotation_to_state(_valid_annotation(8), np.arange(8), layout, dt=1.0 / 16.0)
+        cons = CLEVRERStateConstraint(_meta(layout), layout)
+        projected = cons.project_feasible(torch.from_numpy(state))
+        h = cons.h(projected.numpy())
+        for name, value in h.items():
+            self.assertLessEqual(float(np.max(value)), 1e-4, msg=name)
+        fmbf = cons.get_fmbf(temperature=0.05)
+        p = torch.from_numpy(state).unsqueeze(0)
+        values, grads = fmbf.values_and_gradients(p)
+        self.assertEqual(tuple(values.shape), (1, 3))
+        self.assertEqual(tuple(grads.shape), (1, 3, layout.dim))
+        self.assertTrue(torch.isfinite(values).all())
+        self.assertTrue(torch.isfinite(grads).all())
+
 
 class TestCLEVRERRecognitionBuild(unittest.TestCase):
     @unittest.skipIf(av is None, "PyAV required")

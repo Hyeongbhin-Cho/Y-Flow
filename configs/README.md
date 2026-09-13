@@ -12,8 +12,8 @@
 
 ## 2. 파일 목록 및 요약
 * `exp_01_swiss_roll.yaml`: Exp-01 Swiss roll. 데이터 캐시, MLP, CFM, HardFlow/YFlow/SafeFlow/GuideFlow/UniConFlow 설정
-* `exp_02_video.yaml`: CLEVRER 지연 로딩과 Wan2.1 설정. `data.name: clevrer`, `cache_dir: datasets/clevrer`, 기본 `eval_split: validation`, `train_split: null`. 비디오 생성·물리 평가 연동은 별도 작업.
-* `exp_02_sub_video_recognition.yaml`: CLEVRER 인식 CFM. `data.name: clevrer_recognition`, `model.name: clevrer_flow`, `model.local_dir: checkpoints/clevrer_flow`. train split 필요.
+* `exp_02_video.yaml`: CLEVRER 지연 로딩과 Wan2.1 설정. Exp-02 비교 방법은 FlowMatch와 YFlow이며 나머지 constrained-flow 방법은 제외.
+* `exp_02_sub_video_recognition.yaml`: CLEVRER 직접 인식 지도학습. `data.name: clevrer_recognition`, ImageNet V1 ResNet-34의 stem–layer3와 시간·객체 헤드, train-only 90/10 split, AdamW 및 multi-task loss를 설정한다. 사전학습 가중치는 `scripts/setup_resnet34.py`로 준비한다.
 
 ---
 

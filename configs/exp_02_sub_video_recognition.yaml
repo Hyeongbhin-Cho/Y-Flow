@@ -1,7 +1,8 @@
-# configs/exp_02_sub_video_recognition.yaml
+# Exp-02 보조 실험: CLEVRER 영상에서 객체·궤적·충돌을 직접 인식
 exp: exp_02_sub_video_recognition
 seed: 42
 
+# 원본 320x480 프레임을 종횡비를 유지해 160x240으로 축소한다.
 data:
   name: clevrer_recognition
   cache_dir: datasets/clevrer
@@ -12,9 +13,10 @@ data:
   n_frames: 33
   fps: 16
   start_time: 0.0
-  height: 160              # 원본 320x480과 같은 2:3. 원본 해상도는 null
+  height: 160
   width: 240
   n_slots: 6
+  # Physical diagnostics use simulator world-coordinate units.
   r_xy: 12.0
   z0: 0.20
   tau_z: 0.05
@@ -29,29 +31,51 @@ data:
   eps_null: 1.0e-3
 
 model:
-  name: clevrer_flow
-  local_dir: checkpoints/clevrer_flow
-  hidden: [256, 256, 256]
-  time_embed_dim: 64
-  cond_dim: 128
-
-method:
-  name: flow_matching
-  sigma_min: 0.0
+  name: clevrer_resnet34
+  local_dir: checkpoints/clevrer_recognition
+  pretrained: true
+  weights_path: checkpoints/resnet34_imagenet1k_v1.pth
+  weights_name: ResNet34_Weights.IMAGENET1K_V1
+  backbone_mode: frozen       # 대안 fine-tuning 비교는 layer3
+  dim: 256
+  slot_layers: 2
+  temporal_layers: 4
+  n_heads: 8
+  ff_dim: 1024
+  dropout: 0.1
 
 train:
   batch_size: 4
-  steps: 2000
-  lr: 1.0e-3
-  ema_decay: 0.999
-  num_workers: 0
+  epochs: 30
+  dev_fraction: 0.1
+  early_stopping_patience: 8
+  lr: 3.0e-4                 # fusion + recognition heads
+  backbone_lr: 1.0e-5        # used when backbone_mode=layer3
+  weight_decay: 1.0e-2
+  grad_clip: 1.0
+  lr_factor: 0.5
+  lr_patience: 2
+  num_workers: 4
 
-sample:
-  n_samples: 100
-  n_steps: 50
+loss:
+  objectness: 1.0
+  attributes: 1.0
+  visibility: 1.0
+  position: 5.0
+  velocity: 2.0
+  collision: 2.0
+  kinematic: 0.1
+  match_objectness: 1.0
+  match_attributes: 1.0
+  match_position: 5.0
+  collision_pos_weight_cap: 20.0
 
-log:
-  out_dir: outputs/exp_02_sub_video_recognition
-  plot_every: 500
+eval:
+  batch_size: 1
+  num_workers: 2
+  objectness_threshold: 0.5  # training calibrates thresholds on the dev split
+  visibility_threshold: 0.5
+  collision_threshold: 0.5
+  collision_frame_tolerance: 2
 
 device: cuda

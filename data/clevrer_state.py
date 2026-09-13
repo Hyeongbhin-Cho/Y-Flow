@@ -141,25 +141,84 @@ def pack_parts(
     coll: np.ndarray,
     layout: CLEVRERStateLayout,
 ) -> np.ndarray:
-    k, t = layout.n_slots, layout.n_frames
-    pairs = np.zeros((t, layout.n_pairs), dtype=np.float32)
+    packed = pack_state(color, material, shape, vis, pos, vel, coll, layout)
+    return np.asarray(packed, dtype=np.float32)
+
+
+def pack_state(
+    color,
+    material,
+    shape,
+    vis,
+    pos,
+    vel,
+    coll,
+    layout: CLEVRERStateLayout,
+):
+    """Pack named parts to [..., D]. Accepts numpy or torch, with optional batch dims."""
+    is_torch = isinstance(color, torch.Tensor)
+    k = layout.n_slots
+    if is_torch:
+        idx_i, idx_j = torch.triu_indices(k, k, offset=1, device=color.device)
+        pairs = 0.5 * (coll[..., idx_i, idx_j] + coll[..., idx_j, idx_i])
+        pieces = (color, material, shape, vis, pos, vel, pairs)
+        batch = color.shape[:-2]
+        return torch.cat([item.reshape(*batch, -1) for item in pieces], dim=-1)
+
+    coll_np = np.asarray(coll)
+    batch = np.asarray(color).shape[:-2]
+    t = layout.n_frames
+    pairs = np.zeros((*batch, t, layout.n_pairs), dtype=np.float32)
     pair = 0
     for i in range(k):
         for j in range(i + 1, k):
-            pairs[:, pair] = 0.5 * (coll[:, i, j] + coll[:, j, i])
+            pairs[..., pair] = 0.5 * (coll_np[..., i, j] + coll_np[..., j, i])
             pair += 1
-    return np.concatenate(
-        [
-            color.reshape(-1),
-            material.reshape(-1),
-            shape.reshape(-1),
-            vis.reshape(-1),
-            pos.reshape(-1),
-            vel.reshape(-1),
-            pairs.reshape(-1),
-        ],
-        axis=0,
-    ).astype(np.float32)
+    pieces = (
+        np.asarray(color),
+        np.asarray(material),
+        np.asarray(shape),
+        np.asarray(vis),
+        np.asarray(pos),
+        np.asarray(vel),
+        pairs,
+    )
+    return np.concatenate([item.reshape(*batch, -1) for item in pieces], axis=-1).astype(np.float32)
+
+
+ATTR_KEYS = ("vocab", "count", "ident", "null")
+TRACK_KEYS = ("table", "plane", "step", "kin", "acc")
+COLLISION_KEYS = ("sym", "colvis", "contact", "penetrate", "impulse")
+
+
+def task_safety(h: dict[str, Any]) -> dict[str, Any]:
+    """Per-sample task safety from named h_j <= 0."""
+
+    def _max(keys: tuple[str, ...]):
+        values = [h[key] for key in keys]
+        first = values[0]
+        if isinstance(first, torch.Tensor):
+            return torch.stack(values, dim=0).amax(dim=0)
+        return np.stack([np.asarray(v) for v in values], axis=0).max(axis=0)
+
+    attr = _max(ATTR_KEYS)
+    track = _max(TRACK_KEYS)
+    collision = _max(COLLISION_KEYS)
+    if isinstance(attr, torch.Tensor):
+        total = torch.stack((attr, track, collision), dim=0).amax(dim=0)
+        return {
+            "attr": attr <= 0,
+            "track": track <= 0,
+            "collision": collision <= 0,
+            "total": total <= 0,
+        }
+    total = np.stack((attr, track, collision), axis=0).max(axis=0)
+    return {
+        "attr": attr <= 0,
+        "track": track <= 0,
+        "collision": collision <= 0,
+        "total": total <= 0,
+    }
 
 
 def annotation_to_state(
@@ -296,7 +355,8 @@ class CLEVRERStateConstraint(BaseConstraint):
         n_obj = occupied.sum(dim=-1)
         h_count = torch.maximum(n_obj - float(layout.n_slots), 3.0 - n_obj)
 
-        h_ident = p_t.new_zeros(p_t.shape[:-1])
+        # Packed S stores (a,m,q) per slot, not per frame, so ident is structurally 0.
+        h_ident = p_t.new_zeros(p_t.shape[:-1]) - float(meta.eps_ident)
         h_null = ((1.0 - occupied) * pos.norm(dim=-1).amax(dim=-1)).amax(dim=-1) - float(meta.eps_null)
 
         vis_pos = vis.unsqueeze(-1)
@@ -373,46 +433,121 @@ class CLEVRERStateConstraint(BaseConstraint):
             return 0.5 * torch.stack(terms, dim=0).sum(dim=0)
         return 0.5 * np.stack([np.asarray(t) for t in terms], axis=0).sum(axis=0)
 
-    def project_feasible(self, p: torch.Tensor, buffer: float = 1e-4) -> torch.Tensor:
-        p_t, to_numpy = self._as_torch(p)
-        parts = unpack_state(p_t, self.layout)
+    def _quantize_and_clear(self, parts: dict[str, torch.Tensor], *, buffer: float, smooth: bool) -> dict[str, torch.Tensor]:
         meta = self.meta
+        layout = self.layout
         vis = parts["vis"].clamp(0.0, 1.0)
+        occupied = torch.maximum(
+            (parts["color"].clamp_min(0).sum(dim=-1) > 0.5).to(dtype=vis.dtype),
+            (vis.amax(dim=-1) > 0.5).to(dtype=vis.dtype),
+        )
+        mask_k = occupied.unsqueeze(-1)
+        color = torch.nn.functional.one_hot(parts["color"].argmax(dim=-1), layout.n_color).to(dtype=vis.dtype)
+        material = torch.nn.functional.one_hot(parts["material"].argmax(dim=-1), layout.n_material).to(dtype=vis.dtype)
+        shape = torch.nn.functional.one_hot(parts["shape"].argmax(dim=-1), layout.n_shape).to(dtype=vis.dtype)
+        color = color * mask_k
+        material = material * mask_k
+        shape = shape * mask_k
+        vis = vis * occupied.unsqueeze(-1)
         pos = parts["pos"].clone()
+        vel = parts["vel"].clone()
         xy = pos[..., :2].clamp(-float(meta.r_xy) + buffer, float(meta.r_xy) - buffer)
-        z = pos[..., 2:3].clamp(float(meta.z0) - float(meta.tau_z) + buffer, float(meta.z0) + float(meta.tau_z) - buffer)
+        if smooth:
+            z = pos[..., 2:3].new_full(pos[..., 2:3].shape, float(meta.z0))
+        else:
+            z = pos[..., 2:3].clamp(
+                float(meta.z0) - float(meta.tau_z) + buffer,
+                float(meta.z0) + float(meta.tau_z) - buffer,
+            )
         pos = torch.cat([xy, z], dim=-1)
-        color = torch.nn.functional.one_hot(parts["color"].argmax(dim=-1), self.layout.n_color).to(p_t.dtype)
-        material = torch.nn.functional.one_hot(parts["material"].argmax(dim=-1), self.layout.n_material).to(p_t.dtype)
-        shape = torch.nn.functional.one_hot(parts["shape"].argmax(dim=-1), self.layout.n_shape).to(p_t.dtype)
         coll = 0.5 * (parts["coll"] + parts["coll"].transpose(-1, -2))
         coll = coll - torch.diag_embed(coll.diagonal(dim1=-2, dim2=-1))
-        def _np(x: torch.Tensor) -> np.ndarray:
-            return x.detach().cpu().numpy()
+        coll = coll.clamp(0.0, 1.0)
+        # occupied [B, K], coll [B, T, K, K]
+        coll = coll * occupied[:, None, :, None] * occupied[:, None, None, :]
 
+        pos_t = pos.permute(0, 2, 1, 3)
+        vis_t = vis.permute(0, 2, 1)
+        diff = pos_t[:, :, :, None, :] - pos_t[:, :, None, :, :]
+        dist = diff.norm(dim=-1)
+        slot = torch.arange(layout.n_slots, device=pos.device, dtype=pos.dtype)
+        fallback = torch.zeros_like(diff)
+        fallback[..., 0] = (slot[:, None] - slot[None, :]).sign()
+        unit = torch.where(dist.unsqueeze(-1) > 1e-6, diff / dist.clamp_min(1e-6).unsqueeze(-1), fallback)
+        vis_pair = vis_t[:, :, :, None] * vis_t[:, :, None, :]
+        eye = torch.eye(layout.n_slots, device=pos.device, dtype=pos.dtype)
+        need = (vis_pair > 0.5) & (eye < 0.5) & (dist < float(meta.d_min) + buffer)
+        push = 0.5 * (float(meta.d_min) + buffer - dist).clamp_min(0.0)
+        delta = need.to(dtype=pos.dtype).unsqueeze(-1) * push.unsqueeze(-1) * unit
+        pos = (pos_t + delta.sum(dim=-2)).permute(0, 2, 1, 3)
+
+        if smooth:
+            coll_slot = coll.amax(dim=-1).transpose(-1, -2)
+            prev = torch.cat([pos[..., :1, :], pos[..., :-1, :]], dim=-2)
+            nxt = torch.cat([pos[..., 1:, :], pos[..., -1:, :]], dim=-2)
+            vis_l = torch.cat([vis[..., :1], vis[..., :-1]], dim=-1)
+            vis_r = torch.cat([vis[..., 1:], vis[..., -1:]], dim=-1)
+            use = (vis > 0.5) & (vis_l > 0.5) & (vis_r > 0.5) & (coll_slot <= 0.5)
+            pos = torch.where(use.unsqueeze(-1), 0.25 * prev + 0.5 * pos + 0.25 * nxt, pos)
+
+        pos = pos * occupied[:, :, None, None]
+        vel = vel * occupied[:, :, None, None]
+        return {
+            "color": color,
+            "material": material,
+            "shape": shape,
+            "vis": vis,
+            "pos": pos,
+            "vel": vel,
+            "coll": coll,
+        }
+
+    def project_feasible(self, p: torch.Tensor, buffer: float = 1e-4) -> torch.Tensor:
+        p_t, to_numpy = self._as_torch(p)
+        squeezed = False
         if p_t.ndim == 1:
-            out = pack_parts(_np(color), _np(material), _np(shape), _np(vis), _np(pos), _np(parts["vel"]), _np(coll), self.layout)
-            result = torch.from_numpy(out).to(device=p_t.device, dtype=p_t.dtype)
-            return result.numpy() if to_numpy else result
-        rows = []
-        for i in range(p_t.shape[0]):
-            rows.append(
-                pack_parts(
-                    _np(color[i]),
-                    _np(material[i]),
-                    _np(shape[i]),
-                    _np(vis[i]),
-                    _np(pos[i]),
-                    _np(parts["vel"][i]),
-                    _np(coll[i]),
-                    self.layout,
-                )
-            )
-        result = torch.from_numpy(np.stack(rows)).to(device=p_t.device, dtype=p_t.dtype)
-        return result.numpy() if to_numpy else result
+            p_t = p_t.unsqueeze(0)
+            squeezed = True
+        parts = self._quantize_and_clear(unpack_state(p_t, self.layout), buffer=float(buffer), smooth=False)
+        result = pack_state(
+            parts["color"], parts["material"], parts["shape"],
+            parts["vis"], parts["pos"], parts["vel"], parts["coll"], self.layout,
+        )
+        if squeezed:
+            result = result.squeeze(0)
+        return result.detach().cpu().numpy() if to_numpy else result
 
     def project_physical(self, p: torch.Tensor | np.ndarray) -> torch.Tensor | np.ndarray:
-        return self.project_feasible(p, buffer=0.0)
+        p_t, to_numpy = self._as_torch(p)
+        squeezed = False
+        if p_t.ndim == 1:
+            p_t = p_t.unsqueeze(0)
+            squeezed = True
+        parts = self._quantize_and_clear(unpack_state(p_t, self.layout), buffer=0.0, smooth=True)
+        result = pack_state(
+            parts["color"], parts["material"], parts["shape"],
+            parts["vis"], parts["pos"], parts["vel"], parts["coll"], self.layout,
+        )
+        if squeezed:
+            result = result.squeeze(0)
+        return result.detach().cpu().numpy() if to_numpy else result
+
+    def estimate_lipschitz(
+        self, p: torch.Tensor | np.ndarray, eps: float = 1e-4
+    ) -> torch.Tensor | np.ndarray:
+        p_t, to_numpy = self._as_torch(p)
+        squeezed = False
+        if p_t.ndim == 1:
+            p_t = p_t.unsqueeze(0)
+            squeezed = True
+        delta = torch.randn_like(p_t)
+        delta = delta / delta.norm(dim=-1, keepdim=True).clamp_min(1e-8) * float(eps)
+        p0 = self.project_physical(p_t)
+        p1 = self.project_physical(p_t + delta)
+        lip = (p1 - p0).norm(dim=-1) / delta.norm(dim=-1).clamp_min(float(eps))
+        if squeezed:
+            lip = lip.squeeze(0)
+        return lip.detach().cpu().numpy() if to_numpy else lip
 
     def energy(self, p: torch.Tensor, **kwargs) -> torch.Tensor:
         return self.cost(p)
@@ -428,6 +563,74 @@ class CLEVRERStateConstraint(BaseConstraint):
         vis = unpack_state(p_t, self.layout)["vis"].clamp(0.0, 1.0)
         frac = vis.mean(dim=(-1, -2))
         return frac.detach().cpu().numpy() if to_numpy else frac
+
+    def get_fmbf(self, **kwargs) -> CLEVRERFMBF:
+        return CLEVRERFMBF(self, temperature=float(kwargs.get("temperature", 0.05)))
+
+
+@dataclass(frozen=True)
+class TerminalFilterStats:
+    filtered: int
+
+
+class CLEVRERFMBF:
+    """Three task-level C1 barriers for SafeFlow QP. Oracle h stays 14 named scalars."""
+
+    names = ("attr", "track", "collision")
+
+    def __init__(self, constraint: CLEVRERStateConstraint, temperature: float = 0.05) -> None:
+        if temperature <= 0.0:
+            raise ValueError("FMBF temperature must be positive")
+        self.constraint = constraint
+        self.temperature = float(temperature)
+
+    def _smoothmax(self, h_dict: dict[str, torch.Tensor], keys: tuple[str, ...]) -> torch.Tensor:
+        stacked = torch.stack([h_dict[key] for key in keys], dim=-1)
+        temp = self.temperature
+        return temp * torch.logsumexp(stacked / temp, dim=-1)
+
+    def values_and_gradients(self, p: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        squeezed = False
+        if p.ndim == 1:
+            p = p.unsqueeze(0)
+            squeezed = True
+        p_in = p.detach().requires_grad_(True)
+        h_dict = self.constraint.h(p_in)
+        oracle = torch.stack(
+            (
+                self._smoothmax(h_dict, ATTR_KEYS),
+                self._smoothmax(h_dict, TRACK_KEYS),
+                self._smoothmax(h_dict, COLLISION_KEYS),
+            ),
+            dim=-1,
+        )
+        barriers = -oracle
+        grads = []
+        for j in range(barriers.shape[-1]):
+            grad = torch.autograd.grad(barriers[:, j].sum(), p_in, retain_graph=True)[0]
+            grads.append(grad)
+        gradients = torch.stack(grads, dim=-2)
+        if squeezed:
+            return barriers.squeeze(0).detach(), gradients.squeeze(0).detach()
+        return barriers.detach(), gradients.detach()
+
+    def terminal_filter(
+        self,
+        p: np.ndarray,
+        *,
+        max_iter: int = 100,
+        ftol: float = 1.0e-7,
+        constraint_tol: float = 1.0e-7,
+    ) -> tuple[np.ndarray, TerminalFilterStats]:
+        del max_iter, ftol
+        points = np.asarray(p, dtype=np.float32)
+        projected = self.constraint.project_feasible(
+            torch.from_numpy(points), buffer=max(float(constraint_tol), 1e-4)
+        )
+        out = np.asarray(projected, dtype=np.float64)
+        before = self.constraint.h(points)
+        unsafe_before = np.stack(list(before.values()), axis=-1).max(axis=-1) > 0.0
+        return out, TerminalFilterStats(filtered=int(np.asarray(unsafe_before).sum()))
 
 
 def _constraint_meta(layout: CLEVRERStateLayout, cfg: DictConfig, mean: np.ndarray, std: np.ndarray) -> CLEVRERStateMeta:
@@ -587,4 +790,10 @@ def build_clevrer_recognition(cfg: DictConfig) -> VideoDataBundle:
         **options,
         **{key: getattr(meta, key) for key in ("r_xy", "z0", "tau_z", "v_max", "tau_kin", "d0", "d_min")},
     }
-    return VideoDataBundle(train=train, eval=evaluation, meta=bundle_meta, constraint=constraint)
+    return VideoDataBundle(
+        train=train,
+        eval=evaluation,
+        meta=bundle_meta,
+        constraint=constraint,
+        train_raw=train_states,
+    )

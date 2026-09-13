@@ -73,6 +73,16 @@ def run_train(
     device: torch.device | None = None,
 ) -> Path:
     device = device or get_device(cfg)
+    if str(cfg.data.get("name", "")).lower() == "clevrer_recognition":
+        if method != "recognition":
+            raise ValueError(
+                "CLEVRER video recognition uses direct supervised training; "
+                "invoke `main.py recognition --mode train`"
+            )
+        from train.clevrer_recognition import run_train_recognition
+
+        return run_train_recognition(cfg, method=method, device=device)
+
     out_dir = method_dir(cfg, method)
     out_dir.mkdir(parents=True, exist_ok=True)
     OmegaConf.save(cfg, out_dir / "config.yaml")
@@ -80,10 +90,6 @@ def run_train(
     model_name = str(cfg.model.name).lower()
     if model_name in ("wan2.1", "wan", "wan_transformer"):
         return setup_foundation_model(cfg, out_dir, device)
-    if str(cfg.data.get("name", "")).lower() == "clevrer_recognition":
-        from train.clevrer_flow import run_train_recognition
-
-        return run_train_recognition(cfg, method=method, device=device)
 
     bundle = build_dataset(cfg)
     loader = DataLoader(

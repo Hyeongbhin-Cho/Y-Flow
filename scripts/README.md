@@ -10,11 +10,22 @@
 ## 2. 파일 목록 및 요약
 
 * `setup_wan.py`: Wan2.1 가중치 준비 및 로드 검증.
+* `setup_resnet34.py`: torchvision ImageNet-1K ResNet-34 V1 가중치를 받아 프로젝트 체크포인트 경로에 저장.
 * `setup_clevrer.py`: 공식 CLEVRER 영상·주석 다운로드, ZIP 압축 해제, split manifest 생성.
 * `setup_clevrer_eval.py`: Mask R-CNN / visual-mask / PropNet 평가 아티팩트 다운로드와 원본 클립 객체·상호작용 검토.
 * `export_clevrer_flow.py`: 이미 학습된 `runs/.../flowmatch/last.pt`를 `checkpoints/clevrer_flow/`로 복사.
 
 ## 3. 세부 명세
+
+### setup_resnet34.py
+
+```bash
+python scripts/setup_resnet34.py
+```
+
+torchvision의 ResNet34_Weights.IMAGENET1K_V1 가중치를 다운로드해 `checkpoints/resnet34_imagenet1k_v1.pth`에 저장한다. 이후 CLEVRER 인식 모델은 이 로컬 state dict를 사용하며, 모델 빌드 시 네트워크 접근을 요구하지 않는다. `--output`으로 경로를 바꾸거나 `--force`로 다시 받을 수 있다.
+
+가중치와 CLEVRER train split 준비 후에는 `python main.py recognition --mode train --run_name exp_02_sub_video_recognition --config configs/exp_02_sub_video_recognition.yaml`로 지도학습을 시작한다. 개발 split에서 선택한 checkpoint는 `runs/exp_02_sub_video_recognition/recognition/best.pt` 및 `checkpoints/clevrer_recognition/last.pt`에 저장된다.
 
 ### setup_clevrer.py
 

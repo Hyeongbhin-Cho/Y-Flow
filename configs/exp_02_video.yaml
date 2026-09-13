@@ -52,43 +52,11 @@ log:
 yflow:
   t_on: 0.5
   lambda_oc: 10.0
-  mu: 1.0                     # 0.0이면 HardFlow형 순수 터미널 최적화로 환원
+  mu: 1.0                     # 0.0이면 물리 warm-start 없이 terminal objective만 최적화
   max_iter: 10
   delta: 0.1
   gamma_max: 1.0
   safety_buffer: 1.0e-4
   latent_proxy: true          # true: 잠재 공간 대리 제약으로 고속 PGD, false: VAE 디코더 역전파
-
-hardflow:
-  t_on: 0.5
-  lambda_oc: 10.0
-  max_iter: 10
-
-safeflow:
-  enabled: true
-  integrator: euler
-  t_on: 0.5
-  slack_weight: 1.0
-  terminal_filter:
-    enabled: true
-    max_iter: 20
-
-uniconflow:
-  free_until: 0.0
-  ptzf_rate: 1.0
-  gamma: 1.0
-  slack_weight: 100.0
-  terminal_refinement: true
-
-guideflow:
-  n_anchors: 64
-  cvf: true
-  lambda_cvf: 0.1
-  cf: true
-  k_c: 15
-  rfe: true
-  tau_star: 0.5
-  eta_max: 0.5
-  n_refine: 5
 
 device: cuda
