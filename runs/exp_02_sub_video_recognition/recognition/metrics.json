@@ -1,0 +1,33 @@
+{
+  "method": "recognition",
+  "run_name": "exp_02_sub_video_recognition",
+  "checkpoint": "runs/exp_02_sub_video_recognition/recognition/best.pt",
+  "n_samples": 100,
+  "thresholds": {
+    "objectness": 0.45000000000000007,
+    "visibility": 0.6,
+    "collision": 0.9
+  },
+  "object_count_mae": 0.4,
+  "object_precision": 0.916,
+  "object_recall": 0.9462809917355371,
+  "object_f1": 0.9308943089430894,
+  "attribute_f1": 0.7784552845528455,
+  "visibility_f1": 0.9565886450149834,
+  "track_object_coverage": 0.9462809917355371,
+  "ade_visible": 0.28597831960966874,
+  "fde_visible": 0.2873363432634541,
+  "velocity_mae": 0.27737119344078254,
+  "collision_event_f1": 0.657243816254417,
+  "collision_event_precision": 0.6241610738255033,
+  "collision_event_recall": 0.6940298507462687,
+  "collision_tp": 93,
+  "collision_fp": 56,
+  "collision_fn": 41,
+  "attr_safe": 0.39,
+  "track_safe": 0.15,
+  "collision_safe": 0.27,
+  "total_safe": 0.01,
+  "inference_time_s": 2.597339832223952,
+  "inference_time_s_per_clip": 0.025973398322239518
+}

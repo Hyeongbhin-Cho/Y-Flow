@@ -1,0 +1,74 @@
+exp: exp_02_sub_video_recognition
+seed: 42
+data:
+  name: clevrer_recognition
+  cache_dir: datasets/clevrer
+  train_split: train
+  eval_split: validation
+  n_train: null
+  n_eval: 100
+  n_frames: 33
+  fps: 16
+  start_time: 0.0
+  height: 160
+  width: 240
+  n_slots: 6
+  r_xy: 12.0
+  z0: 0.2
+  tau_z: 0.05
+  v_max: 3.2
+  tau_kin: 0.2
+  tau_acc: 0.6
+  d0: 0.45
+  d_min: 0.38
+  tau_col: 0.2
+  delta_v: 0.15
+  eps_ident: 0.05
+  eps_null: 0.001
+model:
+  name: clevrer_resnet34
+  local_dir: checkpoints/clevrer_recognition
+  pretrained: true
+  weights_path: checkpoints/resnet34_imagenet1k_v1.pth
+  weights_name: ResNet34_Weights.IMAGENET1K_V1
+  backbone_mode: frozen
+  dim: 256
+  slot_layers: 2
+  temporal_layers: 4
+  n_heads: 8
+  ff_dim: 1024
+  dropout: 0.1
+train:
+  batch_size: 4
+  epochs: 30
+  dev_fraction: 0.1
+  early_stopping_patience: 8
+  lr: 0.0003
+  backbone_lr: 1.0e-05
+  weight_decay: 0.01
+  grad_clip: 1.0
+  lr_factor: 0.5
+  lr_patience: 2
+  num_workers: 4
+loss:
+  objectness: 1.0
+  attributes: 1.0
+  visibility: 1.0
+  position: 5.0
+  velocity: 2.0
+  collision: 2.0
+  kinematic: 0.1
+  match_objectness: 1.0
+  match_attributes: 1.0
+  match_position: 5.0
+  collision_pos_weight_cap: 20.0
+eval:
+  batch_size: 1
+  num_workers: 2
+  objectness_threshold: 0.5
+  visibility_threshold: 0.5
+  collision_threshold: 0.5
+  collision_frame_tolerance: 2
+device: cuda
+run_name: exp_02_sub_video_recognition
+mode: train
