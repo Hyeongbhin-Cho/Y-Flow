@@ -8,7 +8,7 @@ import torch
 from omegaconf import OmegaConf
 
 from eval.moflow import trajectory_metrics
-from eval.autonomous_methods import _SAMPLERS
+from eval.autonomous_methods import _SAMPLERS, _cyclic_halfspace_correction
 from data.autonomous_driving import AutonomousDrivingConstraint
 from model.moflow import build_moflow_model
 from train.moflow import moflow_loss
@@ -91,6 +91,13 @@ class TestMoFlow(unittest.TestCase):
             self.assertTrue(torch.isfinite(result).all(), name)
             self.assertFalse(result.requires_grad, name)
             self.assertIsInstance(diagnostics, dict)
+
+    def test_safe_flow_qp_fallback_satisfies_simple_halfspaces(self):
+        a = torch.tensor([[-2.0, -3.0]])
+        b = torch.tensor([[[1.0, 0.0], [0.0, 1.0]]])
+        correction = _cyclic_halfspace_correction(a, b)
+        residual = a + (b * correction.unsqueeze(-2)).sum(dim=-1)
+        self.assertTrue((residual >= -1e-6).all())
 
 
 if __name__ == "__main__":

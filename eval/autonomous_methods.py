@@ -29,6 +29,20 @@ from utils.paths import method_dir
 SUPPORTED = frozenset({"hardflow", "safeflow", "uniconflow", "guideflow", "yflow"})
 
 
+def _cyclic_halfspace_correction(
+    a: torch.Tensor, b: torch.Tensor, passes: int = 4
+) -> torch.Tensor:
+    """Robust projection fallback for constraints a_j + b_j^T u >= 0."""
+    correction = torch.zeros(*a.shape[:-1], b.shape[-1], device=b.device, dtype=b.dtype)
+    for _ in range(int(passes)):
+        for j in range(a.shape[-1]):
+            normal = b[..., j, :]
+            residual = a[..., j] + (normal * correction).sum(dim=-1)
+            step = torch.clamp_min(-residual, 0.0) / normal.square().sum(dim=-1).clamp_min(1e-12)
+            correction = correction + step.unsqueeze(-1) * normal
+    return correction
+
+
 def _load(cfg, device):
     bundle = build_dataset(cfg)
     model = build_moflow_model(cfg).to(device)
@@ -150,7 +164,7 @@ def _uniconflow(cfg, model, context, feature, x0, mean, std, constraint):
 def _safeflow(cfg, model, context, feature, x0, mean, std, constraint):
     settings = cfg.safeflow
     steps, x = int(cfg.sample.n_steps), x0
-    dt, corrected_steps = 1.0 / steps, 0
+    dt, corrected_steps, fallback_steps = 1.0 / steps, 0, 0
     for i in range(steps):
         t = i / steps
         nominal = _velocity(model, context, feature, x, t)
@@ -164,19 +178,27 @@ def _safeflow(cfg, model, context, feature, x0, mean, std, constraint):
                 )
             gain = float(settings.get("av2_gain", 2.0)) / max(1.0 - t, 1.0 / steps)
             a = -(grads * nominal.unsqueeze(-2)).sum(dim=-1) - gain * h.detach()
-            solution = solve_composite_fmbf(
-                a.reshape(-1, a.shape[-1]),
-                (-grads).reshape(-1, grads.shape[-2], grads.shape[-1]),
-                slack_weight=float(settings.slack_weight),
-            )
-            nominal = nominal + solution.correction.reshape_as(x)
+            flat_a = a.reshape(-1, a.shape[-1])
+            flat_b = (-grads).reshape(-1, grads.shape[-2], grads.shape[-1])
+            try:
+                correction = solve_composite_fmbf(
+                    flat_a, flat_b, slack_weight=float(settings.slack_weight)
+                ).correction
+            except RuntimeError:
+                correction = _cyclic_halfspace_correction(flat_a, flat_b)
+                fallback_steps += 1
+            nominal = nominal + correction.reshape_as(x)
             corrected_steps += 1
         x = x + dt * nominal
     pre = constraint.h(x * std + mean)
     pre_safe = torch.stack(list(pre.values()), dim=-1).le(0).all(dim=-1).float().mean()
     if bool(settings.terminal_filter.enabled):
         x = (constraint.project_feasible(x * std + mean) - mean) / std
-    return x.detach(), {"pre_filter_safe_ratio": float(pre_safe.cpu()), "correction_steps": corrected_steps}
+    return x.detach(), {
+        "pre_filter_safe_ratio": float(pre_safe.cpu()),
+        "correction_steps": corrected_steps,
+        "qp_fallback_steps": fallback_steps,
+    }
 
 
 def _guideflow(cfg, model, context, feature, x0, mean, std, constraint):
