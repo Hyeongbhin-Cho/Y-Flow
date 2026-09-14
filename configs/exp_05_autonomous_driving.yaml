@@ -75,6 +75,7 @@ guideflow:
   tau_star: 0.5
   eta_max: 0.5
   av2_max_guidance_norm: 5.0
+  av2_line_search_steps: 8
 
 yflow:
   t_on: 0.5

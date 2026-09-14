@@ -204,7 +204,7 @@ def _safeflow(cfg, model, context, feature, x0, mean, std, constraint):
 def _guideflow(cfg, model, context, feature, x0, mean, std, constraint):
     settings = cfg.guideflow
     steps, x = int(cfg.sample.n_steps), x0
-    dt, corrections = 1.0 / steps, 0
+    dt, corrections, accepted_items, attempted_items = 1.0 / steps, 0, 0, 0
     t_on = float(settings.get("tau_star", 0.5))
     max_norm = float(settings.get("av2_max_guidance_norm", 5.0))
     for i in range(steps):
@@ -219,9 +219,25 @@ def _guideflow(cfg, model, context, feature, x0, mean, std, constraint):
             norm = torch.linalg.vector_norm(grad, dim=-1, keepdim=True)
             grad = grad * torch.clamp(max_norm / norm.clamp_min(1e-12), max=1.0)
             weight = float(settings.eta_max) * (t_next - t_on) / max(1.0 - t_on, 1e-8)
-            x = x - dt * weight * grad
+            base_cost = constraint.cost(x * std + mean).detach()
+            accepted = torch.zeros_like(base_cost, dtype=torch.bool)
+            refined = x
+            step_size = dt * weight
+            for _ in range(int(settings.get("av2_line_search_steps", 8))):
+                candidate = x - step_size * grad
+                candidate_cost = constraint.cost(candidate * std + mean).detach()
+                take = (~accepted) & (candidate_cost <= base_cost)
+                refined = torch.where(take.unsqueeze(-1), candidate, refined)
+                accepted = accepted | take
+                step_size *= 0.5
+            x = refined.detach()
             corrections += 1
-    return x.detach(), {"energy_correction_steps": corrections}
+            accepted_items += int(accepted.sum())
+            attempted_items += int(accepted.numel())
+    return x.detach(), {
+        "energy_correction_steps": corrections,
+        "energy_acceptance_rate": accepted_items / max(attempted_items, 1),
+    }
 
 
 _SAMPLERS = {
