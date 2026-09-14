@@ -226,6 +226,8 @@ def build_dataset(cfg_or_name: DictConfig | str, **kwargs) -> DataBundle:
         # Lazy load built-in datasets if not yet imported
         if name == "swiss_roll":
             import data.swiss_roll  # noqa: F401
+        elif name == "autonomous_driving":
+            import data.autonomous_driving  # noqa: F401
 
     if name not in _DATASET_REGISTRY:
         raise KeyError(

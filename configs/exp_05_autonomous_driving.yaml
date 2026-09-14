@@ -1,0 +1,42 @@
+exp: exp_05_autonomous_driving
+seed: 0
+
+data:
+  name: autonomous_driving
+  raw_dir: /root/datasets/argoverse2/motion_forecasting
+  cache_dir: datasets/autonomous_driving/exp_05
+  regenerate: false
+  sample_hz: 10.0
+  history_steps: 50
+  future_steps: 60
+  difference_window: 5
+  n_train: 780
+  n_eval: 150
+  v_max: 25.0
+  a_max: 15.0
+
+model:
+  name: mlp
+  dim: 120
+  hidden: [256, 256, 256]
+  time_embed_dim: 64
+
+method:
+  name: flow_matching
+  sigma_min: 0.0
+
+train:
+  batch_size: 128
+  steps: 20000
+  lr: 1.0e-3
+  ema_decay: 0.999
+
+sample:
+  n_samples: 150
+  n_steps: 100
+
+log:
+  out_dir: outputs/exp_05_autonomous_driving
+  plot_every: 2000
+
+device: cuda

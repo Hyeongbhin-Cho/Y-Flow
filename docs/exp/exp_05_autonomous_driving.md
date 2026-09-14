@@ -83,6 +83,8 @@ datasets/autonomous_driving/exp_05/
 | `a_max` | 최대 가속도 기준 |
 | `seed` | subset 및 평가 재현용 seed |
 
+MVP subset의 780개 train focal-vehicle 궤적에서 0.5초 구간 차분 통계를 측정한 결과, 전체 속도의 99.9 percentile은 24.14 m/s이고 궤적별 최대 가속도의 99.5 percentile은 14.63 m/s²였다. 정상 데이터의 극단값을 거의 제거하지 않는 hard validity envelope로 `v_max=25.0`, `a_max=15.0`을 사용한다. 이는 comfort 기준이 아니며 편안한 주행 가속도는 별도 지표로 평가한다.
+
 Train/eval split은 공식 split을 유지한다. 정규화 통계는 train split에서만 계산하여 eval leakage를 방지한다.
 
 ---
