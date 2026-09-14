@@ -29,11 +29,21 @@ method:
   name: flow_matching
   sigma_min: 0.0
 
+# MoFlow-style AV2 adaptation: conditional K-shot focal trajectory teacher.
+moflow:
+  n_modes: 6
+  hidden_dim: 256
+  type_embed_dim: 16
+  context_scale_m: 50.0
+  classification_weight: 0.1
+
 train:
   batch_size: 128
   steps: 20000
   lr: 1.0e-3
   ema_decay: 0.999
+  grad_clip: 5.0
+  save_every: 2000
 
 sample:
   n_samples: 150

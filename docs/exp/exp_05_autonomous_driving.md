@@ -243,3 +243,20 @@ MMD만으로 물리적 타당성이나 조건부 예측 정확도를 주장하�
 ## 10. 한 줄
 
 Exp-05의 1차 목표는 **Argoverse 2 차량 미래 궤적을 물리 좌표에서 생성하면서 속도·가속도 hard constraint를 만족하는지 공통 Flow Matching backbone으로 비교하는 것**이며, 과거 궤적·지도 조건과 도로·충돌 제약은 공통 conditional 인터페이스가 준비된 뒤 확장한다.
+
+## MoFlow teacher
+
+`moflow` is an Argoverse 2 adaptation of MoFlow's conditional K-shot flow-matching
+teacher. It predicts the focal vehicle's 6-second future from its 5-second history
+and up to 16 nearby actors. The compact GRU scene encoder replaces MoFlow's
+human-trajectory dataset-specific encoder, so results must be reported as a
+"MoFlow-style AV2 adaptation", not as an exact reproduction of the official model.
+
+Train and evaluate:
+
+```bash
+python main.py moflow --config configs/exp_05_autonomous_driving.yaml --mode train --run_name exp_05_moflow --device cuda
+python main.py moflow --config configs/exp_05_autonomous_driving.yaml --mode eval --run_name exp_05_moflow --device cuda
+```
+
+For a smoke test, add `--train.steps 2 --train.batch_size 4 --sample.n_steps 2`.

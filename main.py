@@ -24,6 +24,7 @@ COMMANDS = (
     "uniconflow",
     "hardflow",
     "yflow",
+    "moflow",
 )
 
 _METHOD_ORDER = (
@@ -108,6 +109,19 @@ def _eval_method(cfg: DictConfig, method: str) -> None:
     run_eval(cfg, method)
 
 
+def _train_moflow(cfg: DictConfig) -> None:
+    from train.moflow import run_train_moflow
+
+    ckpt = run_train_moflow(cfg)
+    print(f"saved {ckpt}")
+
+
+def _eval_moflow(cfg: DictConfig) -> None:
+    from eval.moflow import run_eval_moflow
+
+    run_eval_moflow(cfg)
+
+
 _TRAIN = {
     "flowmatch": _train_flowmatch,
     "guideflow": _train_guideflow,
@@ -115,6 +129,7 @@ _TRAIN = {
     "uniconflow": _train_uniconflow,
     "hardflow": _train_hardflow,
     "yflow": _train_yflow,
+    "moflow": _train_moflow,
 }
 
 _EVAL = {
@@ -124,6 +139,7 @@ _EVAL = {
     "uniconflow": lambda cfg: _eval_method(cfg, "uniconflow"),
     "hardflow": lambda cfg: _eval_method(cfg, "hardflow"),
     "yflow": lambda cfg: _eval_method(cfg, "yflow"),
+    "moflow": _eval_moflow,
 }
 
 
