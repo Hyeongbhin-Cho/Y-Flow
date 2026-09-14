@@ -1,0 +1,23 @@
+{
+  "minADE": 16.637557983398438,
+  "minFDE": 32.60784149169922,
+  "meanADE": 18.28223991394043,
+  "meanFDE": 36.11710739135742,
+  "top1ADE": 18.579444885253906,
+  "top1FDE": 36.59511947631836,
+  "safe_ratio": 1.0,
+  "oracle_safe_ratio": 1.0,
+  "top1_safe_ratio": 1.0,
+  "speed_viol_rate": 0.0,
+  "speed_viol_mean": 0.0,
+  "accel_viol_rate": 0.0,
+  "accel_viol_mean": 0.0,
+  "method": "yflow",
+  "backbone": "moflow",
+  "adaptation": "AV2 conditional K-shot",
+  "run_name": "exp_05_moflow",
+  "n_scenarios": 149,
+  "n_modes": 6,
+  "n_steps": 100,
+  "inference_time_s": 1.8547822423279285
+}
