@@ -60,6 +60,17 @@ def _cfg(raw_dir: Path, cache_dir: Path) -> OmegaConf:
                 "n_eval": 1,
                 "v_max": 25.0,
                 "a_max": 15.0,
+                "context": {
+                    "radius_m": 50.0,
+                    "max_neighbors": 16,
+                    "actor_types": [
+                        "vehicle",
+                        "bus",
+                        "motorcyclist",
+                        "cyclist",
+                        "pedestrian",
+                    ],
+                },
             },
         }
     )
@@ -78,11 +89,19 @@ class TestAutonomousDrivingData(unittest.TestCase):
 
             self.assertEqual(bundle.train_raw.shape, (2, 120))
             self.assertEqual(bundle.eval_raw.shape, (1, 120))
+            self.assertEqual(bundle.train_context["focal_history"].shape, (2, 50, 2))
+            self.assertEqual(
+                bundle.train_context["neighbor_history"].shape, (2, 16, 50, 2)
+            )
+            self.assertEqual(bundle.train_context["neighbor_mask"].shape, (2, 16))
+            self.assertFalse(bundle.train_context["neighbor_mask"].any())
             self.assertAlmostEqual(float(bundle.train_raw[0, 0]), 1.0, places=5)
             self.assertAlmostEqual(float(bundle.train_raw[0, 1]), 0.0, places=5)
             self.assertTrue((cache / "train.npy").is_file())
             self.assertTrue((cache / "eval.npy").is_file())
             self.assertTrue((cache / "meta.json").is_file())
+            self.assertTrue((cache / "train_context.npz").is_file())
+            self.assertTrue((cache / "eval_context.npz").is_file())
 
     def test_constraints_autograd_and_projection(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

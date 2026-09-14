@@ -14,6 +14,10 @@ data:
   n_eval: 150
   v_max: 25.0
   a_max: 15.0
+  context:
+    radius_m: 50.0
+    max_neighbors: 16
+    actor_types: [vehicle, bus, motorcyclist, cyclist, pedestrian]
 
 model:
   name: mlp

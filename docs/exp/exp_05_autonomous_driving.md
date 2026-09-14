@@ -42,6 +42,8 @@
 
 MVP 결과를 scene-conditioned motion forecasting 성능으로 주장하지 않는다.
 
+주변 actor 통계상 50m 이내 완전한 5초 history 수는 90 percentile 14개, 95 percentile 17개였다. 따라서 context는 focal vehicle 1대와 현재 거리순 주변 actor 최대 16개로 고정한다. 부족한 actor 슬롯은 0으로 padding하고 mask로 제외한다.
+
 ---
 
 ## 2. 데이터 표현과 캐시

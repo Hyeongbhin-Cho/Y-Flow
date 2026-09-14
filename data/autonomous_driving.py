@@ -28,6 +28,9 @@ class AutonomousDrivingMeta:
     difference_window: int
     v_max: float
     a_max: float
+    context_radius_m: float
+    max_neighbors: int
+    actor_types: tuple[str, ...]
     n_train: int
     n_eval: int
     skipped_train: int
@@ -137,8 +140,13 @@ def _resolve_path(raw: Any) -> Path:
 
 
 def _extract_focal_trajectory(
-    path: Path, history_steps: int, future_steps: int
-) -> tuple[np.ndarray, str] | None:
+    path: Path,
+    history_steps: int,
+    future_steps: int,
+    context_radius_m: float,
+    max_neighbors: int,
+    actor_types: tuple[str, ...],
+) -> tuple[np.ndarray, str, dict[str, np.ndarray]] | None:
     frame = pd.read_parquet(path)
     required = {
         "observed",
@@ -167,6 +175,10 @@ def _extract_focal_trajectory(
         and int(focal["timestep"].min()) == 0
         and int(focal["timestep"].max()) == expected - 1
         and str(focal["object_type"].iloc[0]).lower() == "vehicle"
+        and np.array_equal(observed["timestep"].to_numpy(), np.arange(history_steps))
+        and np.array_equal(
+            future["timestep"].to_numpy(), np.arange(history_steps, expected)
+        )
     )
     if not complete:
         return None
@@ -181,8 +193,60 @@ def _extract_focal_trajectory(
             -sine * delta[:, 0] + cosine * delta[:, 1],
         ]
     )
+    history_delta = observed[["position_x", "position_y"]].to_numpy(dtype=np.float64) - origin
+    focal_history = np.column_stack(
+        [
+            cosine * history_delta[:, 0] + sine * history_delta[:, 1],
+            -sine * history_delta[:, 0] + cosine * history_delta[:, 1],
+        ]
+    ).astype(np.float32)
+
+    type_to_id = {name: i + 1 for i, name in enumerate(actor_types)}
+    current = frame[
+        (frame["timestep"] == history_steps - 1)
+        & (frame["track_id"] != focal_id)
+        & (frame["object_type"].str.lower().isin(actor_types))
+    ].copy()
+    if len(current):
+        current_xy = current[["position_x", "position_y"]].to_numpy(dtype=np.float64)
+        current["_distance"] = np.linalg.norm(current_xy - origin, axis=1)
+        current = current[current["_distance"] <= context_radius_m].sort_values("_distance")
+
+    neighbor_history = np.zeros((max_neighbors, history_steps, 2), dtype=np.float32)
+    neighbor_mask = np.zeros(max_neighbors, dtype=np.bool_)
+    neighbor_types = np.zeros(max_neighbors, dtype=np.int64)
+    selected = 0
+    for row in current.itertuples(index=False):
+        track = frame[
+            (frame["track_id"] == row.track_id)
+            & (frame["timestep"] >= 0)
+            & (frame["timestep"] < history_steps)
+        ].sort_values("timestep")
+        if len(track) != history_steps or not np.array_equal(
+            track["timestep"].to_numpy(), np.arange(history_steps)
+        ):
+            continue
+        neighbor_delta = track[["position_x", "position_y"]].to_numpy(dtype=np.float64) - origin
+        neighbor_history[selected] = np.column_stack(
+            [
+                cosine * neighbor_delta[:, 0] + sine * neighbor_delta[:, 1],
+                -sine * neighbor_delta[:, 0] + cosine * neighbor_delta[:, 1],
+            ]
+        ).astype(np.float32)
+        neighbor_mask[selected] = True
+        neighbor_types[selected] = type_to_id[str(row.object_type).lower()]
+        selected += 1
+        if selected >= max_neighbors:
+            break
+
     scenario_id = str(frame["scenario_id"].iloc[0])
-    return local.astype(np.float32).reshape(-1), scenario_id
+    context = {
+        "focal_history": focal_history,
+        "neighbor_history": neighbor_history,
+        "neighbor_mask": neighbor_mask,
+        "neighbor_types": neighbor_types,
+    }
+    return local.astype(np.float32).reshape(-1), scenario_id, context
 
 
 def _load_split(
@@ -190,34 +254,55 @@ def _load_split(
     history_steps: int,
     future_steps: int,
     limit: int,
-) -> tuple[np.ndarray, tuple[str, ...], int]:
+    context_radius_m: float,
+    max_neighbors: int,
+    actor_types: tuple[str, ...],
+) -> tuple[np.ndarray, tuple[str, ...], int, dict[str, np.ndarray]]:
     paths = sorted(split_dir.rglob("scenario_*.parquet"))
     if not paths:
         raise FileNotFoundError(f"no scenario parquet files found below {split_dir}")
 
     trajectories: list[np.ndarray] = []
     scenario_ids: list[str] = []
+    contexts: dict[str, list[np.ndarray]] = {
+        "focal_history": [],
+        "neighbor_history": [],
+        "neighbor_mask": [],
+        "neighbor_types": [],
+    }
     skipped = 0
     for path in paths:
-        item = _extract_focal_trajectory(path, history_steps, future_steps)
+        item = _extract_focal_trajectory(
+            path,
+            history_steps,
+            future_steps,
+            context_radius_m,
+            max_neighbors,
+            actor_types,
+        )
         if item is None:
             skipped += 1
             continue
-        trajectory, scenario_id = item
+        trajectory, scenario_id, context = item
         trajectories.append(trajectory)
         scenario_ids.append(scenario_id)
+        for name in contexts:
+            contexts[name].append(context[name])
         if limit > 0 and len(trajectories) >= limit:
             break
 
     if not trajectories:
         raise ValueError(f"no complete focal-vehicle trajectories found below {split_dir}")
-    return np.stack(trajectories), tuple(scenario_ids), skipped
+    stacked_context = {name: np.stack(values) for name, values in contexts.items()}
+    return np.stack(trajectories), tuple(scenario_ids), skipped, stacked_context
 
 
 def _bundle_from_arrays(
     train_raw: np.ndarray,
     eval_raw: np.ndarray,
     meta: AutonomousDrivingMeta,
+    train_context: dict[str, np.ndarray],
+    eval_context: dict[str, np.ndarray],
 ) -> DataBundle:
     mean = np.asarray(meta.mean, dtype=np.float32)
     std = np.asarray(meta.std, dtype=np.float32)
@@ -233,12 +318,20 @@ def _bundle_from_arrays(
         constraint=AutonomousDrivingConstraint(meta),
         meta=meta,
         meta_dict=asdict(meta),
+        train_context=train_context,
+        eval_context=eval_context,
     )
 
 
 def _meta_from_dict(payload: dict[str, Any]) -> AutonomousDrivingMeta:
     data = dict(payload)
-    for name in ("mean", "std", "train_scenario_ids", "eval_scenario_ids"):
+    for name in (
+        "mean",
+        "std",
+        "actor_types",
+        "train_scenario_ids",
+        "eval_scenario_ids",
+    ):
         data[name] = tuple(data[name])
     return AutonomousDrivingMeta(**data)
 
@@ -248,11 +341,15 @@ def save_autonomous_driving(
     train_raw: np.ndarray,
     eval_raw: np.ndarray,
     meta: AutonomousDrivingMeta,
+    train_context: dict[str, np.ndarray],
+    eval_context: dict[str, np.ndarray],
 ) -> None:
     path = Path(cache_dir)
     path.mkdir(parents=True, exist_ok=True)
     np.save(path / "train.npy", np.asarray(train_raw, dtype=np.float32))
     np.save(path / "eval.npy", np.asarray(eval_raw, dtype=np.float32))
+    np.savez_compressed(path / "train_context.npz", **train_context)
+    np.savez_compressed(path / "eval_context.npz", **eval_context)
     (path / "meta.json").write_text(json.dumps(asdict(meta), indent=2))
 
 
@@ -260,25 +357,51 @@ def load_autonomous_driving(cache_dir: str | Path) -> DataBundle:
     path = Path(cache_dir)
     train_raw = np.load(path / "train.npy")
     eval_raw = np.load(path / "eval.npy")
+    with np.load(path / "train_context.npz") as payload:
+        train_context = {name: payload[name] for name in payload.files}
+    with np.load(path / "eval_context.npz") as payload:
+        eval_context = {name: payload[name] for name in payload.files}
     meta = _meta_from_dict(json.loads((path / "meta.json").read_text()))
-    return _bundle_from_arrays(train_raw, eval_raw, meta)
+    return _bundle_from_arrays(train_raw, eval_raw, meta, train_context, eval_context)
 
 
 @register_dataset("autonomous_driving")
 def build_autonomous_driving(cfg: DictConfig) -> DataBundle:
     cache_dir = _resolve_path(cfg.data.cache_dir)
     regenerate = bool(cfg.data.get("regenerate", False))
-    if (cache_dir / "meta.json").is_file() and not regenerate:
+    cache_files = (
+        cache_dir / "train.npy",
+        cache_dir / "eval.npy",
+        cache_dir / "train_context.npz",
+        cache_dir / "eval_context.npz",
+        cache_dir / "meta.json",
+    )
+    if all(path.is_file() for path in cache_files) and not regenerate:
         return load_autonomous_driving(cache_dir)
 
     raw_dir = _resolve_path(cfg.data.raw_dir)
     history_steps = int(cfg.data.history_steps)
     future_steps = int(cfg.data.future_steps)
-    train_raw, train_ids, skipped_train = _load_split(
-        raw_dir / "train", history_steps, future_steps, int(cfg.data.n_train)
+    context_radius_m = float(cfg.data.context.radius_m)
+    max_neighbors = int(cfg.data.context.max_neighbors)
+    actor_types = tuple(str(name).lower() for name in cfg.data.context.actor_types)
+    train_raw, train_ids, skipped_train, train_context = _load_split(
+        raw_dir / "train",
+        history_steps,
+        future_steps,
+        int(cfg.data.n_train),
+        context_radius_m,
+        max_neighbors,
+        actor_types,
     )
-    eval_raw, eval_ids, skipped_eval = _load_split(
-        raw_dir / "val", history_steps, future_steps, int(cfg.data.n_eval)
+    eval_raw, eval_ids, skipped_eval, eval_context = _load_split(
+        raw_dir / "val",
+        history_steps,
+        future_steps,
+        int(cfg.data.n_eval),
+        context_radius_m,
+        max_neighbors,
+        actor_types,
     )
     mean = train_raw.mean(axis=0)
     std = train_raw.std(axis=0).clip(min=1e-6)
@@ -290,6 +413,9 @@ def build_autonomous_driving(cfg: DictConfig) -> DataBundle:
         difference_window=int(cfg.data.difference_window),
         v_max=float(cfg.data.v_max),
         a_max=float(cfg.data.a_max),
+        context_radius_m=context_radius_m,
+        max_neighbors=max_neighbors,
+        actor_types=actor_types,
         n_train=int(train_raw.shape[0]),
         n_eval=int(eval_raw.shape[0]),
         skipped_train=skipped_train,
@@ -301,5 +427,9 @@ def build_autonomous_driving(cfg: DictConfig) -> DataBundle:
         train_scenario_ids=train_ids,
         eval_scenario_ids=eval_ids,
     )
-    save_autonomous_driving(cache_dir, train_raw, eval_raw, meta)
-    return _bundle_from_arrays(train_raw, eval_raw, meta)
+    save_autonomous_driving(
+        cache_dir, train_raw, eval_raw, meta, train_context, eval_context
+    )
+    return _bundle_from_arrays(
+        train_raw, eval_raw, meta, train_context, eval_context
+    )

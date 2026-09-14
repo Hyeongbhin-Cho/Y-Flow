@@ -163,6 +163,8 @@ class DataBundle:
     constraint: BaseConstraint
     meta: Any
     meta_dict: dict
+    train_context: dict[str, np.ndarray] | None = None
+    eval_context: dict[str, np.ndarray] | None = None
 
     def __getitem__(self, key: str) -> Any:
         try:
@@ -187,6 +189,8 @@ class DataBundle:
             "constraint",
             "meta",
             "meta_dict",
+            "train_context",
+            "eval_context",
         ]
 
 
