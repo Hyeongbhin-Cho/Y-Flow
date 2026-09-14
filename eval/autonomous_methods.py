@@ -209,15 +209,16 @@ def _guideflow(cfg, model, context, feature, x0, mean, std, constraint):
     max_norm = float(settings.get("av2_max_guidance_norm", 5.0))
     for i in range(steps):
         t = i / steps
+        t_next = (i + 1) / steps
         x = x + dt * _velocity(model, context, feature, x, t)
-        if t >= t_on:
+        if t_next > t_on:
             with torch.enable_grad():
                 z = x.detach().requires_grad_(True)
                 energy = constraint.cost(z * std + mean).sum()
                 grad = torch.autograd.grad(energy, z)[0]
             norm = torch.linalg.vector_norm(grad, dim=-1, keepdim=True)
             grad = grad * torch.clamp(max_norm / norm.clamp_min(1e-12), max=1.0)
-            weight = float(settings.eta_max) * (t - t_on) / max(1.0 - t_on, 1e-8)
+            weight = float(settings.eta_max) * (t_next - t_on) / max(1.0 - t_on, 1e-8)
             x = x - dt * weight * grad
             corrections += 1
     return x.detach(), {"energy_correction_steps": corrections}

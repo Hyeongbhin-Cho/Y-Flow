@@ -91,6 +91,8 @@ class TestMoFlow(unittest.TestCase):
             self.assertTrue(torch.isfinite(result).all(), name)
             self.assertFalse(result.requires_grad, name)
             self.assertIsInstance(diagnostics, dict)
+            if name == "guideflow":
+                self.assertGreater(diagnostics["energy_correction_steps"], 0)
 
     def test_safe_flow_qp_fallback_satisfies_simple_halfspaces(self):
         a = torch.tensor([[-2.0, -3.0]])
