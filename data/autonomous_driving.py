@@ -114,6 +114,37 @@ class AutonomousDrivingConstraint(BaseConstraint):
             return 0.5 * sum(torch.clamp_min(v, 0.0).square() for v in values.values())
         return 0.5 * sum(np.maximum(v, 0.0) ** 2 for v in values.values())
 
+    def project_physical(
+        self, p: torch.Tensor | np.ndarray
+    ) -> torch.Tensor | np.ndarray:
+        """Non-expansive temporal smoothing prior for vehicle trajectories.
+
+        The final point is retained to avoid directly changing destination
+        accuracy. Interior points are repeatedly averaged with their temporal
+        neighbors; the observed origin anchors the first predicted point.
+        This is a physical prior for YFlow, not the hard feasibility projection.
+        """
+        trajectory = _reshape_trajectories(p, self.meta.future_steps)
+        smoothed = trajectory.clone() if isinstance(trajectory, torch.Tensor) else trajectory.copy()
+        original_endpoint = trajectory[..., -1, :].clone() if isinstance(trajectory, torch.Tensor) else trajectory[..., -1, :].copy()
+        for _ in range(3):
+            previous = smoothed
+            if isinstance(previous, torch.Tensor):
+                origin = torch.zeros_like(previous[..., :1, :])
+                left = torch.cat([origin, previous[..., :-1, :]], dim=-2)
+                updated = 0.25 * left + 0.5 * previous + 0.25 * torch.cat(
+                    [previous[..., 1:, :], previous[..., -1:, :]], dim=-2
+                )
+            else:
+                origin = np.zeros_like(previous[..., :1, :])
+                left = np.concatenate([origin, previous[..., :-1, :]], axis=-2)
+                updated = 0.25 * left + 0.5 * previous + 0.25 * np.concatenate(
+                    [previous[..., 1:, :], previous[..., -1:, :]], axis=-2
+                )
+            updated[..., -1, :] = original_endpoint
+            smoothed = updated
+        return smoothed.reshape(p.shape)
+
     def project_feasible(
         self, p: torch.Tensor | np.ndarray, buffer: float = 1e-4
     ) -> torch.Tensor | np.ndarray:

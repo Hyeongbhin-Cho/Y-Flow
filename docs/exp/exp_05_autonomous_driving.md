@@ -277,3 +277,7 @@ HardFlow, SafeFlow, UniConFlow, GuideFlow, and YFlow are adapted to the AV2
 conditional K-shot state. SafeFlow uses differentiable speed/acceleration
 certificates plus exact terminal projection; GuideFlow uses inference-time
 energy refinement. The output `adaptation` field records this scope.
+
+For YFlow, the domain physical operator is a three-pass non-expansive temporal
+smoother anchored at the observed origin while retaining the predicted endpoint.
+The hard feasibility projection remains a separate speed/acceleration operation.

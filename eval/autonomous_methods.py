@@ -59,14 +59,16 @@ def _load(cfg, device):
     x0 = torch.randn(*shape, generator=generator).to(device)
     mean = bundle.mean.to(device=device, dtype=x0.dtype)
     std = bundle.std.to(device=device, dtype=x0.dtype)
-    feature = model.encode_context(context)
+    with torch.no_grad():
+        feature = model.encode_context(context).detach()
     return bundle, model, context, feature, x0, mean, std
 
 
 def _velocity(model, context, feature, x, t: float):
     batch = x.shape[0]
     times = torch.full((batch,), t, device=x.device, dtype=x.dtype)
-    return model(x, times, context, context_feature=feature)[0]
+    with torch.no_grad():
+        return model(x, times, context, context_feature=feature)[0]
 
 
 def _hardflow(cfg, model, context, feature, x0, mean, std, constraint):
