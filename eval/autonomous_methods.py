@@ -76,7 +76,7 @@ def _hardflow(cfg, model, context, feature, x0, mean, std, constraint):
                 buffer=float(settings.get("safety_buffer", 1e-4)),
             )
         x = t_next * target + (1.0 - t_next) * (bar - t_next * v_next)
-    return x, {}
+    return x.detach(), {}
 
 
 def _yflow(cfg, model, context, feature, x0, mean, std, constraint):
@@ -105,7 +105,7 @@ def _yflow(cfg, model, context, feature, x0, mean, std, constraint):
             )
         eta = 1.0 if terminal else dt / max(1.0 - t, 1e-8)
         x = (1.0 - eta) * x + eta * target
-    return x, {}
+    return x.detach(), {}
 
 
 def _uniconflow(cfg, model, context, feature, x0, mean, std, constraint):
@@ -221,13 +221,16 @@ def run_eval_autonomous(cfg: DictConfig, method: str, device=None) -> dict:
     predictions_z, diagnostics = _SAMPLERS[method](
         cfg, model, context, feature, x0, mean, std, bundle.constraint
     )
+    # Constraint samplers temporarily enable autograd to obtain Jacobians or
+    # optimization gradients. Generated trajectories are inference artifacts.
+    predictions_z = predictions_z.detach()
     final_t = torch.ones(x0.shape[0], device=device, dtype=x0.dtype)
     with torch.no_grad():
         _, logits = model(predictions_z, final_t, context, context_feature=feature)
     if device.type == "cuda":
         torch.cuda.synchronize(device)
     elapsed = time.perf_counter() - started
-    predictions = (predictions_z * std + mean).cpu().numpy()
+    predictions = (predictions_z * std + mean).detach().cpu().numpy()
     probabilities = torch.softmax(logits, dim=-1).cpu().numpy()
     metrics = trajectory_metrics(predictions, bundle.eval_raw, probabilities)
     h = bundle.constraint.h(predictions.reshape(-1, predictions.shape[-1]))

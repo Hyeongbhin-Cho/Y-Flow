@@ -89,6 +89,7 @@ class TestMoFlow(unittest.TestCase):
             )
             self.assertEqual(result.shape, x0.shape, name)
             self.assertTrue(torch.isfinite(result).all(), name)
+            self.assertFalse(result.requires_grad, name)
             self.assertIsInstance(diagnostics, dict)
 
 
