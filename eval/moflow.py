@@ -111,5 +111,8 @@ def run_eval_moflow(cfg: DictConfig, device: torch.device | None = None) -> dict
     np.save(out_dir / "eval_predictions.npy", predictions)
     np.save(out_dir / "eval_probabilities.npy", probabilities)
     (out_dir / "metrics.json").write_text(json.dumps(metrics, indent=2))
+    from eval.evaluate import write_run_metrics
+
+    write_run_metrics(cfg)
     print(json.dumps(metrics, indent=2))
     return metrics

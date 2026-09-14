@@ -36,6 +36,15 @@ _METHOD_ORDER = (
     "yflow",
 )
 
+_AUTONOMOUS_METHOD_ORDER = (
+    "moflow",
+    "hardflow",
+    "safeflow",
+    "uniconflow",
+    "guideflow",
+    "yflow",
+)
+
 _TRAINABLE = frozenset({"flowmatch", "guideflow", "safeflow", "uniconflow", "hardflow", "yflow"})
 
 
@@ -54,20 +63,17 @@ def _train_flowmatch(cfg: DictConfig) -> None:
 
 
 def _train_hardflow(cfg: DictConfig) -> None:
+    if _print_moflow_backbone(cfg, "hardflow"):
+        return
     from train.hard_flow import ensure_flowmatch_ckpt
 
     ckpt = ensure_flowmatch_ckpt(cfg)
     print(f"hardflow backbone {ckpt}")
 
 
-def _train_yflow(cfg: DictConfig) -> None:
-    from train.y_flow import ensure_flowmatch_ckpt
-
-    ckpt = ensure_flowmatch_ckpt(cfg)
-    print(f"yflow backbone {ckpt}")
-
-
 def _train_uniconflow(cfg: DictConfig) -> None:
+    if _print_moflow_backbone(cfg, "uniconflow"):
+        return
     from train.unicon_flow import ensure_flowmatch_ckpt
 
     ckpt = ensure_flowmatch_ckpt(cfg)
@@ -75,6 +81,8 @@ def _train_uniconflow(cfg: DictConfig) -> None:
 
 
 def _train_yflow(cfg: DictConfig) -> None:
+    if _print_moflow_backbone(cfg, "yflow"):
+        return
     from train.y_flow import ensure_flowmatch_ckpt
 
     ckpt = ensure_flowmatch_ckpt(cfg)
@@ -82,6 +90,8 @@ def _train_yflow(cfg: DictConfig) -> None:
 
 
 def _train_safeflow(cfg: DictConfig) -> None:
+    if _print_moflow_backbone(cfg, "safeflow"):
+        return
     from train.safe_flow import ensure_flowmatch_ckpt
 
     ckpt = ensure_flowmatch_ckpt(cfg)
@@ -89,6 +99,8 @@ def _train_safeflow(cfg: DictConfig) -> None:
 
 
 def _train_guideflow(cfg: DictConfig) -> None:
+    if _print_moflow_backbone(cfg, "guideflow"):
+        return
     from eval.guide_flow import owns_backbone
 
     if owns_backbone(cfg):
@@ -103,7 +115,26 @@ def _train_guideflow(cfg: DictConfig) -> None:
     print(f"guideflow backbone {ckpt}")
 
 
+def _print_moflow_backbone(cfg: DictConfig, method: str) -> bool:
+    if str(cfg.data.name) != "autonomous_driving":
+        return False
+    from utils.paths import method_dir
+
+    checkpoint = method_dir(cfg, "moflow") / "last.pt"
+    if not checkpoint.is_file():
+        raise FileNotFoundError(
+            f"missing shared MoFlow checkpoint: {checkpoint}. train `moflow` first"
+        )
+    print(f"{method} backbone {checkpoint}")
+    return True
+
+
 def _eval_method(cfg: DictConfig, method: str) -> None:
+    if str(cfg.data.name) == "autonomous_driving" and method != "flowmatch":
+        from eval.autonomous_methods import run_eval_autonomous
+
+        run_eval_autonomous(cfg, method)
+        return
     from eval.evaluate import run_eval
 
     run_eval(cfg, method)
@@ -145,7 +176,10 @@ _EVAL = {
 
 def _run_all(cfg: DictConfig, mode: str) -> None:
     table = _TRAIN if mode == "train" else _EVAL
-    names = _METHOD_ORDER if mode == "eval" else [m for m in _METHOD_ORDER if m in _TRAINABLE]
+    if mode == "eval" and str(cfg.data.name) == "autonomous_driving":
+        names = _AUTONOMOUS_METHOD_ORDER
+    else:
+        names = _METHOD_ORDER if mode == "eval" else [m for m in _METHOD_ORDER if m in _TRAINABLE]
     for name in names:
         print(f"==> {mode} {name}")
         try:

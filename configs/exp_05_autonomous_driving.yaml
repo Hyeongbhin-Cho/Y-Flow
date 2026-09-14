@@ -49,6 +49,40 @@ sample:
   n_samples: 150
   n_steps: 100
 
+hardflow:
+  t_on: 0.5
+  lambda_oc: 10.0
+  max_iter: 20
+  safety_buffer: 1.0e-4
+
+safeflow:
+  t_on: 0.5
+  slack_weight: 1.0
+  av2_gain: 2.0
+  terminal_filter:
+    enabled: true
+
+uniconflow:
+  free_until: 0.0
+  ptzf_rate: 1.0
+  gamma: 1.0
+  slack_weight: 100.0
+  max_guidance_norm: 20.0
+  terminal_refinement: true
+  safety_buffer: 1.0e-4
+
+guideflow:
+  tau_star: 0.5
+  eta_max: 0.5
+  av2_max_guidance_norm: 5.0
+
+yflow:
+  t_on: 0.5
+  lambda_oc: 10.0
+  mu: 1.0
+  max_iter: 20
+  safety_buffer: 1.0e-4
+
 log:
   out_dir: outputs/exp_05_autonomous_driving
   plot_every: 2000

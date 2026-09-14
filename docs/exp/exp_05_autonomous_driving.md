@@ -260,3 +260,20 @@ python main.py moflow --config configs/exp_05_autonomous_driving.yaml --mode eva
 ```
 
 For a smoke test, add `--train.steps 2 --train.batch_size 4 --sample.n_steps 2`.
+
+### Shared-backbone constraint comparison
+
+The five constraint methods below load the same
+`runs/<run_name>/moflow/last.pt` checkpoint and reuse the same initial noise.
+
+```bash
+for method in hardflow safeflow uniconflow guideflow yflow; do
+  python main.py "$method" --config configs/exp_05_autonomous_driving.yaml \
+    --mode eval --run_name exp_05_moflow --device cuda
+done
+```
+
+HardFlow, SafeFlow, UniConFlow, GuideFlow, and YFlow are adapted to the AV2
+conditional K-shot state. SafeFlow uses differentiable speed/acceleration
+certificates plus exact terminal projection; GuideFlow uses inference-time
+energy refinement. The output `adaptation` field records this scope.

@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import unittest
+from types import SimpleNamespace
 
 import numpy as np
 import torch
 from omegaconf import OmegaConf
 
 from eval.moflow import trajectory_metrics
+from eval.autonomous_methods import _SAMPLERS
+from data.autonomous_driving import AutonomousDrivingConstraint
 from model.moflow import build_moflow_model
 from train.moflow import moflow_loss
 
@@ -27,6 +30,12 @@ def _cfg():
                 "type_embed_dim": 8,
                 "classification_weight": 0.1,
             },
+            "sample": {"n_steps": 2},
+            "hardflow": {"t_on": 0.5, "lambda_oc": 1.0, "max_iter": 1, "safety_buffer": 1e-4},
+            "safeflow": {"t_on": 0.5, "slack_weight": 1.0, "av2_gain": 1.0, "terminal_filter": {"enabled": True}},
+            "uniconflow": {"free_until": 0.0, "ptzf_rate": 1.0, "gamma": 1.0, "slack_weight": 10.0, "max_guidance_norm": 5.0, "terminal_refinement": True, "safety_buffer": 1e-4},
+            "guideflow": {"tau_star": 0.5, "eta_max": 0.1, "av2_max_guidance_norm": 1.0},
+            "yflow": {"t_on": 0.5, "lambda_oc": 1.0, "mu": 1.0, "max_iter": 1, "safety_buffer": 1e-4},
         }
     )
 
@@ -60,6 +69,27 @@ class TestMoFlow(unittest.TestCase):
         metrics = trajectory_metrics(predictions, truth)
         self.assertEqual(metrics["minADE"], 0.0)
         self.assertEqual(metrics["minFDE"], 0.0)
+
+    def test_all_constraint_adapters_preserve_shape(self):
+        cfg = _cfg()
+        model = build_moflow_model(cfg)
+        context = _context(2)
+        feature = model.encode_context(context)
+        x0 = torch.randn(2, 3, 120)
+        mean = torch.zeros(120)
+        std = torch.ones(120)
+        meta = SimpleNamespace(
+            difference_window=5, future_steps=60, sample_hz=10.0,
+            v_max=25.0, a_max=15.0,
+        )
+        constraint = AutonomousDrivingConstraint(meta)
+        for name, sampler in _SAMPLERS.items():
+            result, diagnostics = sampler(
+                cfg, model, context, feature, x0.clone(), mean, std, constraint
+            )
+            self.assertEqual(result.shape, x0.shape, name)
+            self.assertTrue(torch.isfinite(result).all(), name)
+            self.assertIsInstance(diagnostics, dict)
 
 
 if __name__ == "__main__":
