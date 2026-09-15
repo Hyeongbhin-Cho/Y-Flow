@@ -34,12 +34,38 @@ def _sift_matches(a, b, max_matches):
     return np.asarray([ka[m.queryIdx].pt for m in good]), np.asarray([kb[m.trainIdx].pt for m in good])
 
 
-def verify(root="datasets/realestate10k", split="train", limit=10, max_matches=1000):
+def _decode_generated_video(path: Path, frames: int, expected_height: int, expected_width: int):
+    import av
+
+    decoded = []
+    with av.open(str(path)) as container:
+        for frame in container.decode(video=0):
+            decoded.append(frame.to_ndarray(format="rgb24"))
+            if len(decoded) == frames:
+                break
+    if len(decoded) < frames:
+        raise ValueError(f"{path} has {len(decoded)} frames; expected at least {frames}")
+    if decoded[0].shape[:2] != (expected_height, expected_width):
+        raise ValueError(
+            f"{path} has {decoded[0].shape[:2]} pixels; expected {(expected_height, expected_width)} for its F matrices"
+        )
+    return np.stack(decoded)
+
+
+def verify(root="datasets/realestate10k", split="train", limit=10, max_matches=1000, video_dir=None):
     dataset = RealEstate10KDataset(root, split=split, limit=limit)
     constraint = RealEstate10KEpipolarConstraint(tolerance_px=0.0)
     reports = []
     for sample in dataset:
-        frames = ((sample["video"].permute(1, 2, 3, 0).numpy() + 1) * 127.5).clip(0, 255).astype(np.uint8)
+        original = ((sample["video"].permute(1, 2, 3, 0).numpy() + 1) * 127.5).clip(0, 255).astype(np.uint8)
+        if video_dir is None:
+            frames = original
+        else:
+            path = Path(video_dir) / f"{sample['clip_id']}.mp4"
+            if not path.is_file():
+                reports.append({"clip_id": sample["clip_id"], "status": "missing_generated_video", "video": str(path)})
+                continue
+            frames = _decode_generated_video(path, len(original), original.shape[1], original.shape[2])
         pairs = []
         for no, (i, j) in enumerate(sample["pair_indices"].tolist()):
             if not bool(sample["fundamental_valid"][no]):
@@ -57,7 +83,8 @@ def verify(root="datasets/realestate10k", split="train", limit=10, max_matches=1
                           "raw_p90_px": float(np.percentile(raw, 90)),
                           "projected_max_abs_px": float(np.max(np.abs(after[mask[0]]))),
                           "projectable": int(mask[0].sum()), "status": "ok"})
-        reports.append({"clip_id": sample["clip_id"], "pairs": pairs})
+        reports.append({"clip_id": sample["clip_id"], "video_source": "original" if video_dir is None else "generated",
+                        "pairs": pairs})
     return reports
 
 
@@ -67,8 +94,10 @@ def main():
     p.add_argument("--split", choices=["train", "test"], default="train")
     p.add_argument("--limit", type=int, default=10)
     p.add_argument("--max-matches", type=int, default=1000)
+    p.add_argument("--video-dir", type=Path,
+                   help="Generated MP4 directory (<clip_id>.mp4). Uses original camera F as an exploratory target.")
     args = p.parse_args()
-    print(json.dumps(verify(args.root, args.split, args.limit, args.max_matches), indent=2))
+    print(json.dumps(verify(args.root, args.split, args.limit, args.max_matches, args.video_dir), indent=2))
 
 
 if __name__ == "__main__":
