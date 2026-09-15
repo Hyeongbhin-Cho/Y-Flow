@@ -128,6 +128,15 @@ python scripts/setup_realestate10k.py --poses-dir /path/to/poses --videos-dir /p
 - 동일 root/split에서 전처리 설정을 바꾸는 것은 거부한다. 별도 root를 사용한다.
 - 자동 선별은 기하 유효성·정적 장면을 보장하지 않는다. RealEstate10K 원본 포즈 오차와 시차는 후속 오라클에서 확인한다.
 
+대응점과 hard constraint 검증:
+
+```bash
+python -m pip install opencv-python-headless
+python scripts/verify_realestate10k_geometry.py --root datasets/realestate10k --split train --limit 10
+```
+
+이 진단은 SIFT 대응점의 원래 에피폴라 잔차와 `project_feasible` 후 잔차를 JSON으로 기록한다. 후자의 수치가 수치 오차 범위(대략 `1e-5 px` 이하)에 있어야 projector가 좌표 공간에서 정확히 작동한 것이다. 실제 장면의 매칭 품질과 제공 포즈의 정확도는 `raw_median_px`, `raw_p90_px`, `matches`로 별도 판단하며, `insufficient_matches` 쌍은 성공으로 집계하지 않는다.
+
 ```text
 datasets/realestate10k/
 ├── poses/{train,test}/*.txt

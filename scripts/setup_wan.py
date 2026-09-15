@@ -87,8 +87,8 @@ def main() -> None:
         "--subcomponent",
         type=str,
         default="core",
-        choices=["core", "transformer", "vae", "all"],
-        help="Components to ensure: 'core' (DiT+VAE, ~3GB), 'transformer', 'vae', 'all'.",
+        choices=["core", "transformer", "vae", "text_encoder", "all"],
+        help="Components to ensure: core (DiT+VAE), transformer, vae, text_encoder, or all.",
     )
     parser.add_argument(
         "--force",

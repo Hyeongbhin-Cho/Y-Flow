@@ -5,3 +5,5 @@ data:
   eval_split: train   # 10 development clips, not held-out test results
   n_eval: 10
   epipolar_tolerance_px: 1.0
+  prompt: "a realistic, stable real estate interior walkthrough"
+  noise_seed: 42

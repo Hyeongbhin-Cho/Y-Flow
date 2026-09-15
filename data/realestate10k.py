@@ -190,7 +190,7 @@ class RealEstate10KEpipolarConstraint:
 class RealEstate10KDataset(Dataset):
     """Lazy float32 RGB [C,T,H,W] in [-1,1], float64 camera geometry."""
 
-    def __init__(self, root, split="train", limit=None):
+    def __init__(self, root, split="train", limit=None, prompt=None, noise_seed=None):
         if split not in ("train", "test"):
             raise ValueError("split must be train or test")
         if limit is not None and (isinstance(limit, bool) or int(limit) != limit or limit <= 0):
@@ -206,6 +206,8 @@ class RealEstate10KDataset(Dataset):
         if len({r["clip_id"] for r in self.records}) != len(self.records):
             raise ValueError("Duplicate clip IDs")
         self.meta = manifest.get("settings", {})
+        self.prompt = prompt or self.meta.get("prompt", "a realistic real estate interior")
+        self.noise_seed = int(self.meta.get("seed", 42) if noise_seed is None else noise_seed)
 
     def __len__(self):
         return len(self.records)
@@ -233,6 +235,8 @@ class RealEstate10KDataset(Dataset):
         )
         return {
             "clip_id": record["clip_id"], "source_url": record["source_url"],
+            "prompt": record.get("prompt", self.prompt),
+            "noise_seed": torch.tensor(int(record.get("noise_seed", self.noise_seed + index)), dtype=torch.int64),
             "video": video,
             "wan_video": wan_video,
             "wan_timestamps_us": wan_timestamps,
@@ -258,7 +262,11 @@ def build_realestate10k(cfg):
     root = Path(str(options.get("cache_dir", "datasets/realestate10k"))).expanduser()
     if not root.is_absolute():
         root = ROOT / root
-    evaluation = RealEstate10KDataset(root, options.get("eval_split", "train"), options.get("n_eval", 10))
+    evaluation = RealEstate10KDataset(
+        root, options.get("eval_split", "train"), options.get("n_eval", 10),
+        prompt=str(options.get("prompt", "a realistic real estate interior")),
+        noise_seed=int(options.get("noise_seed", options.get("seed", 42))),
+    )
     constraint = RealEstate10KEpipolarConstraint(
         tolerance_px=float(options.get("epipolar_tolerance_px", 1.0))
     )

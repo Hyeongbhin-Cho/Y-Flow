@@ -94,6 +94,8 @@ def test_setup_ten_clips_and_resume(tmp_path):
     assert sample['wan_frame_mask'].tolist() == [True, True, True, False, False]
     torch.testing.assert_close(sample['wan_video'][:, -1], sample['video'][:, -1])
     assert sample['video'].dtype == torch.float32
+    assert sample['prompt'] == 'a realistic real estate interior'
+    assert sample['noise_seed'].item() == 42
     assert sample['fundamental_valid'].all()
     np.testing.assert_allclose(sample['K'][0], [[25.6, 0, 16], [0, 28.8, 16], [0, 0, 1]])
     np.testing.assert_array_equal(sample['actual_timestamps_us'], [0, 100000, 200000])

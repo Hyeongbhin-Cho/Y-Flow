@@ -45,5 +45,6 @@ dependencies:
       - transformers
       - sentencepiece
       - av                    # MP4 timestamp 기반 디코딩 (PyAV)
+      - opencv-python-headless # SIFT 대응점 검증 스크립트
       - "yt-dlp[default]"     # RealEstate10K 다운로드 + YouTube EJS 솔버
       - gdown                 # CLEVRER PropNet Google Drive 아카이브
