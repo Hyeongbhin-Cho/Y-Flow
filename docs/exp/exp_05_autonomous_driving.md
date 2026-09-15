@@ -360,3 +360,57 @@ bash run_exp_05_10k.sh
 `datasets/autonomous_driving/exp_05_10k`, 결과는 `runs/exp_05_av2_10k`에 저장한다.
 기존 MVP cache, checkpoint, 결과는 덮어쓰지 않는다. 첫 실행은 데이터 준비,
 MoFlow 재학습, seed-0 전체 비교까지만 수행하며 정상 확인 후 multi-seed로 확장한다.
+
+### 12.1 10k/2k 5-seed 주 결과
+
+유효 focal trajectory 10,000개로 MoFlow teacher를 학습하고 AV2 validation
+2,000개 scenario를 평가했다. 각 scenario에서 6개 후보를 Euler 100 step으로
+생성했으며 sampling seed 0~4를 사용했다. 아래 값은 5회 평균 ± 표준편차다.
+모든 제약 방법은 동일한 `exp_05_av2_10k` backbone checkpoint를 사용한다.
+
+| 방법 | minADE ↓ | minFDE ↓ | top-1 ADE ↓ | safe ratio ↑ | inference time ↓ |
+|---|---:|---:|---:|---:|---:|
+| MoFlow | 3.153 ± 0.050 | **6.944 ± 0.188** | 12.354 ± 0.147 | 0.00002 ± 0.00004 | **0.212 ± 0.002 s** |
+| SafeFlow | **3.035 ± 0.050** | 6.983 ± 0.180 | 12.202 ± 0.144 | **1.000 ± 0.000** | 7.619 ± 1.335 s |
+| UniConFlow | **3.035 ± 0.051** | 6.984 ± 0.173 | 12.200 ± 0.144 | **1.000 ± 0.000** | 0.564 ± 0.037 s |
+| YFlow | 3.076 ± 0.051 | 7.031 ± 0.165 | **12.091 ± 0.137** | **1.000 ± 0.000** | 4.311 ± 0.068 s |
+
+Terminal projection/refinement를 켜면 SafeFlow, UniConFlow, YFlow 모두 속도와
+가속도 제약을 100% 만족한다. YFlow는 세 안전 방법 중 top-1 ADE가 가장 낮지만,
+minADE와 minFDE는 SafeFlow/UniConFlow보다 소폭 높다. 추론 시간은 SafeFlow보다
+짧고 UniConFlow보다 약 7.6배 길다. 따라서 projection-on 결과만으로 YFlow가
+안전성에서 우월하다고 주장할 수는 없다.
+
+MoFlow는 가장 빠르고 minFDE가 가장 낮지만 평균 가속도 위반률이 99.998%이며
+safe ratio는 사실상 0이다. 또한 모든 방법에서 top-1 ADE가 minADE보다 크게
+높으므로 confidence head의 후보 순위화 성능은 후속 개선 대상으로 남는다.
+
+### 12.2 Terminal projection 제거 5-seed 결과
+
+생성 과정 자체의 제약 유도 효과와 사후 보정 효과를 분리하기 위해 SafeFlow,
+UniConFlow, YFlow의 terminal projection/refinement를 끄고 동일한 조건으로
+5개 seed를 반복했다.
+
+| 방법 | minADE ↓ | minFDE ↓ | safe ratio ↑ | speed viol. ↓ | accel. viol. ↓ | time ↓ |
+|---|---:|---:|---:|---:|---:|---:|
+| SafeFlow | 3.108 ± 0.051 | 6.945 ± 0.187 | 0.00218 ± 0.00036 | 0.0171 ± 0.0011 | 0.9978 ± 0.0003 | 6.624 ± 0.103 s |
+| UniConFlow | 3.120 ± 0.051 | **6.939 ± 0.190** | 0.00058 ± 0.00010 | 0.0259 ± 0.0014 | 0.9994 ± 0.0001 | **0.561 ± 0.052 s** |
+| YFlow | **3.041 ± 0.052** | 7.006 ± 0.169 | **0.88407 ± 0.00190** | **0.0041 ± 0.0007** | **0.1120 ± 0.0017** | 4.260 ± 0.092 s |
+
+YFlow는 terminal projection 없이 평균 88.41%의 후보가 두 제약을 모두
+만족했다. SafeFlow는 0.22%, UniConFlow는 0.06%에 그쳤으며 두 방법의 가속도
+위반률은 99.8% 이상이었다. 이 차이는 5개 seed에서 작은 표준편차로 반복됐다.
+YFlow는 이 조건에서 minADE도 가장 낮았지만 minFDE와 추론 시간은 UniConFlow보다
+불리했다.
+
+따라서 이 실험이 지지하는 핵심 결론은 **YFlow가 사후 terminal projection에
+덜 의존하면서 물리적으로 실행 가능한 궤적을 생성한다**는 것이다. 다만 88.41%는
+hard safety guarantee가 아니며, 최종 100% 만족이 필요한 경우에는 YFlow에도
+terminal refinement가 필요하다. 현재 실험은 속도·가속도 제약만 평가하므로
+도로 이탈, 충돌 회피, 카메라·LiDAR 입력 및 폐루프 실제 차량 안전성으로 결론을
+확대하지 않는다.
+
+집계 결과 원본은 다음 파일에 저장한다.
+
+- `runs/exp_05_av2_10k_multiseed_summary.json`
+- `runs/exp_05_av2_10k_no_terminal_multiseed_summary.json`
