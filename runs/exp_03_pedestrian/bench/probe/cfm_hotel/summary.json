@@ -1,0 +1,15 @@
+{
+  "checkpoint": "/root/Y-Flow/experiments/exp_03_pedestrian/checkpoints/cfm/hotel/model.pt",
+  "dropout_cfg": {
+    "drop_method": null,
+    "drop_logi_k": null,
+    "drop_logi_m": null
+  },
+  "terminal_step_t": 0.9500000000000001,
+  "terminal_change_m": {
+    "0.1": 0.3364206145346049,
+    "0.5": 4.817934013847207,
+    "1.0": 10.724745118598094
+  },
+  "n_scenes": 200
+}

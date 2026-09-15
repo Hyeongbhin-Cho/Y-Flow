@@ -1,0 +1,125 @@
+# configs/exp_03_pedestrian.yaml
+# Exp-03. ETH/UCY pedestrian trajectories as 38-d points (8 obs + 12 fut, agent frame),
+# same protocol as Exp-01: unconstrained FlowMatch + training-free constrained methods.
+exp: exp_03_pedestrian
+seed: 0
+
+data:
+  name: pedestrian
+  subset: zara2                 # eth | hotel | univ | zara1 | zara2
+  source_dir: datasets/pedestrian/default
+  cache_dir: datasets/pedestrian/points
+  regenerate: false
+  dt: 0.4
+  rotate_time_frame: 6
+  quantile: 99.5                # v_max / a_max: train per-trajectory max quantile
+  margin: 0.5                   # box R = train max |coord| + margin
+  n_eval: null                  # null: whole test split
+
+model:
+  name: mlp
+  dim: 38
+  hidden: [256, 256, 256]
+  time_embed_dim: 64
+
+method:
+  name: flow_matching
+  sigma_min: 0.0
+
+train:
+  batch_size: 256
+  steps: 40000
+  lr: 5.0e-4
+  ema_decay: 0.999
+
+sample:
+  n_samples: 4000
+  n_steps: 100
+
+log:
+  out_dir: outputs/exp_03_pedestrian
+  plot_every: 4000
+
+guideflow:
+  n_anchors: 256
+  cvf: true
+  lambda_cvf: 0.1
+  cvf_t_on: 0.0
+  cf: true
+  cf_mode: interp
+  k_c: 50
+  rfe: true
+  tau_star: 0.5
+  eta_max: 0.5
+  n_refine: 10
+  slack: 0.01
+  w_tube: 1.0                   # speed term
+  w_core: 1.0                   # acceleration term
+  w_box: 1.0
+  w_cost: 0.05
+  guidance:
+    enabled: false
+    signal: command             # command = heading bin of the final future point
+    n_commands: 5
+    p_uncond: 0.2
+    gamma: 1.0
+    reward: false
+    ep: 1.0
+    cond_steps: 20000
+    cond_lr: 1.0e-3
+    cond_batch_size: 256
+    cond_hidden: [256, 256, 256]
+    cond_embed_dim: 32
+  rfe_train:
+    rfe_loss: false
+    lambda_rfe: 1.0
+    t_min: 0.5
+    rollout_steps: -1
+
+safeflow:
+  enabled: true
+  integrator: euler
+  t_on: 0.5
+  phi_schedule: paper_piecewise
+  phi0: 1.0
+  phi_gamma: 0.9
+  phi_omega: 3.0
+  slack_weight: 1.0
+  terminal_eps: 1.0e-3
+  smooth_radius_eps: 1.0e-2     # sqrt(||d||^2 + eps^2) in the barriers
+  smooth_tube_margin: 2.0e-3    # radii shrink of the smooth barriers
+  smooth_box_temperature: 1.0e-3
+  qp_active_tol: 1.0e-6
+  dopri5:
+    rtol: 1.0e-5
+    atol: 1.0e-7
+  terminal_filter:
+    enabled: true
+    max_iter: 100
+    ftol: 1.0e-7
+    constraint_tol: 1.0e-7
+
+uniconflow:
+  free_until: 0.0
+  ptzf_rate: 1.0
+  gamma: 1.0
+  slack_weight: 100.0
+  max_guidance_norm: 20.0
+  terminal_refinement: true
+  safety_buffer: 1.0e-4
+
+hardflow:
+  t_on: 0.5
+  lambda_oc: 10.0
+  max_iter: 20
+
+yflow:
+  t_on: 0.5
+  lambda_oc: 10.0
+  mu: 1.0
+  max_iter: 20
+  delta: 0.1
+  gamma_max: 1.0
+  safety_buffer: 1.0e-4
+
+device: cuda

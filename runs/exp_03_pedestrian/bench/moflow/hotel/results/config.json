@@ -1,0 +1,138 @@
+{
+  "args": {
+    "subset": "hotel",
+    "model": "moflow",
+    "ckpt_dir": null,
+    "config": "/root/Y-Flow/configs/exp_03_pedestrian.yaml",
+    "methods": [
+      "FLOWMATCH",
+      "HARDFLOW",
+      "YFLOW",
+      "SAFEFLOW",
+      "UNICONFLOW",
+      "GUIDEFLOW"
+    ],
+    "steps": null,
+    "seeds": 1,
+    "seed_base": 42,
+    "batch_size": 1000,
+    "limit_batches": null,
+    "calibration": "traj",
+    "quantile": 99.5,
+    "v_max": null,
+    "a_max": null,
+    "rotate_time_frame": 6,
+    "num_workers": 0,
+    "device": null,
+    "out_dir": null,
+    "save_raw": true,
+    "no_posthoc": false,
+    "solver": "euler",
+    "sampling_steps": 10,
+    "lin_poly_p": 5,
+    "lin_poly_long_step": 1000
+  },
+  "steps": 100,
+  "limits": {
+    "v_max": 1.8510371585176946,
+    "a_max": 2.383154586100108,
+    "calibration": "traj",
+    "quantile": 99.5,
+    "v_max_override": null,
+    "a_max_override": null
+  },
+  "checkpoint": "/root/Y-Flow/experiments/exp_03_pedestrian/checkpoints/eth_ucy/moflow/hotel/models/checkpoint_best.pt",
+  "tied_noise": true,
+  "method_config": {
+    "hardflow": {
+      "t_on": 0.5,
+      "lambda_oc": 10.0,
+      "max_iter": 20
+    },
+    "yflow": {
+      "t_on": 0.5,
+      "lambda_oc": 10.0,
+      "mu": 1.0,
+      "max_iter": 20,
+      "delta": 0.1,
+      "gamma_max": 1.0,
+      "safety_buffer": 0.0001
+    },
+    "safeflow": {
+      "enabled": true,
+      "integrator": "euler",
+      "t_on": 0.5,
+      "phi_schedule": "paper_piecewise",
+      "phi0": 1.0,
+      "phi_gamma": 0.9,
+      "phi_omega": 3.0,
+      "slack_weight": 1.0,
+      "terminal_eps": 0.001,
+      "smooth_radius_eps": 0.01,
+      "smooth_tube_margin": 0.002,
+      "smooth_box_temperature": 0.001,
+      "qp_active_tol": 1e-06,
+      "dopri5": {
+        "rtol": 1e-05,
+        "atol": 1e-07
+      },
+      "terminal_filter": {
+        "enabled": true,
+        "max_iter": 100,
+        "ftol": 1e-07,
+        "constraint_tol": 1e-07
+      }
+    },
+    "uniconflow": {
+      "free_until": 0.0,
+      "ptzf_rate": 1.0,
+      "gamma": 1.0,
+      "slack_weight": 100.0,
+      "max_guidance_norm": 20.0,
+      "terminal_refinement": true,
+      "safety_buffer": 0.0001
+    },
+    "guideflow": {
+      "n_anchors": 256,
+      "cvf": true,
+      "lambda_cvf": 0.1,
+      "cvf_t_on": 0.0,
+      "cf": true,
+      "cf_mode": "interp",
+      "k_c": 50,
+      "rfe": true,
+      "tau_star": 0.5,
+      "eta_max": 0.5,
+      "n_refine": 10,
+      "slack": 0.01,
+      "w_tube": 1.0,
+      "w_core": 1.0,
+      "w_box": 1.0,
+      "w_cost": 0.05,
+      "guidance": {
+        "enabled": false,
+        "signal": "command",
+        "n_commands": 5,
+        "p_uncond": 0.2,
+        "gamma": 1.0,
+        "reward": false,
+        "ep": 1.0,
+        "cond_steps": 20000,
+        "cond_lr": 0.001,
+        "cond_batch_size": 256,
+        "cond_hidden": [
+          256,
+          256,
+          256
+        ],
+        "cond_embed_dim": 32
+      },
+      "rfe_train": {
+        "rfe_loss": false,
+        "lambda_rfe": 1.0,
+        "t_min": 0.5,
+        "rollout_steps": -1
+      }
+    }
+  }
+}

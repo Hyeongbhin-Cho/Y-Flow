@@ -14,6 +14,12 @@ from data.base import (
     solve_composite_fmbf,
     solve_single_fmbf,
 )
+from data.pedestrian import (
+    PedestrianConstraint,
+    PedestrianFMBF,
+    PedestrianMeta,
+    build_pedestrian,
+)
 from data.swiss_roll import (
     PointDataset,
     SwissRollConstraint,
@@ -36,6 +42,10 @@ __all__ = [
     "solve_single_fmbf",
     "solve_composite_fmbf",
     "CompositeQPSolution",
+    "PedestrianMeta",
+    "PedestrianConstraint",
+    "PedestrianFMBF",
+    "build_pedestrian",
     "SwissRollMeta",
     "SwissRollConstraint",
     "SwissRollFMBF",

@@ -23,6 +23,8 @@
 * `test_unicon_flow.py`: PTZF 감소 성질, slack QP certificate 보정과 비활성 조건
 * `test_y_flow.py`: FlowMatch ckpt skip, 립시츠 상수 추정, PGD 가이던스 및 deterministic eval 재현성
 * `test_sample_result.py`: SampleResult 기본값, 불변성, 튜플 언패킹, with_diagnostics 헬퍼
+* `test_pedestrian.py`: `data/pedestrian.py` 오라클 안전성, 엄밀 투영, 비확장성, autograd, FMBF 기울기, command bins
+* `test_exp_03_pedestrian.py`: Exp-03 경로 격리, 데이터 연결, ETH/UCY pkl 무결성, CPU-only 투영 수학 무결성
 
 ---
 

@@ -31,6 +31,9 @@ _SAMPLE_MODULES = {
 
 def _save_scatter(path: Path, points: np.ndarray, reference: np.ndarray | None, title: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    if points.shape[-1] > 2:
+        _save_trajectories(path, points, reference, title)
+        return
     fig, ax = plt.subplots(figsize=(5.5, 5.5))
     if reference is not None:
         ax.scatter(reference[:, 0], reference[:, 1], s=4, alpha=0.25, c="0.6", label="data")
@@ -38,6 +41,28 @@ def _save_scatter(path: Path, points: np.ndarray, reference: np.ndarray | None, 
     ax.set_aspect("equal", adjustable="box")
     ax.set_title(title)
     ax.legend(loc="upper right", fontsize=8, markerscale=2)
+    fig.tight_layout()
+    fig.savefig(path, dpi=150)
+    plt.close(fig)
+
+
+def _save_trajectories(path: Path, points: np.ndarray, reference: np.ndarray | None, title: str, n: int = 60) -> None:
+    """Points that are whole trajectories ([N, F*2]): draw a few of them in the agent frame."""
+    from data.pedestrian import point_to_seq  # local import: only reached for trajectory datasets
+
+    rng = np.random.default_rng(0)
+    fig, ax = plt.subplots(figsize=(6, 6))
+    if reference is not None and reference.shape[0]:
+        ref = point_to_seq(reference[rng.choice(reference.shape[0], min(n, reference.shape[0]), replace=False)])
+        for tr in ref:
+            ax.plot(tr[:, 0], tr[:, 1], c="0.75", lw=0.8, alpha=0.6)
+    seq = point_to_seq(points[rng.choice(points.shape[0], min(n, points.shape[0]), replace=False)])
+    for tr in seq:
+        ax.plot(tr[:8, 0], tr[:8, 1], c="C1", lw=1.0, alpha=0.8)
+        ax.plot(tr[7:, 0], tr[7:, 1], c="C0", lw=1.0, alpha=0.8)
+    ax.scatter([0.0], [0.0], c="k", s=12, zorder=3)
+    ax.set_aspect("equal", adjustable="box")
+    ax.set_title(f"{title} (orange: observed, blue: future, grey: data)")
     fig.tight_layout()
     fig.savefig(path, dpi=150)
     plt.close(fig)
