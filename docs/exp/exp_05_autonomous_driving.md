@@ -286,3 +286,7 @@ Every constrained evaluation also regenerates the matched unconstrained MoFlow
 sample from the same initial noise and reports `intervention_ADE_m`,
 `intervention_FDE_m`, and `intervention_max_m`. These quantify how much safety
 guidance changes the teacher prediction instead of hiding terminal-projection cost.
+
+The AV2 feasibility projection uses a forward kinematic tracker at 10 Hz. It clips
+per-step velocity and velocity change before reconstructing positions, preserving
+the original path more closely than uniformly shrinking the entire trajectory.

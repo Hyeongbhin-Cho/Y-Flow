@@ -129,6 +129,7 @@ class TestAutonomousDrivingData(unittest.TestCase):
             projected_h = constraint.h(projected)
             self.assertLessEqual(float(projected_h["speed"].item()), 1e-5)
             self.assertLessEqual(float(projected_h["accel"].item()), 1e-5)
+            self.assertGreater(float(projected.reshape(1, 60, 2)[..., -1, 0]), 0.0)
 
             zigzag = torch.zeros_like(safe.detach()).reshape(1, 60, 2)
             zigzag[..., 0] = torch.arange(60) % 2

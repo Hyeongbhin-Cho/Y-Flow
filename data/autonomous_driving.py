@@ -148,22 +148,39 @@ class AutonomousDrivingConstraint(BaseConstraint):
     def project_feasible(
         self, p: torch.Tensor | np.ndarray, buffer: float = 1e-4
     ) -> torch.Tensor | np.ndarray:
-        values = self.h(p)
         speed_limit = max(float(self.meta.v_max) - float(buffer), 1e-8)
         accel_limit = max(float(self.meta.a_max) - float(buffer), 1e-8)
-        max_speed = values["speed"] + float(self.meta.v_max)
-        max_accel = values["accel"] + float(self.meta.a_max)
+        dt = 1.0 / float(self.meta.sample_hz)
+        trajectory = _reshape_trajectories(p, self.meta.future_steps)
 
-        if isinstance(p, torch.Tensor):
-            one = torch.ones_like(max_speed)
-            scale = torch.minimum(one, speed_limit / max_speed.clamp_min(1e-12))
-            scale = torch.minimum(scale, accel_limit / max_accel.clamp_min(1e-12))
-            return p * scale.unsqueeze(-1)
+        def clip_norm(value, limit):
+            if isinstance(value, torch.Tensor):
+                norm = torch.linalg.vector_norm(value, dim=-1, keepdim=True)
+                return value * torch.clamp(limit / norm.clamp_min(1e-12), max=1.0)
+            norm = np.linalg.norm(value, axis=-1, keepdims=True)
+            return value * np.minimum(limit / np.maximum(norm, 1e-12), 1.0)
 
-        one = np.ones_like(max_speed)
-        scale = np.minimum(one, speed_limit / np.maximum(max_speed, 1e-12))
-        scale = np.minimum(scale, accel_limit / np.maximum(max_accel, 1e-12))
-        return p * np.expand_dims(scale, axis=-1)
+        if isinstance(trajectory, torch.Tensor):
+            position = torch.zeros_like(trajectory[..., 0, :])
+        else:
+            position = np.zeros_like(trajectory[..., 0, :])
+        velocity = None
+        projected = []
+        for i in range(self.meta.future_steps):
+            desired_velocity = clip_norm((trajectory[..., i, :] - position) / dt, speed_limit)
+            if velocity is not None:
+                delta_velocity = clip_norm(
+                    desired_velocity - velocity, accel_limit * dt
+                )
+                desired_velocity = clip_norm(velocity + delta_velocity, speed_limit)
+            velocity = desired_velocity
+            position = position + dt * velocity
+            projected.append(position)
+        if isinstance(trajectory, torch.Tensor):
+            result = torch.stack(projected, dim=-2)
+        else:
+            result = np.stack(projected, axis=-2)
+        return result.reshape(p.shape)
 
 def _resolve_path(raw: Any) -> Path:
     path = Path(str(raw)).expanduser()
