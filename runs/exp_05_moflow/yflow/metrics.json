@@ -1,10 +1,13 @@
 {
-  "minADE": 16.637557983398438,
-  "minFDE": 32.60784149169922,
-  "meanADE": 18.28223991394043,
-  "meanFDE": 36.11710739135742,
-  "top1ADE": 18.579444885253906,
-  "top1FDE": 36.59511947631836,
+  "minADE": 3.941725254058838,
+  "minFDE": 9.312005043029785,
+  "meanADE": 6.27726936340332,
+  "meanFDE": 16.141157150268555,
+  "top1ADE": 6.787660598754883,
+  "top1FDE": 17.68657112121582,
+  "intervention_ADE_m": 1.815651774406433,
+  "intervention_FDE_m": 4.055700302124023,
+  "intervention_max_m": 8.147988319396973,
   "safe_ratio": 1.0,
   "oracle_safe_ratio": 1.0,
   "top1_safe_ratio": 1.0,
@@ -19,5 +22,5 @@
   "n_scenarios": 149,
   "n_modes": 6,
   "n_steps": 100,
-  "inference_time_s": 1.8547822423279285
+  "inference_time_s": 13.070241478271782
 }
