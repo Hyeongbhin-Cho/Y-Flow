@@ -226,3 +226,4 @@ runs/*/*/*.npy
 __pycache__/
 
 codex/
+datasets/autonomous_driving/

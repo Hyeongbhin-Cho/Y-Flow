@@ -1,0 +1,22 @@
+{
+  "minADE": 3.162433624267578,
+  "minFDE": 6.949326515197754,
+  "meanADE": 8.151209831237793,
+  "meanFDE": 20.929304122924805,
+  "top1ADE": 12.352417945861816,
+  "top1FDE": 32.85377502441406,
+  "safe_ratio": 0.0,
+  "oracle_safe_ratio": 0.0,
+  "top1_safe_ratio": 0.0,
+  "speed_viol_rate": 0.12625,
+  "speed_viol_mean": 0.4255402684211731,
+  "accel_viol_rate": 1.0,
+  "accel_viol_mean": 27.050119400024414,
+  "method": "moflow",
+  "run_name": "exp_05_av2_10k_seed_0",
+  "backbone_run_name": "exp_05_av2_10k",
+  "n_scenarios": 2000,
+  "n_modes": 6,
+  "n_steps": 100,
+  "inference_time_s": 0.2123666601255536
+}

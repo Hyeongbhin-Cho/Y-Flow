@@ -1,0 +1,55 @@
+{
+  "runs": [
+    "exp_05_yflow_iter_20_seed_0",
+    "exp_05_yflow_iter_20_seed_1",
+    "exp_05_yflow_iter_20_seed_2",
+    "exp_05_yflow_iter_20_seed_3",
+    "exp_05_yflow_iter_20_seed_4"
+  ],
+  "n_repeats": 5,
+  "evaluation_signature": [
+    149,
+    6,
+    100
+  ],
+  "methods": {
+    "yflow": {
+      "minADE": {
+        "mean": 3.85335636138916,
+        "std": 0.08014505124604941
+      },
+      "minFDE": {
+        "mean": 8.871177101135254,
+        "std": 0.383188454036024
+      },
+      "top1ADE": {
+        "mean": 6.4661109924316404,
+        "std": 0.20872492750591215
+      },
+      "top1FDE": {
+        "mean": 16.45853214263916,
+        "std": 0.7565640628204909
+      },
+      "safe_ratio": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "speed_viol_rate": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "accel_viol_rate": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "intervention_ADE_m": {
+        "mean": 1.8114251852035523,
+        "std": 0.013936966994703603
+      },
+      "inference_time_s": {
+        "mean": 12.642879932932555,
+        "std": 0.4060088978387998
+      }
+    }
+  }
+}

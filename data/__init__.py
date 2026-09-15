@@ -23,6 +23,13 @@ from data.swiss_roll import (
     load_swiss_roll,
     save_swiss_roll,
 )
+from data.autonomous_driving import (
+    AutonomousDrivingConstraint,
+    AutonomousDrivingMeta,
+    TrajectoryDataset,
+    build_autonomous_driving,
+    load_autonomous_driving,
+)
 
 __all__ = [
     "BaseConstraint",
@@ -43,4 +50,9 @@ __all__ = [
     "build_swiss_roll",
     "load_swiss_roll",
     "save_swiss_roll",
+    "AutonomousDrivingMeta",
+    "AutonomousDrivingConstraint",
+    "TrajectoryDataset",
+    "build_autonomous_driving",
+    "load_autonomous_driving",
 ]

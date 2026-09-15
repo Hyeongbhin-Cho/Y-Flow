@@ -10,6 +10,41 @@ from utils.paths import method_dir
 
 
 class TestCLI(unittest.TestCase):
+    def test_moflow_command_with_autonomous_config(self) -> None:
+        args, cfg = parse_args(
+            [
+                "moflow",
+                "--config",
+                "configs/exp_05_autonomous_driving.yaml",
+                "--mode",
+                "train",
+                "--run_name",
+                "moflow_unit",
+                "--moflow.n_modes",
+                "3",
+            ]
+        )
+        self.assertEqual(args.command, "moflow")
+        self.assertEqual(int(cfg.moflow.n_modes), 3)
+
+    def test_moflow_backbone_can_be_decoupled_from_output_run(self) -> None:
+        from utils.paths import moflow_backbone_run_name
+
+        _, cfg = parse_args(
+            [
+                "moflow",
+                "--config",
+                "configs/exp_05_autonomous_driving.yaml",
+                "--mode",
+                "eval",
+                "--run_name",
+                "seed_1",
+                "--moflow.backbone_run_name",
+                "exp_05_moflow",
+            ]
+        )
+        self.assertEqual(moflow_backbone_run_name(cfg), "exp_05_moflow")
+
     def test_overrides_and_run_dir(self) -> None:
         args, cfg = parse_args(
             [

@@ -23,3 +23,17 @@ def method_dir(cfg: DictConfig, method: str) -> Path:
 
 def flowmatch_ckpt(cfg: DictConfig) -> Path:
     return method_dir(cfg, "flowmatch") / "last.pt"
+
+
+def moflow_backbone_run_name(cfg: DictConfig) -> str:
+    configured = cfg.moflow.get("backbone_run_name", None)
+    name = run_name_of(cfg) if configured is None or str(configured) == "" else str(configured)
+    if not name or name in (".", "..") or "/" in name or "\\" in name:
+        raise ValueError(f"invalid MoFlow backbone run name {name!r}")
+    return name
+
+
+def moflow_ckpt(cfg: DictConfig) -> Path:
+    """Checkpoint for evaluation, optionally decoupled from the output run."""
+    name = moflow_backbone_run_name(cfg)
+    return ROOT / "runs" / name / "moflow" / "last.pt"

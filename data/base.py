@@ -163,6 +163,8 @@ class DataBundle:
     constraint: BaseConstraint
     meta: Any
     meta_dict: dict
+    train_context: dict[str, np.ndarray] | None = None
+    eval_context: dict[str, np.ndarray] | None = None
 
     def __getitem__(self, key: str) -> Any:
         try:
@@ -187,6 +189,8 @@ class DataBundle:
             "constraint",
             "meta",
             "meta_dict",
+            "train_context",
+            "eval_context",
         ]
 
 
@@ -226,6 +230,8 @@ def build_dataset(cfg_or_name: DictConfig | str, **kwargs) -> DataBundle:
         # Lazy load built-in datasets if not yet imported
         if name == "swiss_roll":
             import data.swiss_roll  # noqa: F401
+        elif name == "autonomous_driving":
+            import data.autonomous_driving  # noqa: F401
 
     if name not in _DATASET_REGISTRY:
         raise KeyError(
