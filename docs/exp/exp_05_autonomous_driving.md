@@ -290,3 +290,7 @@ guidance changes the teacher prediction instead of hiding terminal-projection co
 The AV2 feasibility projection uses a forward kinematic tracker at 10 Hz. It clips
 per-step velocity and velocity change before reconstructing positions, preserving
 the original path more closely than uniformly shrinking the entire trajectory.
+
+For repeated sampling evaluations, set `moflow.backbone_run_name` to the trained
+run while changing `run_name` and `seed`. Aggregate completed runs with
+`python -m eval.summarize_autonomous --runs <run1> <run2> ...`.

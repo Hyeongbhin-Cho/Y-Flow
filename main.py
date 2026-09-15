@@ -118,9 +118,9 @@ def _train_guideflow(cfg: DictConfig) -> None:
 def _print_moflow_backbone(cfg: DictConfig, method: str) -> bool:
     if str(cfg.data.name) != "autonomous_driving":
         return False
-    from utils.paths import method_dir
+    from utils.paths import moflow_ckpt
 
-    checkpoint = method_dir(cfg, "moflow") / "last.pt"
+    checkpoint = moflow_ckpt(cfg)
     if not checkpoint.is_file():
         raise FileNotFoundError(
             f"missing shared MoFlow checkpoint: {checkpoint}. train `moflow` first"

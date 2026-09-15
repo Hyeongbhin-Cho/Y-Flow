@@ -31,6 +31,7 @@ method:
 
 # MoFlow-style AV2 adaptation: conditional K-shot focal trajectory teacher.
 moflow:
+  backbone_run_name: null
   n_modes: 6
   hidden_dim: 256
   type_embed_dim: 16

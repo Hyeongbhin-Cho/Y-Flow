@@ -23,7 +23,7 @@ from model.moflow import build_moflow_model
 from train.checkpoint import load_checkpoint
 from train.ema import EMA
 from utils.device import get_device
-from utils.paths import method_dir
+from utils.paths import method_dir, moflow_backbone_run_name, moflow_ckpt
 
 
 SUPPORTED = frozenset({"hardflow", "safeflow", "uniconflow", "guideflow", "yflow"})
@@ -47,7 +47,7 @@ def _load(cfg, device):
     bundle = build_dataset(cfg)
     model = build_moflow_model(cfg).to(device)
     ema = EMA(model, decay=float(cfg.train.ema_decay))
-    checkpoint = method_dir(cfg, "moflow") / "last.pt"
+    checkpoint = moflow_ckpt(cfg)
     if not checkpoint.is_file():
         raise FileNotFoundError(f"missing shared MoFlow checkpoint: {checkpoint}")
     load_checkpoint(checkpoint, model, ema=ema, map_location=device)
@@ -331,6 +331,7 @@ def run_eval_autonomous(cfg: DictConfig, method: str, device=None) -> dict:
         metrics[f"{name}_viol_mean"] = float(np.maximum(value, 0).mean())
     metrics.update({
         "method": method, "backbone": "moflow", "adaptation": "AV2 conditional K-shot",
+        "backbone_run_name": moflow_backbone_run_name(cfg),
         "run_name": str(cfg.run_name), "n_scenarios": len(predictions),
         "n_modes": predictions.shape[1], "n_steps": int(cfg.sample.n_steps),
         "inference_time_s": float(elapsed), **diagnostics,
