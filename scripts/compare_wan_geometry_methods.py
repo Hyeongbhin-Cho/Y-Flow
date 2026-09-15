@@ -34,12 +34,20 @@ def _stats(vae, reference):
 class GeometryBridge:
     """Decode, warp accepted frame pairs, and deterministically re-encode."""
 
-    def __init__(self, pipe, sample, max_matches, max_displacement, support_radius, min_matches):
+    def __init__(self, pipe, sample, max_matches, max_displacement, support_radius, min_matches,
+                 min_controls, control_features, control_ratio, min_control_coverage,
+                 track_sensitivity=False, sensitivity_epsilon=1e-3):
         self.pipe, self.sample = pipe, sample
         self.max_matches = max_matches
         self.max_displacement = max_displacement
         self.support_radius = support_radius
         self.min_matches = min_matches
+        self.min_controls = min_controls
+        self.control_features = control_features
+        self.control_ratio = control_ratio
+        self.min_control_coverage = min_control_coverage
+        self.track_sensitivity = track_sensitivity
+        self.sensitivity_epsilon = sensitivity_epsilon
         self.constraint = RealEstate10KEpipolarConstraint(tolerance_px=0.0)
         self.calls = []
         self.F_by_pair = {
@@ -65,7 +73,7 @@ class GeometryBridge:
         return ((raw.float() - mean) / std).to(dtype=dtype)
 
     @torch.no_grad()
-    def __call__(self, clean_latents, *, step, sigma):
+    def _apply(self, clean_latents, *, step, sigma, record):
         frames = self._decode(clean_latents)
         warped = frames.copy()
         pairs = []
@@ -76,15 +84,19 @@ class GeometryBridge:
             F = self.F_by_pair.get((0, target_index))
             if F is None:
                 continue
-            before = metrics(self.constraint, frames[0], frames[target_index], F, self.max_matches)
+            before = metrics(self.constraint, frames[0], frames[target_index], F, self.max_matches,
+                             self.control_features, self.control_ratio)
             candidate, controls = warp_target(
                 self.constraint, frames[0], frames[target_index], F, self.max_matches,
-                self.max_displacement, self.support_radius,
+                self.max_displacement, self.support_radius, self.min_controls,
+                self.control_features, self.control_ratio,
             )
-            after = metrics(self.constraint, frames[0], candidate, F, self.max_matches)
+            after = metrics(self.constraint, frames[0], candidate, F, self.max_matches,
+                            self.control_features, self.control_ratio)
             accept = (
                 controls.get("status") == "ok" and after.get("status") == "ok"
                 and after["matches"] >= self.min_matches
+                and controls.get("control_coverage", 0.0) >= self.min_control_coverage
                 and after["median_px"] < before.get("median_px", float("inf"))
             )
             if accept:
@@ -93,10 +105,35 @@ class GeometryBridge:
             pairs.append({"pair": [0, target_index], "before": before, "controls": controls,
                           "after": after, "accepted": accept})
         event = {"step": int(step), "sigma": float(sigma), "accepted_pairs": accepted_pairs, "pairs": pairs}
-        self.calls.append(event)
+        if record:
+            self.calls.append(event)
         if accepted_pairs == 0:
-            return None
-        return self._encode(warped, clean_latents.dtype)
+            return None, event
+        return self._encode(warped, clean_latents.dtype), event
+
+    @torch.no_grad()
+    def __call__(self, clean_latents, *, step, sigma):
+        geo, event = self._apply(clean_latents, step=step, sigma=sigma, record=True)
+        if geo is None or not self.track_sensitivity:
+            return geo
+        generator = torch.Generator(device=clean_latents.device).manual_seed(10_000 + int(step))
+        direction = torch.randn(clean_latents.shape, device=clean_latents.device, dtype=clean_latents.dtype,
+                                generator=generator)
+        direction = direction / direction.float().square().mean().sqrt().clamp_min(1e-12).to(direction.dtype)
+        perturbed, perturbed_event = self._apply(
+            clean_latents + self.sensitivity_epsilon * direction, step=step, sigma=sigma, record=False
+        )
+        if perturbed is None:
+            event["bridge_sensitivity"] = {"status": "perturbed_bridge_rejected"}
+        else:
+            gain = (perturbed.float() - geo.float()).square().mean().sqrt() / self.sensitivity_epsilon
+            event["bridge_sensitivity"] = {
+                "status": "ok", "epsilon": self.sensitivity_epsilon,
+                "empirical_rms_gain": float(gain),
+                "accepted_pairs_base": event["accepted_pairs"],
+                "accepted_pairs_perturbed": perturbed_event["accepted_pairs"],
+            }
+        return geo
 
 
 def _predict_velocity(pipe, latents, timestep, prompt_embeds, negative_prompt_embeds, attention_kwargs):
@@ -188,10 +225,16 @@ def main():
     parser.add_argument("--guidance-scale", type=float, default=5.0)
     parser.add_argument("--alpha", type=float, default=0.5)
     parser.add_argument("--correction-last-steps", type=int, default=2)
-    parser.add_argument("--max-matches", type=int, default=1000)
+    parser.add_argument("--max-matches", type=int, default=2000)
     parser.add_argument("--max-displacement", type=float, default=64.0)
     parser.add_argument("--support-radius", type=float, default=48.0)
     parser.add_argument("--min-matches", type=int, default=8)
+    parser.add_argument("--min-controls", type=int, default=12)
+    parser.add_argument("--control-features", type=int, default=8000)
+    parser.add_argument("--control-ratio", type=float, default=0.80)
+    parser.add_argument("--min-control-coverage", type=float, default=0.02)
+    parser.add_argument("--track-bridge-sensitivity", action="store_true")
+    parser.add_argument("--sensitivity-epsilon", type=float, default=1e-3)
     parser.add_argument("--methods", nargs="+", default=["flowmatch", "terminal_warp", "yflow_geo", "hardflow_geo"],
                         choices=["flowmatch", "terminal_warp", "yflow_geo", "hardflow_geo"])
     args = parser.parse_args()
@@ -213,7 +256,11 @@ def main():
         for method in args.methods:
             destination = args.output / method
             destination.mkdir(parents=True, exist_ok=True)
-            bridge = GeometryBridge(pipe, sample, args.max_matches, args.max_displacement, args.support_radius, args.min_matches)
+            bridge = GeometryBridge(
+                pipe, sample, args.max_matches, args.max_displacement, args.support_radius, args.min_matches,
+                args.min_controls, args.control_features, args.control_ratio, args.min_control_coverage,
+                args.track_bridge_sensitivity, args.sensitivity_epsilon,
+            )
             frames = sample_method(pipe, sample, method, args.steps, args.guidance_scale, args.alpha,
                                    args.correction_last_steps, bridge)
             video_path = destination / f"{sample['clip_id']}.mp4"

@@ -159,6 +159,14 @@ HardFlow와 YFlow에서 질문한 “decode → warp → encode 결과로 $x_{i+
 
 현재 대응점 matcher는 비미분·매 step 비용이 크다. 따라서 첫 구현은 $\tau\ge t_{on}$의 드문 step(예: 마지막 2--4회)에서만 $Q_F$를 호출한다. 중간 step에는 $\alpha_i<1$을 쓰되, 마지막 step에서 bridge가 accept되면 $\alpha_i=1$로 terminal target을 완전히 교체한다. 그렇지 않으면 final DiT step이 중간 RGB/VAE 보정을 지워 버릴 수 있다. 같은 seed에서 $\alpha=0$이 native scheduler와 bitwise 또는 허용오차 수준으로 동치인지 검사한다. `Q_F`의 SIFT 결과로 방법을 선택한 뒤 같은 SIFT 수치만 최종 보고하면 selection bias가 생기므로, 최종 평가는 고정된 별도 matcher/육안 검토로 교차 확인한다.
 
+#### SafeFlow·UniConFlow·GuideFlow의 bridge 한계와 Lipschitz
+
+현재 bridge에는 SafeFlow의 CBF-QP와 UniConFlow의 PTZF-QP가 요구하는 $h(z)$, $\nabla_z h(z)$가 없다. `RealEstate10KEpipolarConstraint`는 sample별 F와 **이미 추출된 픽셀 대응점**에만 정의되며 `BaseConstraint`가 아니다. SIFT의 keypoint 선택·ratio test, warp control accept/reject, VAE encode는 모두 불연속 또는 비미분 연산이다. 따라서 finite difference Jacobian을 latent 전체에 적용하는 것은 차원·비용·matching 교체 문제 때문에 현재 실험의 제약 미분으로 사용할 수 없다. SafeFlow-Geo와 UniConFlow-Geo는 $g_i$ injection ablation까지만 가능하며 QP certificate, path-wise safety, prescribed-time convergence를 주장하지 않는다.
+
+GuideFlow도 현재는 적용할 수 없다. conditional velocity/energy model은 camera-F·대응점 품질·warp accept 상태를 조건으로 학습해야 하지만, 10개 개발 clip은 학습 데이터가 아니며 Wan T2V에는 camera conditioning 입력도 없다. 한 번의 bridge target replacement는 GuideFlow가 아니라 `GuideFlow-Geo`라는 이름의 truncation ablation으로만 기록한다.
+
+기존 `eval/y_flow.py`의 `estimate_lipschitz()`도 Wan 경로에서는 호출되지 않는다. 그것은 `BaseConstraint.estimate_lipschitz()`가 있는 Swiss-roll/CLEVRER state projection의 local $L_P$를 gating하는 구현이다. Wan bridge에는 우선 매 bridge call마다 $\hat L_Q=\|Q_F(z+\epsilon r)-Q_F(z)\|_2/\epsilon$와 accept-set 변화율을 **경험적 sensitivity 지표**로 로그한다. 이는 SIFT/warp gate가 불연속이므로 Lipschitz 상수나 안정성 보장이 아니며, threshold는 실험적으로 skip gate에만 쓴다.
+
 ## 5. 비교와 평가
 
 주 비교는 **FlowMatch, terminal warp, YFlow-Geo**다. HardFlow-Geo는 terminal-target replacement ablation으로 추가한다. SafeFlow/UniConFlow/GuideFlow는 미분 가능한 latent geometry surrogate가 구현되기 전에는 같은 이름의 정식 비교 방법으로 보고하지 않는다.
@@ -203,7 +211,7 @@ $$d_S=\frac{(p_k^\top Fp_1)^2}{(Fp_1)_x^2+(Fp_1)_y^2+(F^\top p_k)_x^2+(F^\top p_
 | 1 | 카메라 parser, F/투영 유틸, 합성 검증 | 포즈 방향·좌표 변환·퇴화 처리와 투영 잔차 검증 |
 | 2 | 개발 10클립 원본 영상 오라클 리포트 | 유효 매칭 확보, 음성 대조군과 구분 가능 |
 | 3 | 통제 warp·재매칭·VAE round-trip 리포트 | 좌표 개선이 영상 개선으로 전달됨. 현재 1개 생성 clip에서 0→1은 16.81→0.29 px, 0→2는 33.71→3.79 px로 개선됐고, 0→3은 악화·장거리 쌍은 control 부족으로 skip됨 |
-| 4 | 공식 파이프라인과 동치인 baseline 1클립 | seed/CFG/시간 부호/latent scaling 검증 |
+| 4 | 공식 파이프라인과 동치인 baseline 1클립 | seed/CFG/시간 부호/latent scaling 검증. 1-clip pilot에서 terminal warp는 0→1/2/3 residual을 16.71/33.93/49.54에서 1.45/7.83/20.09 px로 낮췄고, YFlow-Geo·HardFlow-Geo는 bridge feedback이 terminal warp보다 안정적이지 않음 |
 | 5 | 후반 보정 1클립 → 개발 10클립 | 수치 안정성과 비용·품질 확인 |
 | 6 | 설정 동결, test 20×3 → 100×3 | 보정 효과와 실패율을 함께 보고 |
 

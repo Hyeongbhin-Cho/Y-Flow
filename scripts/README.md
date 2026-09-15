@@ -148,10 +148,13 @@ python scripts/warp_realestate10k_geometry.py --clip-id <clip_id>
 Wan FlowMatch 비교(`FlowMatch`, terminal warp, `YFlow-Geo`, `HardFlow-Geo`):
 
 ```bash
-python scripts/compare_wan_geometry_methods.py --limit 1 --steps 30
+python scripts/compare_wan_geometry_methods.py --limit 1 --steps 30 \
+  --max-matches 2000 --control-features 8000 --control-ratio 0.80 \
+  --min-controls 12 --min-control-coverage 0.02 \
+  --track-bridge-sensitivity
 ```
 
-모든 방법은 같은 clip prompt·noise seed·scheduler를 사용한다. `YFlow-Geo`와 `HardFlow-Geo`는 마지막 몇 step의 clean terminal prediction에만 decode → RGB warp → deterministic encode bridge를 적용한다. `comparison.json`에는 bridge accept/skip 사유와 최종 새 SIFT 측정값이 남는다. 이들은 Wan latent의 exact hard constraint나 원 HardFlow의 PGD guarantee가 아닌 실험적 `-Geo` 방법이다.
+모든 방법은 같은 clip prompt·noise seed·scheduler를 사용한다. `YFlow-Geo`와 `HardFlow-Geo`는 마지막 몇 step의 clean terminal prediction에만 decode → RGB warp → deterministic encode bridge를 적용한다. `comparison.json`에는 bridge accept/skip 사유, control point 수·coverage, 최종 새 SIFT 측정값이 남는다. `--track-bridge-sensitivity`는 작은 latent 섭동에 대한 bridge RMS gain과 accept-set 변화를 기록하지만, 비미분 SIFT/warp/VAE bridge의 Lipschitz 보장은 아니다. 이들은 Wan latent의 exact hard constraint나 원 HardFlow의 PGD guarantee가 아닌 실험적 `-Geo` 방법이다.
 
 ```text
 datasets/realestate10k/

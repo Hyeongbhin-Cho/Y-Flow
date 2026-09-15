@@ -31,15 +31,15 @@ def _cv2():
     return cv2
 
 
-def sift_matches(source, target, max_matches):
+def sift_matches(source, target, max_matches, nfeatures=8000, ratio=0.80):
     cv2 = _cv2()
-    detector = cv2.SIFT_create(nfeatures=4000)
+    detector = cv2.SIFT_create(nfeatures=nfeatures)
     source_keys, source_desc = detector.detectAndCompute(source, None)
     target_keys, target_desc = detector.detectAndCompute(target, None)
     if source_desc is None or target_desc is None:
         return np.empty((0, 2)), np.empty((0, 2))
     candidates = cv2.BFMatcher(cv2.NORM_L2).knnMatch(source_desc, target_desc, k=2)
-    good = [first for first, second in candidates if first.distance < 0.75 * second.distance]
+    good = [first for first, second in candidates if first.distance < ratio * second.distance]
     good.sort(key=lambda match: match.distance)
     good = good[:max_matches]
     return (np.asarray([source_keys[m.queryIdx].pt for m in good], dtype=np.float64),
@@ -76,8 +76,8 @@ def export_video(frames, path: Path, fps=16):
             container.mux(packet)
 
 
-def metrics(constraint, source, target, F, max_matches):
-    p1, p2 = sift_matches(source, target, max_matches)
+def metrics(constraint, source, target, F, max_matches, nfeatures=8000, ratio=0.80):
+    p1, p2 = sift_matches(source, target, max_matches, nfeatures, ratio)
     if len(p1) < 8:
         return {"matches": int(len(p1)), "status": "insufficient_matches"}
     matrices = np.broadcast_to(F, (len(p1), 3, 3))[None]
@@ -86,9 +86,12 @@ def metrics(constraint, source, target, F, max_matches):
             "p90_px": float(np.percentile(residual, 90)), "status": "ok"}
 
 
-def warp_target(constraint, source, target, F, max_matches, max_displacement, support_radius):
+def warp_target(
+    constraint, source, target, F, max_matches, max_displacement, support_radius,
+    min_controls=12, nfeatures=8000, ratio=0.80,
+):
     """Return an inverse-warped target and its accepted exact control points."""
-    p1, p2 = sift_matches(source, target, max_matches)
+    p1, p2 = sift_matches(source, target, max_matches, nfeatures, ratio)
     if len(p1) < 8:
         return target.copy(), {"matches": int(len(p1)), "accepted_controls": 0, "status": "insufficient_matches"}
     matrices = np.broadcast_to(F, (len(p1), 3, 3))[None]
@@ -97,12 +100,15 @@ def warp_target(constraint, source, target, F, max_matches, max_displacement, su
     displacement = p2 - projected  # inverse sampling: output q* reads from original q
     distance = np.linalg.norm(displacement, axis=1)
     accepted = mask & np.isfinite(distance) & (distance <= max_displacement)
-    if accepted.sum() < 8:
+    if accepted.sum() < min_controls:
         return target.copy(), {"matches": int(len(p1)), "accepted_controls": int(accepted.sum()),
                                "status": "insufficient_accepted_controls"}
     controls = projected[accepted]
     values = displacement[accepted]
     height, width = target.shape[:2]
+    cv2 = _cv2()
+    hull = cv2.convexHull(controls.astype(np.float32))
+    coverage = float(cv2.contourArea(hull) / max(height * width, 1))
     # Boundary anchors preserve the frame edge. Interpolation only affects
     # pixels close to actual projected correspondence controls.
     anchors = np.array([[0, 0], [width - 1, 0], [0, height - 1], [width - 1, height - 1]], dtype=np.float64)
@@ -115,16 +121,17 @@ def warp_target(constraint, source, target, F, max_matches, max_displacement, su
     supported = nearest.reshape(height, width) <= support_radius
     field_x = np.where(supported, field_x, 0.0).astype(np.float32)
     field_y = np.where(supported, field_y, 0.0).astype(np.float32)
-    cv2 = _cv2()
     warped = cv2.remap(target, xx.astype(np.float32) + field_x, yy.astype(np.float32) + field_y,
                         interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
     control_residual = constraint.h(p1[None, accepted], projected[None, accepted],
                                     np.broadcast_to(F, (accepted.sum(), 3, 3))[None])["epipolar_px"][0]
     return warped, {"matches": int(len(p1)), "accepted_controls": int(accepted.sum()),
+                    "control_coverage": coverage,
                     "control_max_abs_px": float(np.max(np.abs(control_residual))), "status": "ok"}
 
 
-def run(root, generated_dir, output, split, clip_id, max_matches, max_displacement, support_radius):
+def run(root, generated_dir, output, split, clip_id, max_matches, max_displacement, support_radius,
+        min_controls=12, control_features=8000, control_ratio=0.80):
     dataset = RealEstate10KDataset(root, split=split)
     sample = next((item for item in dataset if item["clip_id"] == clip_id), None)
     if sample is None:
@@ -143,17 +150,19 @@ def run(root, generated_dir, output, split, clip_id, max_matches, max_displaceme
         if F is None:
             report_pairs.append({"pair": list(pair), "status": "invalid_fundamental_matrix"})
             continue
-        before = metrics(constraint, frames[0], frames[target_index], F, max_matches)
+        before = metrics(constraint, frames[0], frames[target_index], F, max_matches, control_features, control_ratio)
         warped[target_index], controls = warp_target(constraint, frames[0], frames[target_index], F, max_matches,
-                                                      max_displacement, support_radius)
-        after = metrics(constraint, warped[0], warped[target_index], F, max_matches)
+                                                      max_displacement, support_radius, min_controls,
+                                                      control_features, control_ratio)
+        after = metrics(constraint, warped[0], warped[target_index], F, max_matches, control_features, control_ratio)
         report_pairs.append({"pair": list(pair), "before": before, "controls": controls, "after": after})
     output.mkdir(parents=True, exist_ok=True)
     video_path = output / f"{clip_id}_warped.mp4"
     export_video(warped, video_path)
     report = {"clip_id": clip_id, "input_video": str(Path(generated_dir) / f"{clip_id}.mp4"),
               "warped_video": str(video_path), "max_displacement_px": max_displacement,
-              "support_radius_px": support_radius,
+              "support_radius_px": support_radius, "min_controls": min_controls,
+              "control_features": control_features, "control_ratio": control_ratio,
               "warning": "Each target frame is independently warped toward frame 0; this is not a Wan latent constraint.",
               "pairs": report_pairs}
     (output / f"{clip_id}_warp_report.json").write_text(json.dumps(report, indent=2))
@@ -167,9 +176,12 @@ def main():
     parser.add_argument("--output", type=Path, default=Path("outputs/realestate10k_warp"))
     parser.add_argument("--split", choices=["train", "test"], default="train")
     parser.add_argument("--clip-id", required=True)
-    parser.add_argument("--max-matches", type=int, default=1000)
+    parser.add_argument("--max-matches", type=int, default=2000)
     parser.add_argument("--max-displacement", type=float, default=64.0)
     parser.add_argument("--support-radius", type=float, default=48.0)
+    parser.add_argument("--min-controls", type=int, default=12)
+    parser.add_argument("--control-features", type=int, default=8000)
+    parser.add_argument("--control-ratio", type=float, default=0.80)
     args = parser.parse_args()
     print(json.dumps(run(**vars(args)), indent=2))
 
