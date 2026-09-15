@@ -281,3 +281,8 @@ energy refinement. The output `adaptation` field records this scope.
 For YFlow, the domain physical operator is a three-pass non-expansive temporal
 smoother anchored at the observed origin while retaining the predicted endpoint.
 The hard feasibility projection remains a separate speed/acceleration operation.
+
+Every constrained evaluation also regenerates the matched unconstrained MoFlow
+sample from the same initial noise and reports `intervention_ADE_m`,
+`intervention_FDE_m`, and `intervention_max_m`. These quantify how much safety
+guidance changes the teacher prediction instead of hiding terminal-projection cost.

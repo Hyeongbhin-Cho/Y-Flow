@@ -8,7 +8,11 @@ import torch
 from omegaconf import OmegaConf
 
 from eval.moflow import trajectory_metrics
-from eval.autonomous_methods import _SAMPLERS, _cyclic_halfspace_correction
+from eval.autonomous_methods import (
+    _SAMPLERS,
+    _cyclic_halfspace_correction,
+    _nominal_sample,
+)
 from data.autonomous_driving import AutonomousDrivingConstraint
 from model.moflow import build_moflow_model
 from train.moflow import moflow_loss
@@ -100,6 +104,18 @@ class TestMoFlow(unittest.TestCase):
         correction = _cyclic_halfspace_correction(a, b)
         residual = a + (b * correction.unsqueeze(-2)).sum(dim=-1)
         self.assertTrue((residual >= -1e-6).all())
+
+    def test_nominal_sampler_is_deterministic_and_shape_preserving(self):
+        cfg = _cfg()
+        model = build_moflow_model(cfg)
+        context = _context(2)
+        feature = model.encode_context(context).detach()
+        x0 = torch.randn(2, 3, 120)
+        first = _nominal_sample(cfg, model, context, feature, x0)
+        second = _nominal_sample(cfg, model, context, feature, x0)
+        self.assertEqual(first.shape, x0.shape)
+        self.assertTrue(torch.equal(first, second))
+        self.assertFalse(first.requires_grad)
 
 
 if __name__ == "__main__":

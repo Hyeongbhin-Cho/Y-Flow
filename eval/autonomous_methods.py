@@ -71,6 +71,15 @@ def _velocity(model, context, feature, x, t: float):
         return model(x, times, context, context_feature=feature)[0]
 
 
+@torch.no_grad()
+def _nominal_sample(cfg, model, context, feature, x0):
+    x = x0.clone()
+    steps = int(cfg.sample.n_steps)
+    for i in range(steps):
+        x = x + _velocity(model, context, feature, x, i / steps) / steps
+    return x
+
+
 def _hardflow(cfg, model, context, feature, x0, mean, std, constraint):
     settings = cfg.hardflow
     steps, x = int(cfg.sample.n_steps), x0
@@ -158,9 +167,10 @@ def _uniconflow(cfg, model, context, feature, x0, mean, std, constraint):
             norm = torch.linalg.vector_norm(guidance, dim=-1, keepdim=True)
             guidance = guidance * torch.clamp(float(settings.max_guidance_norm) / norm.clamp_min(1e-12), max=1.0)
         x = x + dt * (nominal + guidance)
+    pre_terminal = x.detach()
     if bool(settings.terminal_refinement):
         x = (constraint.project_feasible(x * std + mean, buffer=float(settings.safety_buffer)) - mean) / std
-    return x.detach(), {}
+    return x.detach(), {"_pre_terminal_z": pre_terminal}
 
 
 def _safeflow(cfg, model, context, feature, x0, mean, std, constraint):
@@ -182,6 +192,11 @@ def _safeflow(cfg, model, context, feature, x0, mean, std, constraint):
             a = -(grads * nominal.unsqueeze(-2)).sum(dim=-1) - gain * h.detach()
             flat_a = a.reshape(-1, a.shape[-1])
             flat_b = (-grads).reshape(-1, grads.shape[-2], grads.shape[-1])
+            # Scaling a half-space by a positive value leaves it unchanged and
+            # greatly improves conditioning for AV2 acceleration gradients.
+            row_scale = torch.linalg.vector_norm(flat_b, dim=-1).clamp_min(1e-6)
+            flat_a = flat_a / row_scale
+            flat_b = flat_b / row_scale.unsqueeze(-1)
             try:
                 correction = solve_composite_fmbf(
                     flat_a, flat_b, slack_weight=float(settings.slack_weight)
@@ -194,12 +209,14 @@ def _safeflow(cfg, model, context, feature, x0, mean, std, constraint):
         x = x + dt * nominal
     pre = constraint.h(x * std + mean)
     pre_safe = torch.stack(list(pre.values()), dim=-1).le(0).all(dim=-1).float().mean()
+    pre_terminal = x.detach()
     if bool(settings.terminal_filter.enabled):
         x = (constraint.project_feasible(x * std + mean) - mean) / std
     return x.detach(), {
         "pre_filter_safe_ratio": float(pre_safe.cpu()),
         "correction_steps": corrected_steps,
         "qp_fallback_steps": fallback_steps,
+        "_pre_terminal_z": pre_terminal,
     }
 
 
@@ -256,6 +273,7 @@ def run_eval_autonomous(cfg: DictConfig, method: str, device=None) -> dict:
         raise KeyError(f"unsupported autonomous method: {method}")
     device = device or get_device(cfg)
     bundle, model, context, feature, x0, mean, std = _load(cfg, device)
+    nominal_z = _nominal_sample(cfg, model, context, feature, x0)
     if device.type == "cuda":
         torch.cuda.synchronize(device)
     started = time.perf_counter()
@@ -272,8 +290,33 @@ def run_eval_autonomous(cfg: DictConfig, method: str, device=None) -> dict:
         torch.cuda.synchronize(device)
     elapsed = time.perf_counter() - started
     predictions = (predictions_z * std + mean).detach().cpu().numpy()
+    nominal = (nominal_z * std + mean).detach().cpu().numpy()
     probabilities = torch.softmax(logits, dim=-1).cpu().numpy()
     metrics = trajectory_metrics(predictions, bundle.eval_raw, probabilities)
+    pre_terminal_z = diagnostics.pop("_pre_terminal_z", None)
+    if pre_terminal_z is not None:
+        pre_terminal = (pre_terminal_z * std + mean).detach().cpu().numpy()
+        pre_metrics = trajectory_metrics(pre_terminal, bundle.eval_raw)
+        metrics["pre_terminal_minADE"] = pre_metrics["minADE"]
+        metrics["pre_terminal_minFDE"] = pre_metrics["minFDE"]
+        pre_h = bundle.constraint.h(pre_terminal.reshape(-1, pre_terminal.shape[-1]))
+        pre_stacked = np.stack(list(pre_h.values()), axis=-1)
+        metrics["pre_terminal_safe_ratio"] = float((pre_stacked <= 0).all(axis=-1).mean())
+        terminal_shift = np.linalg.norm(
+            predictions.reshape(*predictions.shape[:2], -1, 2)
+            - pre_terminal.reshape(*pre_terminal.shape[:2], -1, 2),
+            axis=-1,
+        )
+        metrics["terminal_projection_ADE_m"] = float(terminal_shift.mean())
+        metrics["terminal_projection_FDE_m"] = float(terminal_shift[..., -1].mean())
+    displacement = np.linalg.norm(
+        predictions.reshape(*predictions.shape[:2], -1, 2)
+        - nominal.reshape(*nominal.shape[:2], -1, 2),
+        axis=-1,
+    )
+    metrics["intervention_ADE_m"] = float(displacement.mean())
+    metrics["intervention_FDE_m"] = float(displacement[..., -1].mean())
+    metrics["intervention_max_m"] = float(displacement.max(axis=-1).mean())
     h = bundle.constraint.h(predictions.reshape(-1, predictions.shape[-1]))
     stacked = np.stack(list(h.values()), axis=-1)
     safe = (stacked <= 0).all(axis=-1).reshape(predictions.shape[:2])
