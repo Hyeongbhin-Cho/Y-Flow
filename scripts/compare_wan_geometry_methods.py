@@ -146,12 +146,17 @@ def sample_method(pipe, sample, method, steps, guidance_scale, alpha, correction
         velocity = _predict_velocity(pipe, latents, timestep, prompt_embeds, negative_prompt_embeds, None)
         sigma = float(pipe.scheduler.sigmas[index])
         next_sigma = float(pipe.scheduler.sigmas[index + 1])
-        late = index >= len(pipe.scheduler.timesteps) - correction_last_steps and next_sigma > 0.0
+        # At the last denoising step current sigma is still positive while
+        # next_sigma is zero. It is the correct place to replace the clean
+        # terminal target; excluding it would let the final DiT step erase all
+        # earlier RGB/VAE corrections.
+        late = index >= len(pipe.scheduler.timesteps) - correction_last_steps and sigma > 0.0
         clean = latents - sigma * velocity
         if method == "yflow_geo" and late and alpha > 0.0:
             geo = bridge(clean, step=index, sigma=sigma)
             if geo is not None:
-                target = (1.0 - alpha) * clean + alpha * geo
+                step_alpha = 1.0 if next_sigma == 0.0 else alpha
+                target = (1.0 - step_alpha) * clean + step_alpha * geo
                 velocity = (latents - target) / max(sigma, 1e-6)
         if method == "hardflow_geo" and late and alpha > 0.0:
             geo = bridge(clean, step=index, sigma=sigma)
@@ -160,7 +165,8 @@ def sample_method(pipe, sample, method, steps, guidance_scale, alpha, correction
                 # its terminal-target component. This is algebraically the
                 # same as retaining the estimated noise at next_sigma, while
                 # ensuring alpha=0 is bitwise the native scheduler path.
-                target = (1.0 - alpha) * clean + alpha * geo
+                step_alpha = 1.0 if next_sigma == 0.0 else alpha
+                target = (1.0 - step_alpha) * clean + step_alpha * geo
                 baseline_next = pipe.scheduler.step(velocity, timestep_value, latents, return_dict=False)[0]
                 latents = (baseline_next + (1.0 - next_sigma) * (target - clean)).to(dtype=baseline_next.dtype)
                 continue

@@ -157,7 +157,7 @@ $$Q_F(z)=E\bigl(W_F(D(z))\bigr)=z_{geo},$$
 
 HardFlow와 YFlow에서 질문한 “decode → warp → encode 결과로 $x_{i+1}$을 정할 수 있는가”의 답은 **가능하지만 terminal clean prediction에만**이다. noisy $z_i$ 자체를 decode해 보정하거나, RGB warp 결과를 $z_i$에 더하면 scheduler의 상태 의미와 VAE temporal contract를 잃는다. $\hat z_1$ 또는 HardFlow의 $\bar z_1$을 $Q_F$에 넣고, 위 표의 rectified-flow 보간으로 다음 state를 계산한다. $\tau=1$에서는 나누지 않고 final terminal warp만 수행한다.
 
-현재 대응점 matcher는 비미분·매 step 비용이 크다. 따라서 첫 구현은 $\tau\ge t_{on}$의 드문 step(예: 마지막 2--4회)에서만 $Q_F$를 호출하고, 같은 seed에서 $\alpha=0$이 native scheduler와 bitwise 또는 허용오차 수준으로 동치인지 검사한다. `Q_F`의 SIFT 결과로 방법을 선택한 뒤 같은 SIFT 수치만 최종 보고하면 selection bias가 생기므로, 최종 평가는 고정된 별도 matcher/육안 검토로 교차 확인한다.
+현재 대응점 matcher는 비미분·매 step 비용이 크다. 따라서 첫 구현은 $\tau\ge t_{on}$의 드문 step(예: 마지막 2--4회)에서만 $Q_F$를 호출한다. 중간 step에는 $\alpha_i<1$을 쓰되, 마지막 step에서 bridge가 accept되면 $\alpha_i=1$로 terminal target을 완전히 교체한다. 그렇지 않으면 final DiT step이 중간 RGB/VAE 보정을 지워 버릴 수 있다. 같은 seed에서 $\alpha=0$이 native scheduler와 bitwise 또는 허용오차 수준으로 동치인지 검사한다. `Q_F`의 SIFT 결과로 방법을 선택한 뒤 같은 SIFT 수치만 최종 보고하면 selection bias가 생기므로, 최종 평가는 고정된 별도 matcher/육안 검토로 교차 확인한다.
 
 ## 5. 비교와 평가
 
