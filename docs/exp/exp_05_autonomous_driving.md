@@ -304,3 +304,42 @@ bash run_exp_05_ablations.sh
 The script evaluates YFlow with `max_iter` in `{1, 3, 5, 10, 20}` and evaluates
 SafeFlow, UniConFlow, and YFlow with their terminal projection/refinement disabled.
 Every run loads the frozen `exp_05_moflow` checkpoint and writes a separate summary.
+
+## 11. 5-seed 결과와 최종 설정
+
+평가는 AV2 validation의 149개 scenario, scenario당 6개 후보, Euler 100 step,
+sampling seed 0~4에서 수행했다. 모든 방법은 동일한 MoFlow teacher checkpoint를
+사용한다. 아래 값은 5회 평균 ± 표본 표준편차다.
+
+| 방법 | minADE ↓ | minFDE ↓ | safe ratio ↑ | inference time ↓ |
+|---|---:|---:|---:|---:|
+| MoFlow | 4.072 ± 0.091 | **8.788 ± 0.246** | 0.000 | **0.169 ± 0.004 s** |
+| GuideFlow | 3.998 ± 0.092 | 8.824 ± 0.264 | 0.007 ± 0.003 | 0.394 ± 0.007 s |
+| UniConFlow | **3.820 ± 0.079** | 8.963 ± 0.404 | **1.000** | 0.498 ± 0.016 s |
+| SafeFlow | 3.823 ± 0.077 | 8.994 ± 0.378 | **1.000** | 1.135 ± 0.085 s |
+| YFlow (`max_iter=1`) | 3.854 ± 0.080 | **8.879 ± 0.381** | **1.000** | 4.280 ± 0.170 s |
+| HardFlow | 9.845 ± 0.210 | 18.167 ± 0.754 | **1.000** | 23.417 ± 0.488 s |
+
+굵은 minFDE는 전체 최고와 safe ratio 1인 방법 중 최고를 각각 표시한다.
+YFlow는 안전한 방법 중 minFDE와 top-1 정확도가 가장 좋지만, minADE는
+UniConFlow가 가장 좋고 YFlow의 추론 비용도 더 크다.
+
+### 11.1 Terminal projection ablation
+
+| 방법 | terminal off safe ratio ↑ | minADE ↓ | minFDE ↓ |
+|---|---:|---:|---:|
+| SafeFlow | 0.000 ± 0.000 | 3.992 ± 0.091 | 8.822 ± 0.266 |
+| UniConFlow | 0.000 ± 0.000 | 4.015 ± 0.090 | 8.806 ± 0.260 |
+| YFlow | **0.832 ± 0.008** | **3.820 ± 0.079** | 8.880 ± 0.382 |
+
+SafeFlow와 UniConFlow의 최종 100% 안전성은 이 구현에서 terminal projection에
+의존한다. YFlow는 마지막 refinement를 제거해도 평균 83.2%를 만족하며, terminal
+refinement는 작은 정확도 변화로 이를 100%까지 높인다. 따라서 최종 안전성을
+guidance만의 효과로 표현하지 않고 terminal projection 사용 여부를 함께 보고한다.
+
+### 11.2 YFlow 반복 횟수 ablation
+
+`max_iter={1,3,5,10,20}`은 minADE 3.8533~3.8536, minFDE
+8.8712~8.8785, safe ratio 1.0으로 사실상 같은 결과를 보였다. 추론 시간은
+`max_iter=1`에서 4.280초, `max_iter=20`에서 12.643초였다. 이에 따라 Exp-05의
+최종 기본값은 `max_iter=1`, `terminal_refinement=true`로 정한다.
