@@ -145,6 +145,14 @@ python scripts/warp_realestate10k_geometry.py --clip-id <clip_id>
 
 출력 JSON은 warp 전후에 **새로** 찾은 SIFT 대응점의 잔차를 기록한다. 이 단계는 Wan latent에 제약을 넣지 않으며, 각 후속 프레임을 첫 프레임 기준으로 독립 보정한다. `accepted_controls`와 `support_radius_px`가 실제 보정 범위를 나타내므로, residual만 보고 성공으로 판단하지 않는다.
 
+Wan FlowMatch 비교(`FlowMatch`, terminal warp, `YFlow-Geo`, `HardFlow-Geo`):
+
+```bash
+python scripts/compare_wan_geometry_methods.py --limit 1 --steps 30
+```
+
+모든 방법은 같은 clip prompt·noise seed·scheduler를 사용한다. `YFlow-Geo`와 `HardFlow-Geo`는 마지막 몇 step의 clean terminal prediction에만 decode → RGB warp → deterministic encode bridge를 적용한다. `comparison.json`에는 bridge accept/skip 사유와 최종 새 SIFT 측정값이 남는다. 이들은 Wan latent의 exact hard constraint나 원 HardFlow의 PGD guarantee가 아닌 실험적 `-Geo` 방법이다.
+
 ```text
 datasets/realestate10k/
 ├── poses/{train,test}/*.txt

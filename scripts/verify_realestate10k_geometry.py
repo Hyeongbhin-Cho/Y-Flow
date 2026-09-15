@@ -52,11 +52,14 @@ def _decode_generated_video(path: Path, frames: int, expected_height: int, expec
     return np.stack(decoded)
 
 
-def verify(root="datasets/realestate10k", split="train", limit=10, max_matches=1000, video_dir=None):
-    dataset = RealEstate10KDataset(root, split=split, limit=limit)
+def verify(root="datasets/realestate10k", split="train", limit=10, max_matches=1000, video_dir=None, clip_ids=None):
+    dataset = RealEstate10KDataset(root, split=split, limit=None if clip_ids is not None else limit)
+    wanted = None if clip_ids is None else set(clip_ids)
     constraint = RealEstate10KEpipolarConstraint(tolerance_px=0.0)
     reports = []
     for sample in dataset:
+        if wanted is not None and sample["clip_id"] not in wanted:
+            continue
         original = ((sample["video"].permute(1, 2, 3, 0).numpy() + 1) * 127.5).clip(0, 255).astype(np.uint8)
         if video_dir is None:
             frames = original

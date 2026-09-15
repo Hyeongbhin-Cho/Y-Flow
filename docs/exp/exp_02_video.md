@@ -118,7 +118,7 @@ noise-to-data τ∈[0,1]에서 Euler 속도가 vᵢ라면 종단 예측을 다�
 
 $$\hat z_1=z_i+(1-\tau_i)v_i.$$
 
-신뢰도가 충분한 후반 스텝에서만 아래 보정 Q를 적용한다.
+신뢰도가 충분한 후반 스텝에서만 아래 보정 연산자 $Q$를 적용한다. $Q$는 latent projector가 아니다. 현재 clean 예측 $\hat z_1$를 decode하고, 첫 생성 frame을 기준으로 대응점·F·희소 RGB warp를 계산한 뒤 deterministic VAE encode와 Wan latent 정규화를 거쳐 $z_{geo}$를 돌려주는 **검증된 경우에만 정의되는 bridge**다.
 
 ```text
 prompt (+ initial_frame in I2V) → frozen model → v_i
@@ -135,9 +135,33 @@ z_next = z_i + Δτ_i/(1−τ_i) × (z_target − z_i)
 
 이 경로는 no-grad 추론으로 구성할 수 있지만 역전파가 없다는 이유만으로 저비용이라고 주장하지 않는다. 기존 Y-Flow의 PGD 알고리즘과 동일하지 않으므로 `YFlow-Geo (experimental)`로 구분하고 차이를 기록한다.
 
+### 4.1 VAE bridge와 방법별 제약 주입
+
+Wan latent $z$에는 픽셀 대응점의 exact constraint가 없다. 따라서 모든 방법은 다음 공통 bridge만 사용할 수 있다.
+
+$$Q_F(z)=E\bigl(W_F(D(z))\bigr)=z_{geo},$$
+
+여기서 $D$는 Wan VAE decode, $W_F$는 SIFT control point를 $q^\star$로 옮긴 뒤 inverse RGB warp를 적용하는 연산, $E$는 posterior `mode()`와 Wan mean/std 정규화를 포함한 deterministic encode다. $W_F$는 다음을 모두 만족할 때만 accept한다: 충분한 control point와 화면 coverage, 최대 이동량 이하, warp 뒤 **새로 찾은** 대응점의 median/p90 개선, 매칭 수·유효 면적 하한. 하나라도 실패하면 $Q_F$는 적용하지 않고 reason을 남긴다.
+
+`Q_F`가 accept되어도 $D(Q_F(z))$의 대응점 공간에서만 국소적으로 검증된다. 이후 DiT 호출이나 다시 encode/decode한 영상이 제약을 보존한다는 보장은 없다. 그러므로 다음 방법 이름의 `-Geo` 구현은 모두 Wan 원 논문이나 Exp-01의 exact state-space 구현과 구분한다.
+
+| 방법 | Wan에 가능한 구체적 주입 | 현재 제약으로 가능한 주장 |
+| :--- | :--- | :--- |
+| FlowMatch | native scheduler의 $z_{i+1}$만 사용 | 무보정 baseline |
+| Terminal warp | 마지막 clean latent에만 $Q_F$를 적용하고 종료 | RGB 출력의 사후 보정; 이후 DiT가 없으므로 bridge가 통과한 pair에 한해 재매칭 개선을 주장 가능 |
+| **YFlow-Geo** | $z_1^\star=(1-\alpha_i)\hat z_1+\alpha_i Q_F(\hat z_1)$, $z_{i+1}=z_i+\Delta\tau_i(z_1^\star-z_i)/(1-\tau_i)$ | 후반 terminal target feedback 휴리스틱. 가장 먼저 구현할 방법 |
+| **HardFlow-Geo** | HardFlow의 terminal PGD 대신 $\bar z_1$에 $Q_F$를 한 번 적용해 $z_1^\star$를 만들고, 기존 posterior reparameterization으로 다음 state를 계산 | PGD/`BaseConstraint` hard guarantee 없음. terminal-target replacement ablation으로만 보고 |
+| **SafeFlow-Geo** | clean target 차이 $g_i=(Q_F(\hat z_1)-\hat z_1)/(1-\tau_i)$를 clip·gate한 보정 속도로 더하는 heuristic | CBF-QP SafeFlow가 아님. $h(z)$와 $\nabla_z h$가 없으므로 certificate/safety claim 불가 |
+| **UniConFlow-Geo** | 같은 $g_i$를 prescribed-time schedule로 가중하거나 마지막에 $Q_F$ 적용 | PTZF/QP UniConFlow가 아님. Jacobian 없이 zeroing certificate 불가 |
+| **GuideFlow-Geo** | 별도 guide network를 학습하지 않고, truncation 시점에 한 번 $Q_F$ target으로 교체하거나 $g_i$를 주입 | 원 GuideFlow의 conditional/energy model이 아니다. 10개 개발 clip으로 guide 학습 금지 |
+
+HardFlow와 YFlow에서 질문한 “decode → warp → encode 결과로 $x_{i+1}$을 정할 수 있는가”의 답은 **가능하지만 terminal clean prediction에만**이다. noisy $z_i$ 자체를 decode해 보정하거나, RGB warp 결과를 $z_i$에 더하면 scheduler의 상태 의미와 VAE temporal contract를 잃는다. $\hat z_1$ 또는 HardFlow의 $\bar z_1$을 $Q_F$에 넣고, 위 표의 rectified-flow 보간으로 다음 state를 계산한다. $\tau=1$에서는 나누지 않고 final terminal warp만 수행한다.
+
+현재 대응점 matcher는 비미분·매 step 비용이 크다. 따라서 첫 구현은 $\tau\ge t_{on}$의 드문 step(예: 마지막 2--4회)에서만 $Q_F$를 호출하고, 같은 seed에서 $\alpha=0$이 native scheduler와 bitwise 또는 허용오차 수준으로 동치인지 검사한다. `Q_F`의 SIFT 결과로 방법을 선택한 뒤 같은 SIFT 수치만 최종 보고하면 selection bias가 생기므로, 최종 평가는 고정된 별도 matcher/육안 검토로 교차 확인한다.
+
 ## 5. 비교와 평가
 
-주 비교는 **FlowMatch와 YFlow-Geo**다. 추가 항목은 효과를 분해하기 위한 ablation이다.
+주 비교는 **FlowMatch, terminal warp, YFlow-Geo**다. HardFlow-Geo는 terminal-target replacement ablation으로 추가한다. SafeFlow/UniConFlow/GuideFlow는 미분 가능한 latent geometry surrogate가 구현되기 전에는 같은 이름의 정식 비교 방법으로 보고하지 않는다.
 
 | 실행 | 목적 |
 | :--- | :--- |
@@ -145,8 +169,10 @@ z_next = z_i + Δτ_i/(1−τ_i) × (z_target − z_i)
 | FlowMatch + terminal warp | 최종 영상 후처리만의 효과 |
 | FlowMatch + VAE round-trip | 동일 횟수 encode/decode가 주는 영향 |
 | YFlow-Geo | 후반 종단 보정을 ODE에 주입 |
+| HardFlow-Geo | HardFlow식 다음-state reparameterization에서 terminal target만 $Q_F$로 교체 |
+| SafeFlow-Geo / UniConFlow-Geo / GuideFlow-Geo | $g_i$ injection ablation; certificate·학습 방법의 원 주장과 분리 |
 
-같은 최초 노이즈·프롬프트·해상도·프레임 수·CFG를 공유한다. DiT 호출 수와 전체 시간은 별도로 보고한다. 초기 비교에서 HardFlow/SafeFlow/UniConFlow/GuideFlow 추가 구현은 하지 않는다.
+같은 최초 노이즈·프롬프트·해상도·프레임 수·CFG를 공유한다. DiT 호출 수와 전체 시간은 별도로 보고한다. 모든 `-Geo` 방법은 $Q_F$ 호출 step, accept/skip 사유, control coverage, RGB warp 전후 새 matcher 지표를 함께 기록한다.
 
 ### 5.1 Sampson 거리와 실패 처리
 
@@ -176,12 +202,12 @@ $$d_S=\frac{(p_k^\top Fp_1)^2}{(Fp_1)_x^2+(Fp_1)_y^2+(F^\top p_k)_x^2+(F^\top p_
 | :--- | :--- | :--- |
 | 1 | 카메라 parser, F/투영 유틸, 합성 검증 | 포즈 방향·좌표 변환·퇴화 처리와 투영 잔차 검증 |
 | 2 | 개발 10클립 원본 영상 오라클 리포트 | 유효 매칭 확보, 음성 대조군과 구분 가능 |
-| 3 | 통제 warp·재매칭·VAE round-trip 리포트 | 좌표 개선이 영상 개선으로 전달됨 |
+| 3 | 통제 warp·재매칭·VAE round-trip 리포트 | 좌표 개선이 영상 개선으로 전달됨. 현재 1개 생성 clip에서 0→1은 16.81→0.29 px, 0→2는 33.71→3.79 px로 개선됐고, 0→3은 악화·장거리 쌍은 control 부족으로 skip됨 |
 | 4 | 공식 파이프라인과 동치인 baseline 1클립 | seed/CFG/시간 부호/latent scaling 검증 |
 | 5 | 후반 보정 1클립 → 개발 10클립 | 수치 안정성과 비용·품질 확인 |
 | 6 | 설정 동결, test 20×3 → 100×3 | 보정 효과와 실패율을 함께 보고 |
 
-`data/realestate10k.py`는 카메라 parser, 준비된 프레임 로더, Wan causal-VAE 입력 padding/mask, 픽셀 대응점용 에피폴라 잔차와 투영 연산을 제공한다. 좌표 투영의 제약과 영상 재측정 오라클을 분리한다. `BaseConstraint.project_feasible`의 엄밀 보장 계약은 대응점 표현에만 적용할 수 있다. RGB/latent 보정을 동일한 exact projector로 등록하지 않는다. 대응점 matcher, 원본 영상 오라클 평가, RGB warp, scheduler·text-conditioning을 포함한 Wan 생성 baseline, `eval/video_geometry.py`, `eval/y_flow_geo.py`는 아직 구현 대상이다.
+`data/realestate10k.py`는 카메라 parser, 준비된 프레임 로더, Wan causal-VAE 입력 padding/mask, prompt/noise seed, 픽셀 대응점용 에피폴라 잔차와 투영 연산을 제공한다. `scripts/verify_realestate10k_geometry.py`는 원본/생성 MP4의 SIFT-F 잔차를, `scripts/warp_realestate10k_geometry.py`는 희소 RGB warp 뒤 새 SIFT 잔차를 기록한다. 좌표 투영의 제약과 영상 재측정 오라클을 분리한다. `BaseConstraint.project_feasible`의 엄밀 보장 계약은 대응점 표현에만 적용할 수 있다. RGB/latent 보정을 동일한 exact projector로 등록하지 않는다. scheduler 내부의 `Q_F` bridge 및 `YFlow-Geo`/각 `-Geo` sampler는 아직 구현 대상이다.
 
 현재 `configs/exp_02_video.yaml`은 CLEVRER 설정이며 기존 실행 스크립트는 새 계획을 실행하지 않는다. `configs/realestate10k.yaml`은 개발 데이터 로더 설정이다. `model/wan.py`의 VAE helper는 Wan latent 정규화와 deterministic encode를 적용하지만, transformer 가중치 로드·text conditioning/CFG·scheduler 시간과 부호를 포함한 생성 경로는 아직 기준 구현과 대조하고 연결해야 한다.
 
