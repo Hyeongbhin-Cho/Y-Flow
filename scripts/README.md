@@ -137,6 +137,14 @@ python scripts/verify_realestate10k_geometry.py --root datasets/realestate10k --
 
 이 진단은 SIFT 대응점의 원래 에피폴라 잔차와 `project_feasible` 후 잔차를 JSON으로 기록한다. 후자의 수치가 수치 오차 범위(대략 `1e-5 px` 이하)에 있어야 projector가 좌표 공간에서 정확히 작동한 것이다. 실제 장면의 매칭 품질과 제공 포즈의 정확도는 `raw_median_px`, `raw_p90_px`, `matches`로 별도 판단하며, `insufficient_matches` 쌍은 성공으로 집계하지 않는다.
 
+생성 RGB에 희소 투영 변위를 반영하고 새 대응점으로 측정하는 통제 warp:
+
+```bash
+python scripts/warp_realestate10k_geometry.py --clip-id <clip_id>
+```
+
+출력 JSON은 warp 전후에 **새로** 찾은 SIFT 대응점의 잔차를 기록한다. 이 단계는 Wan latent에 제약을 넣지 않으며, 각 후속 프레임을 첫 프레임 기준으로 독립 보정한다. `accepted_controls`와 `support_radius_px`가 실제 보정 범위를 나타내므로, residual만 보고 성공으로 판단하지 않는다.
+
 ```text
 datasets/realestate10k/
 ├── poses/{train,test}/*.txt
