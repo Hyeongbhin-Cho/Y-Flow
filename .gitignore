@@ -226,3 +226,5 @@ runs/*/*/*.npy
 __pycache__/
 
 codex/
+datasets/pedestrian/default/
+runs/exp_03_pedestrian/bench/*/*/results/raw.csv

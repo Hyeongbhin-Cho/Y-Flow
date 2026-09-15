@@ -1,0 +1,15 @@
+{
+  "checkpoint": "/root/Y-Flow/experiments/exp_03_pedestrian/checkpoints/eth_ucy/moflow/zara1/models/checkpoint_best.pt",
+  "dropout_cfg": {
+    "drop_method": "emb",
+    "drop_logi_k": 20.0,
+    "drop_logi_m": 0.5
+  },
+  "terminal_step_t": 0.90872475696,
+  "terminal_change_m": {
+    "0.1": 0.0011258087707619567,
+    "0.5": 0.004485089875029512,
+    "1.0": 0.008378443940908614
+  },
+  "n_scenes": 200
+}

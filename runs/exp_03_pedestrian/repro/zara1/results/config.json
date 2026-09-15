@@ -1,0 +1,71 @@
+{
+  "code_sha256_16": {
+    "run_phase1.py": "61f247374aa77b8d",
+    "constraints.py": "315ee5ba48076675",
+    "neighbors.py": "5b048a6ebec38045",
+    "sampling.py": "6a97142b0a27911d",
+    "checkpoint": "0a0a45821e06ad8f"
+  },
+  "args": {
+    "subset": "zara1",
+    "ckpt_dir": null,
+    "data_dir": null,
+    "methods": [
+      "PLAIN_FM"
+    ],
+    "constraint": "kin",
+    "r_safe": 0.2,
+    "seeds": 1,
+    "seed_base": 42,
+    "calibration": "traj",
+    "quantile": 99.5,
+    "v_max": null,
+    "a_max": null,
+    "t_on": 0.5,
+    "admm_iters": 100,
+    "admm_iters_terminal": 300,
+    "admm_tol": 1e-05,
+    "admm_tol_guide": 0.001,
+    "seal_buffer": 0.0001,
+    "sampling_steps": 100,
+    "solver": "lin_poly",
+    "lin_poly_p": 5,
+    "lin_poly_long_step": 1000,
+    "batch_size": 1000,
+    "limit_batches": null,
+    "rotate_time_frame": 6,
+    "device": null,
+    "num_workers": 0,
+    "out_dir": "../../runs/exp_03_pedestrian/repro/zara1",
+    "save_raw": false
+  },
+  "limits": {
+    "v_max": 1.875,
+    "a_max": 2.375822226093538,
+    "calibration": "traj",
+    "quantile": 99.5,
+    "v_max_override": null,
+    "a_max_override": null
+  },
+  "constraint": "kin",
+  "r_safe": 0.2,
+  "normalization": {
+    "fut_traj_min": -11.535706520080566,
+    "fut_traj_max": 7.446029186248779,
+    "scale": 0.1053644424799947,
+    "offset": 0.21545328610112868
+  },
+  "checkpoint": "/Users/seojunhyeok/Downloads/Y-Flow/experiments/exp_03_pedestrian/checkpoints/eth_ucy/moflow/zara1/models/checkpoint_best.pt",
+  "yml": "/Users/seojunhyeok/Downloads/Y-Flow/experiments/exp_03_pedestrian/checkpoints/eth_ucy/moflow/zara1/cor_fm_updated.yml",
+  "methods": {
+    "PLAIN_FM": {
+      "active": false
+    }
+  },
+  "n_scenes": 2253,
+  "device": "cpu",
+  "fm_wrapper": "direct",
+  "tied_noise": true,
+  "solver": "lin_poly",
+  "sampling_steps": 100
+}

@@ -1,0 +1,68 @@
+# Exp-03. Pedestrian (ETH/UCY) Y-Flow evaluation manifest
+exp: exp_03_pedestrian
+task: pedestrian
+seed: 42
+
+source:
+  implementation_root: experiments/exp_03_pedestrian
+  upstream_repository: https://github.com/DSL-Lab/MoFlow.git
+  upstream_commit: f1b89b0e80ce95646214923e271e3c280d305cfa
+  checkpoint_repository: https://huggingface.co/fyxfelixfu/moflow
+
+data:
+  name: moflow_eth_ucy
+  cache_dir: datasets/pedestrian/default
+  source: original
+  subsets: [eth, hotel, univ, zara1, zara2]
+  past_frames: 8
+  future_frames: 12
+  frame_dt: 0.4
+  rotate: true
+  rotate_time_frame: 6
+
+model:
+  name: pretrained_moflow_teacher
+  checkpoint_dir: experiments/exp_03_pedestrian/checkpoints/eth_ucy/moflow
+  retrain: false
+
+sample:
+  k_preds: 20
+  solver: lin_poly
+  sampling_steps: 100
+  lin_poly_p: 5
+  lin_poly_long_step: 1000
+  batch_size: 1000
+
+constraint:
+  kind: kinematic_speed_acc + neighbour_clearance
+  dt: 0.4
+  calibration: traj
+  quantile: 99.5
+  anchor_velocity_clip: v_max
+  r_safe: 0.2
+  neighbours: gt_future_of_co_present_agents   # planning setting (oracle), see docs/exp/exp_03_pedestrian.md
+  clearance_convexification: candidate_halfplane
+  neighbour_pruning: kinematic_reachability
+
+yflow:
+  t_on: 0.5
+  mu: 0.0
+  cost: 0.0
+  damping: 1.0
+  terminal_replacement: true
+  projection: admm_exact
+  admm_rho: 10.0
+  admm_relax: 1.8
+  admm_iters: 100
+  admm_iters_terminal: 300
+  admm_tol_m: 1.0e-5
+  admm_tol_guide_m: 1.0e-3
+  terminal_seal: forward_two_disc
+
+methods: [PLAIN_FM, FINAL_PROJECTION, YFLOW, YFLOW_NO_REPLACE]   # optional: POV_ALWAYS
+
+retrain:
+  drop_method: "None"      # upstream default "emb" makes x1_hat ignore y_t at late t
+
+log:
+  out_dir: runs/exp_03_pedestrian

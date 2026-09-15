@@ -24,6 +24,11 @@ from utils.paths import method_dir
 
 def _save_scatter(path: Path, points: np.ndarray, reference: np.ndarray | None, title: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    if points.shape[-1] > 2:
+        from eval.evaluate import _save_trajectories
+
+        _save_trajectories(path, points, reference, title)
+        return
     fig, ax = plt.subplots(figsize=(5.5, 5.5))
     if reference is not None:
         ax.scatter(reference[:, 0], reference[:, 1], s=4, alpha=0.25, c="0.6", label="data")

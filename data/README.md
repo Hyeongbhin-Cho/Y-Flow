@@ -22,6 +22,7 @@
   * 범용 CFMBF Active-Set QP 솔버: `solve_composite_fmbf`, `solve_single_fmbf`, `barrier_gain`.
   * 유틸리티: `normalize_tensor`, `denormalize_tensor`, `build_anchor_vocabulary`.
 * `swiss_roll.py`: 2D spiral 데이터 생성, 캐시 저장/로드, `SwissRollConstraint`, `SwissRollFMBF`.
+* `pedestrian.py`: ETH/UCY 보행자 궤적을 38-d 점으로 변환, 운동학 제약 `PedestrianConstraint`, `PedestrianFMBF` (Exp-03).
 * `../datasets/swiss_roll/default/`: Exp-01 기본 dump (`train.npy`, `eval.npy`, `meta.json`).
 
 ---

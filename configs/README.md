@@ -12,6 +12,7 @@
 
 ## 2. 파일 목록 및 요약
 * `exp_01_swiss_roll.yaml`: Exp-01 Swiss roll. 데이터 캐시, MLP, CFM, HardFlow/YFlow/SafeFlow/GuideFlow/UniConFlow 설정
+* `exp_03_pedestrian.yaml`: Exp-03 pedestrian. MoFlow 출처, ETH/UCY split, 사전학습 체크포인트, 샘플링 설정
 
 ---
 

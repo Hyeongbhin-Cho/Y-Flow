@@ -18,6 +18,7 @@
 * `HardFlow.md`: HardFlow 구현 목표 체크리스트
 * `YFlow.md`: YFlow 구현 목표 체크리스트
 * `exp/exp_01_swiss_roll.md`: Swiss roll 비교 실험 프로토콜. 데이터는 `datasets/swiss_roll/default/`에 고정
+* `exp/exp_03_pedestrian.md`: ETH/UCY 보행자 Y-Flow 실험 구조, 고정 설정, 결과 범위
 
 ---
 
@@ -46,3 +47,6 @@
 
 ### exp/exp_01_swiss_roll.md
 *   **설명**: 2D Swiss roll 포인트 생성 실험. 비교는 무제약 FlowMatch + HardFlow, SafeFlow, UniConFlow, GuideFlow, YFlow. 점과 meta는 dump 쌍을 쓴다.
+
+### exp/exp_03_pedestrian.md
+*   **설명**: MoFlow 기반 보행자 실험을 독립 실행 패키지로 구성하고, 데이터·설정·실행·결과를 Y-Flow의 번호형 실험 구조에 연결한다.

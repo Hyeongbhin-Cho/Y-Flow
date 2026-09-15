@@ -17,7 +17,6 @@ import torch
 from omegaconf import DictConfig
 
 from data.base import BaseConstraint, build_dataset
-from data.swiss_roll import nearest_u
 from eval._backbone import load_frozen_velocity
 
 _H_NAMES = ("tube", "core", "box")
@@ -42,22 +41,9 @@ def energy_grad(
     w_cost: float,
     slack: float,
 ) -> np.ndarray:
-    p = np.asarray(p, dtype=np.float64)
-    meta = constraint.meta
-    proj = constraint.project(p).astype(np.float64)
-    diff = p - proj
-    d = np.linalg.norm(diff, axis=-1, keepdims=True)
-    unit = diff / np.clip(d, _EPS, None)
-    tube = np.maximum(d - (meta.tau - slack), 0.0)
-    grad = 2.0 * w_tube * tube * unit + 2.0 * w_cost * diff
-
-    r = np.linalg.norm(p, axis=-1, keepdims=True)
-    core = np.maximum((meta.rho_min + slack) - r, 0.0)
-    grad = grad - 2.0 * w_core * core * (p / np.clip(r, _EPS, None))
-
-    box = np.maximum(np.abs(p) - (meta.R - slack), 0.0)
-    grad = grad + 2.0 * w_box * box * np.sign(p)
-    return grad
+    return constraint.energy_grad(
+        np.asarray(p, dtype=np.float64), w_tube=w_tube, w_core=w_core, w_box=w_box, w_cost=w_cost, slack=slack
+    )
 
 
 def energy_torch(
