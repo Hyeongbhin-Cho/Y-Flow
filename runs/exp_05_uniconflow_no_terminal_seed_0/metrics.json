@@ -1,0 +1,37 @@
+{
+  "run_name": "exp_05_uniconflow_no_terminal_seed_0",
+  "methods": {
+    "uniconflow": {
+      "minADE": 4.092286109924316,
+      "minFDE": 9.04482364654541,
+      "meanADE": 6.3933234214782715,
+      "meanFDE": 15.85908031463623,
+      "top1ADE": 7.014191150665283,
+      "top1FDE": 17.73758888244629,
+      "pre_terminal_minADE": 4.092286109924316,
+      "pre_terminal_minFDE": 9.04482364654541,
+      "pre_terminal_safe_ratio": 0.0,
+      "terminal_projection_ADE_m": 0.0,
+      "terminal_projection_FDE_m": 0.0,
+      "intervention_ADE_m": 0.1834394782781601,
+      "intervention_FDE_m": 0.4156983196735382,
+      "intervention_max_m": 2.15385365486145,
+      "safe_ratio": 0.0,
+      "oracle_safe_ratio": 0.0,
+      "top1_safe_ratio": 0.0,
+      "speed_viol_rate": 0.06711409395973154,
+      "speed_viol_mean": 0.16233548521995544,
+      "accel_viol_rate": 1.0,
+      "accel_viol_mean": 18.48493003845215,
+      "method": "uniconflow",
+      "backbone": "moflow",
+      "adaptation": "AV2 conditional K-shot",
+      "backbone_run_name": "exp_05_moflow",
+      "run_name": "exp_05_uniconflow_no_terminal_seed_0",
+      "n_scenarios": 149,
+      "n_modes": 6,
+      "n_steps": 100,
+      "inference_time_s": 0.5356100955978036
+    }
+  }
+}

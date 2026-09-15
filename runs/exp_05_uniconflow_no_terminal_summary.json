@@ -1,0 +1,55 @@
+{
+  "runs": [
+    "exp_05_uniconflow_no_terminal_seed_0",
+    "exp_05_uniconflow_no_terminal_seed_1",
+    "exp_05_uniconflow_no_terminal_seed_2",
+    "exp_05_uniconflow_no_terminal_seed_3",
+    "exp_05_uniconflow_no_terminal_seed_4"
+  ],
+  "n_repeats": 5,
+  "evaluation_signature": [
+    149,
+    6,
+    100
+  ],
+  "methods": {
+    "uniconflow": {
+      "minADE": {
+        "mean": 4.014960241317749,
+        "std": 0.08990368293371544
+      },
+      "minFDE": {
+        "mean": 8.805525779724121,
+        "std": 0.2601601815176726
+      },
+      "top1ADE": {
+        "mean": 6.664869403839111,
+        "std": 0.2444527682722437
+      },
+      "top1FDE": {
+        "mean": 16.456823348999023,
+        "std": 0.8063863874904579
+      },
+      "safe_ratio": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "speed_viol_rate": {
+        "mean": 0.06577181208053691,
+        "std": 0.004432128133368893
+      },
+      "accel_viol_rate": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "intervention_ADE_m": {
+        "mean": 0.18222829103469848,
+        "std": 0.0017262009072391896
+      },
+      "inference_time_s": {
+        "mean": 0.5455014277249575,
+        "std": 0.03848067279660787
+      }
+    }
+  }
+}

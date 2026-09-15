@@ -1,0 +1,34 @@
+{
+  "run_name": "exp_05_yflow_iter_20_seed_2",
+  "methods": {
+    "yflow": {
+      "minADE": 3.933730125427246,
+      "minFDE": 9.045783996582031,
+      "meanADE": 6.3381428718566895,
+      "meanFDE": 16.00510597229004,
+      "top1ADE": 6.4917449951171875,
+      "top1FDE": 16.324764251708984,
+      "intervention_ADE_m": 1.792805790901184,
+      "intervention_FDE_m": 4.053144454956055,
+      "intervention_max_m": 8.129603385925293,
+      "safe_ratio": 1.0,
+      "oracle_safe_ratio": 1.0,
+      "top1_safe_ratio": 1.0,
+      "speed_viol_rate": 0.0,
+      "speed_viol_mean": 0.0,
+      "accel_viol_rate": 0.0,
+      "accel_viol_mean": 0.0,
+      "method": "yflow",
+      "backbone": "moflow",
+      "adaptation": "AV2 conditional K-shot",
+      "backbone_run_name": "exp_05_moflow",
+      "run_name": "exp_05_yflow_iter_20_seed_2",
+      "n_scenarios": 149,
+      "n_modes": 6,
+      "n_steps": 100,
+      "inference_time_s": 12.31555653270334,
+      "terminal_refinement": true,
+      "max_iter": 20
+    }
+  }
+}
