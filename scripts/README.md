@@ -101,3 +101,41 @@ python scripts/export_clevrer_flow.py --src runs/exp_02_sub_video_recognition/fl
 ```
 
 산출물: `checkpoints/clevrer_flow/last.pt`, `config.yaml`, `READY.json`.
+
+### setup_realestate10k.py
+
+Exp-02 에피폴라 실험용 개발 클립을 준비한다. 기본은 **train 10클립 × 8프레임, 0.25초 간격, 512×288**이다. 실제 영상의 정적 장면 여부는 다운로드 후 사람이 검토해야 하며 manifest의 `static_scene_review`는 `pending`으로 시작한다.
+
+```bash
+conda env create -f environment.yml -n yflow311
+conda activate yflow311
+python scripts/setup_realestate10k.py --dry-run
+python scripts/setup_realestate10k.py
+
+# 이미 확보한 공식 포즈와 원본 MP4로 네트워크 없이 준비
+python scripts/setup_realestate10k.py --poses-dir /path/to/poses --videos-dir /path/to/videos
+```
+
+`--poses-dir` 아래에는 `train/*.txt` 또는 `test/*.txt`, `--videos-dir` 아래에는 `<clip_id>.mp4`를 둔다. MP4는 시간 원점이 유지된 원본 영상이어야 한다. 잘라낸 영상의 PTS를 0으로 재설정하면 카메라 timestamp와 맞지 않는다.
+이 환경에는 YouTube EJS 지원이 포함된 `yt-dlp[default]`와 JavaScript 런타임 Deno가 들어 있다. 기존 환경에 수동 설치할 때는 Python 3.11 이상에서 `yt-dlp[default]`, `av`, `pillow`와 Deno 2.3 이상을 준비한다.
+
+- 공식 포즈 아카이브를 받으며, PNG 추출 후 임시 원본 영상과 압축파일을 제거한다. 포즈 텍스트는 재시도에 사용한다.
+- seed로 후보 순서를 고정하고 기본 최대 100개 후보에서 성공한 10개를 준비한다. 다른 split manifest와 같은 URL은 중복 선택하지 않는다.
+- 720p 이하 MP4를 우선 선택하고, 없으면 720p 이하 포맷, 마지막으로 제한 없는 최고 포맷을 시도한다. 마지막 fallback은 720p보다 큰 원본을 받을 수 있지만 출력은 설정한 크기로 resize한다.
+- 영상 삭제·접근 제한 등은 manifest의 `failures`에 남긴다. 형식 오류는 재시도하며, 이미 기록된 비공개 영상과 sampling window보다 짧은 클립은 다음 실행에서 건너뛴다. 10개 미달이면 비정상 종료하고 완료된 클립은 재사용한다. 전역 네트워크/포즈 다운로드 오류는 즉시 종료한다.
+- 카메라 row를 최근접 선택하고 실제 디코딩 PTS와 대조한다. 기본 허용 오차는 20ms이며 중복 프레임과 누락은 거부한다.
+- 가로·세로를 지정 크기로 직접 resize한다. crop/padding은 없으며 K와 spatial transform에 각각의 축척을 반영한다.
+- 동일 root/split에서 전처리 설정을 바꾸는 것은 거부한다. 별도 root를 사용한다.
+- 자동 선별은 기하 유효성·정적 장면을 보장하지 않는다. RealEstate10K 원본 포즈 오차와 시차는 후속 오라클에서 확인한다.
+
+```text
+datasets/realestate10k/
+├── poses/{train,test}/*.txt
+├── clips/train/<clip_id>/
+│   ├── 0000.png ... 0007.png
+│   ├── cameras.npz
+│   └── source_camera.txt
+└── manifests/train.json
+```
+
+2026-09-15: 취소된 CLEVRER 실험의 로컬 `datasets/clevrer/` 영상·주석·압축 캐시는 삭제했다. 위 CLEVRER setup 설명은 기존 코드의 사용 기록이다.

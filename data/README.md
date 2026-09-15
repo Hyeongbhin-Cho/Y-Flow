@@ -144,3 +144,27 @@ annotation = sample["annotation"]
 #### CLEVRERRecognitionDataset / CLEVRERStateConstraint
 
 `data.name: clevrer_recognition`. 클립 $V$와 packed 상태 $S$를 같이 반환한다. $S$는 슬롯 $K=6$, 33프레임 world 좌표(속성 원-핫, 가시성, 위치·속도, 충돌 상삼각). 제약 $h(S)\le 0$은 어휘·개수·테이블·운동학·충돌 접촉이다. train split이 없으면 `python scripts/setup_clevrer.py --splits train`.
+
+### RealEstate10K (Exp-02 개발 데이터)
+
+`realestate10k.py`는 준비된 PNG만 지연 로드한다. [setup 스크립트](../scripts/setup_realestate10k.py)를 먼저 실행한다. 학습이나 다운로드는 로더에서 수행하지 않는다.
+
+```python
+from omegaconf import OmegaConf
+from torch.utils.data import DataLoader
+from data import build_dataset, collate_realestate10k
+
+bundle = build_dataset(OmegaConf.load("configs/realestate10k.yaml"))
+loader = DataLoader(bundle.eval, batch_size=1, collate_fn=collate_realestate10k)
+sample = next(iter(loader))
+```
+
+개별 sample의 `video`는 관측된 RGB 프레임 float32 `[3,T,H,W]`, 범위 `[-1,1]`이다. `wan_video`는 같은 클립을 Wan2.1 causal VAE의 `T=1+4k` 계약에 맞춰 마지막 관측 프레임을 반복한 `[3,1+4k,H,W]` 입력이다. `wan_frame_mask`와 `wan_timestamps_us`는 반복 padding을 구분한다. 설정 영상 크기는 VAE의 8배 축소와 Transformer의 2×2 patch를 고려해 높이·너비 모두 16의 배수여야 한다. 배치에서는 `collate_realestate10k`를 사용하면 각 tensor가 batch 축으로 쌓인다. Wan VAE encode는 `WanVelocityNet.encode_video(batch["wan_video"])`로 수행한다.
+
+`K`, `K_normalized`, `world_to_camera`, `spatial_transform`은 float64이며 `timestamps_us`(선택 포즈), `requested_timestamps_us`, `actual_timestamps_us`(영상 PTS), `camera_indices`, `source_sizes_wh`도 반환한다.
+
+`pair_indices`는 첫 프레임 기준 쌍과 인접 쌍의 합집합이다. 같은 순서의 `fundamental_matrices`는 픽셀 좌표에 적용하며 Frobenius norm으로 정규화한다. `fundamental_valid=False`인 순수 회전/0 translation 쌍은 F를 0으로 반환하므로 **반드시 마스킹**해야 한다. 이 유효성은 대수적 판정이며 작은 시차·정적 장면·매칭 성공을 의미하지 않는다. `valid_region`은 crop/padding이 없는 준비 프레임 전체이며 정적 배경/가림 마스크가 아니다.
+
+`VideoDataBundle`을 반환하고 `train=None`이다. `constraint`는 sample별 F를 쓰는 `RealEstate10KEpipolarConstraint`다. 대응점 좌표 `p1,p2`와 대응하는 F를 전달해 `constraint.h(p1,p2,F,valid=...)`로 픽셀 단위 선 잔차를 얻고, `constraint.project_feasible(...)`로 목표 점을 에피폴라 선에 최소 거리 투영할 수 있다. `h<=0`은 지정 허용 오차 안을 뜻한다. 퇴화/무효 쌍은 `valid=False`로 전달하며 결과에서 제외된다. 이는 `BaseConstraint`의 전역 상태공간 제약이 아닌 대응점 공간 연산이다. RGB 프레임·Wan latent에 직접 투영할 수 없으며, 정적 장면/매칭 성공도 데이터만으로 보장하지 않는다. 개발 train 10클립 로더 설정은 [configs/realestate10k.yaml](../configs/realestate10k.yaml)이며, 기존 CLEVRER 생성 설정과 구분된다.
+
+공식 포즈 형식: [RealEstate10K](https://google.github.io/realestate10k/download.html). Timestamp + intrinsics 4개 + reserved 2개 + world-to-camera 3×4 행렬, 총 19개 열을 파싱한다.

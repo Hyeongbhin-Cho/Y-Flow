@@ -229,6 +229,7 @@ codex/
 
 # Model Checkpoints & Large Weights
 datasets/clevrer/
+datasets/realestate10k/
 checkpoints/
 *.safetensors
 *.pth

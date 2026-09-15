@@ -229,6 +229,8 @@ def build_dataset(cfg_or_name: DictConfig | str, **kwargs) -> DataBundle | Video
         # Lazy load built-in datasets if not yet imported
         if name == "swiss_roll":
             import data.swiss_roll  # noqa: F401
+        elif name == "realestate10k":
+            import data.realestate10k  # noqa: F401
         elif name == "clevrer":
             import data.clevrer  # noqa: F401
         elif name == "clevrer_recognition":

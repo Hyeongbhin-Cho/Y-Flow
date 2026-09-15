@@ -1,0 +1,7 @@
+# Development data only; no generation sampler is configured here.
+data:
+  name: realestate10k
+  cache_dir: datasets/realestate10k
+  eval_split: train   # 10 development clips, not held-out test results
+  n_eval: 10
+  epipolar_tolerance_px: 1.0

@@ -86,22 +86,64 @@ class WanVelocityNet(VelocityNet):
 
     @torch.no_grad()
     def decode_latents(self, z: torch.Tensor) -> torch.Tensor:
-        """Decode latent tensor z [B, C, T', H', W'] into RGB video [B, 3, T, H, W] in [-1, 1]."""
+        """Decode Wan-normalized z [B,C,T',H',W'] to RGB video in [-1,1]."""
         if self.vae is None:
             raise RuntimeError("VAE is not loaded in WanVelocityNet. Set load_vae=True in config.")
-        # AutoencoderKLWan decode
-        out = self.vae.decode(z)
+        mean, std = self._latent_stats(z)
+        vae_dtype = next(self.vae.parameters()).dtype
+        unnormalized = z.float() * std.float() + mean.float()
+        out = self.vae.decode(unnormalized.to(dtype=vae_dtype))
         video = out.sample if hasattr(out, "sample") else out
         return video
 
     @torch.no_grad()
     def encode_video(self, video: torch.Tensor) -> torch.Tensor:
-        """Encode RGB video [B, 3, T, H, W] in [-1, 1] into latent tensor z."""
+        """Encode Wan-ready RGB [B,3,T,H,W] into deterministic normalized latents.
+
+        Wan2.1 uses causal temporal compression by four, so input clips must have
+        ``T = 1 + 4k`` frames. RealEstate10K samples expose ``wan_video`` padded
+        to this contract; the separate ``video`` field keeps only observed frames.
+        """
         if self.vae is None:
             raise RuntimeError("VAE is not loaded in WanVelocityNet. Set load_vae=True in config.")
+        if video.ndim != 5 or video.shape[1] != 3:
+            raise ValueError(f"Expected video [B,3,T,H,W], got {tuple(video.shape)}")
+        temporal_factor = int(getattr(self.vae.config, "scale_factor_temporal", 4) or 4)
+        spatial_factor = int(getattr(self.vae.config, "scale_factor_spatial", 8) or 8)
+        if (video.shape[2] - 1) % temporal_factor:
+            raise ValueError(
+                f"Wan VAE requires T=1+{temporal_factor}k frames; got T={video.shape[2]}. "
+                "Use the dataset's wan_video field."
+            )
+        if video.shape[-2] % spatial_factor or video.shape[-1] % spatial_factor:
+            raise ValueError(f"Wan VAE requires H,W divisible by {spatial_factor}")
+        vae_param = next(self.vae.parameters())
+        video = video.to(device=vae_param.device, dtype=vae_param.dtype)
         out = self.vae.encode(video)
-        latents = out.latent_dist.sample() if hasattr(out, "latent_dist") else out
-        return latents
+        posterior = out.latent_dist if hasattr(out, "latent_dist") else None
+        if posterior is None:
+            latents = out
+        elif hasattr(posterior, "mode"):
+            latents = posterior.mode()
+        else:
+            raise TypeError("Wan VAE encoder output must expose a deterministic latent_dist.mode()")
+        mean, std = self._latent_stats(latents)
+        return ((latents.float() - mean.float()) / std.float()).to(dtype=latents.dtype)
+
+    def _latent_stats(self, reference: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        """Return broadcastable Wan posterior mean/std in latent channel order."""
+        config = self.vae.config
+        mean_values = getattr(config, "latents_mean", None)
+        std_values = getattr(config, "latents_std", None)
+        if mean_values is None or std_values is None:
+            raise ValueError("Wan VAE config must define latents_mean and latents_std")
+        mean = torch.as_tensor(mean_values, device=reference.device, dtype=torch.float32).view(1, -1, 1, 1, 1)
+        std = torch.as_tensor(std_values, device=reference.device, dtype=torch.float32).view(1, -1, 1, 1, 1)
+        if mean.shape[1] != reference.shape[1] or std.shape[1] != reference.shape[1]:
+            raise ValueError("Wan latent statistics do not match latent channel count")
+        if torch.any(std <= 0):
+            raise ValueError("Wan latent standard deviations must be positive")
+        return mean, std
 
 
 def build_wan_model(cfg: DictConfig) -> WanVelocityNet:

@@ -5,8 +5,9 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.10
+  - python=3.11
   - pip
+  - deno>=2.3
 
   # Deep learning
   - pytorch
@@ -29,6 +30,7 @@ dependencies:
   - pyyaml
   - jupyter
   - ipykernel
+  - pytest
 
   - pip:
       - triton==2.3.0
@@ -42,5 +44,6 @@ dependencies:
       - accelerate
       - transformers
       - sentencepiece
-      - av                    # CLEVRER MP4 디코딩 (PyAV)
+      - av                    # MP4 timestamp 기반 디코딩 (PyAV)
+      - "yt-dlp[default]"     # RealEstate10K 다운로드 + YouTube EJS 솔버
       - gdown                 # CLEVRER PropNet Google Drive 아카이브
