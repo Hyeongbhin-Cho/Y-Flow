@@ -109,6 +109,7 @@ def run_eval_moflow(cfg: DictConfig, device: torch.device | None = None) -> dict
         "n_steps": int(cfg.sample.n_steps), "inference_time_s": float(elapsed),
     })
     out_dir = method_dir(cfg, "moflow")
+    out_dir.mkdir(parents=True, exist_ok=True)
     np.save(out_dir / "eval_predictions.npy", predictions)
     np.save(out_dir / "eval_probabilities.npy", probabilities)
     (out_dir / "metrics.json").write_text(json.dumps(metrics, indent=2))
