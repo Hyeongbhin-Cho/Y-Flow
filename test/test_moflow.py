@@ -105,6 +105,24 @@ class TestMoFlow(unittest.TestCase):
         residual = a + (b * correction.unsqueeze(-2)).sum(dim=-1)
         self.assertTrue((residual >= -1e-6).all())
 
+    def test_yflow_can_disable_terminal_refinement(self):
+        cfg = _cfg()
+        cfg.yflow.terminal_refinement = False
+        model = build_moflow_model(cfg)
+        context = _context(2)
+        feature = model.encode_context(context).detach()
+        x0 = torch.randn(2, 3, 120)
+        meta = SimpleNamespace(
+            difference_window=5, future_steps=60, sample_hz=10.0,
+            v_max=25.0, a_max=15.0,
+        )
+        result, diagnostics = _SAMPLERS["yflow"](
+            cfg, model, context, feature, x0,
+            torch.zeros(120), torch.ones(120), AutonomousDrivingConstraint(meta),
+        )
+        self.assertEqual(result.shape, x0.shape)
+        self.assertFalse(diagnostics["terminal_refinement"])
+
     def test_nominal_sampler_is_deterministic_and_shape_preserving(self):
         cfg = _cfg()
         model = build_moflow_model(cfg)

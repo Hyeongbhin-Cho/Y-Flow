@@ -294,3 +294,13 @@ the original path more closely than uniformly shrinking the entire trajectory.
 For repeated sampling evaluations, set `moflow.backbone_run_name` to the trained
 run while changing `run_name` and `seed`. Aggregate completed runs with
 `python -m eval.summarize_autonomous --runs <run1> <run2> ...`.
+
+Run the registered five-seed YFlow iteration and terminal-projection ablations:
+
+```bash
+bash run_exp_05_ablations.sh
+```
+
+The script evaluates YFlow with `max_iter` in `{1, 3, 5, 10, 20}` and evaluates
+SafeFlow, UniConFlow, and YFlow with their terminal projection/refinement disabled.
+Every run loads the frozen `exp_05_moflow` checkpoint and writes a separate summary.

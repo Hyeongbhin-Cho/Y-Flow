@@ -113,6 +113,9 @@ def _yflow(cfg, model, context, feature, x0, mean, std, constraint):
         v = _velocity(model, context, feature, x, t)
         raw = x + (1.0 - t) * v
         terminal = i == steps - 1
+        if terminal and not bool(settings.get("terminal_refinement", True)):
+            x = raw
+            continue
         if not terminal and t < float(settings.t_on):
             eta = dt / max(1.0 - t, 1e-8)
             x = (1.0 - eta) * x + eta * raw
@@ -130,7 +133,10 @@ def _yflow(cfg, model, context, feature, x0, mean, std, constraint):
             )
         eta = 1.0 if terminal else dt / max(1.0 - t, 1e-8)
         x = (1.0 - eta) * x + eta * target
-    return x.detach(), {}
+    return x.detach(), {
+        "terminal_refinement": bool(settings.get("terminal_refinement", True)),
+        "max_iter": int(settings.max_iter),
+    }
 
 
 def _uniconflow(cfg, model, context, feature, x0, mean, std, constraint):
