@@ -343,3 +343,20 @@ guidance만의 효과로 표현하지 않고 terminal projection 사용 여부�
 8.8712~8.8785, safe ratio 1.0으로 사실상 같은 결과를 보였다. 추론 시간은
 `max_iter=1`에서 4.280초, `max_iter=20`에서 12.643초였다. 이에 따라 Exp-05의
 최종 기본값은 `max_iter=1`, `terminal_refinement=true`로 정한다.
+
+## 12. 10k/2k 확장 실험
+
+MVP의 780개 train/149개 evaluation 한계를 줄이기 위해 유효 focal trajectory
+10,000개와 evaluation 2,000개를 별도 실험으로 구성한다. focal trajectory가
+불완전한 scenario가 있으므로 원본 parquet은 train 11,500개, val 2,300개를 먼저
+선별 다운로드한다. 사용하지 않는 map JSON은 내려받지 않는다.
+
+```bash
+bash download_av2_motion_subset.sh
+bash run_exp_05_10k.sh
+```
+
+원본은 `/root/datasets/argoverse2/motion_forecasting_10k`, 가공 cache는
+`datasets/autonomous_driving/exp_05_10k`, 결과는 `runs/exp_05_av2_10k`에 저장한다.
+기존 MVP cache, checkpoint, 결과는 덮어쓰지 않는다. 첫 실행은 데이터 준비,
+MoFlow 재학습, seed-0 전체 비교까지만 수행하며 정상 확인 후 multi-seed로 확장한다.

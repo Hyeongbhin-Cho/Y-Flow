@@ -1,0 +1,92 @@
+exp: exp_05_autonomous_driving_10k
+seed: 0
+
+data:
+  name: autonomous_driving
+  raw_dir: /root/datasets/argoverse2/motion_forecasting_10k
+  cache_dir: datasets/autonomous_driving/exp_05_10k
+  regenerate: false
+  sample_hz: 10.0
+  history_steps: 50
+  future_steps: 60
+  difference_window: 5
+  n_train: 10000
+  n_eval: 2000
+  v_max: 25.0
+  a_max: 15.0
+  context:
+    radius_m: 50.0
+    max_neighbors: 16
+    actor_types: [vehicle, bus, motorcyclist, cyclist, pedestrian]
+
+model:
+  name: mlp
+  dim: 120
+  hidden: [256, 256, 256]
+  time_embed_dim: 64
+
+method:
+  name: flow_matching
+  sigma_min: 0.0
+
+moflow:
+  backbone_run_name: null
+  n_modes: 6
+  hidden_dim: 256
+  type_embed_dim: 16
+  context_scale_m: 50.0
+  classification_weight: 0.1
+
+train:
+  batch_size: 128
+  steps: 20000
+  lr: 1.0e-3
+  ema_decay: 0.999
+  grad_clip: 5.0
+  save_every: 2000
+
+sample:
+  n_samples: 2000
+  n_steps: 100
+
+hardflow:
+  t_on: 0.5
+  lambda_oc: 10.0
+  max_iter: 20
+  safety_buffer: 1.0e-4
+
+safeflow:
+  t_on: 0.5
+  slack_weight: 1.0
+  av2_gain: 2.0
+  terminal_filter:
+    enabled: true
+
+uniconflow:
+  free_until: 0.0
+  ptzf_rate: 1.0
+  gamma: 1.0
+  slack_weight: 100.0
+  max_guidance_norm: 20.0
+  terminal_refinement: true
+  safety_buffer: 1.0e-4
+
+guideflow:
+  tau_star: 0.5
+  eta_max: 0.5
+  av2_max_guidance_norm: 5.0
+  av2_line_search_steps: 8
+
+yflow:
+  t_on: 0.5
+  lambda_oc: 10.0
+  mu: 1.0
+  max_iter: 1
+  terminal_refinement: true
+  safety_buffer: 1.0e-4
+
+log:
+  out_dir: outputs/exp_05_autonomous_driving_10k
+  plot_every: 2000
+
+device: cuda
