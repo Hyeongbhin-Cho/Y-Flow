@@ -115,10 +115,22 @@ def download_video(url, work):
         import yt_dlp
     except ImportError as error:
         raise RuntimeError("Install yt-dlp or supply --videos-dir for offline setup") from error
-    with yt_dlp.YoutubeDL({"format": "best[height<=720][ext=mp4]/best[height<=720]/best",
-                           "outtmpl": str(work / "source.%(ext)s"), "noplaylist": True,
-                           "socket_timeout": 30, "retries": 1, "cachedir": False,
-                           "quiet": True}) as downloader:
+    # Prefer a single progressive stream so PyAV can open it without relying
+    # on an external ffmpeg merge. The final /best handles videos whose
+    # available stream height is above 720 or whose container is not mp4.
+    options = {
+        "format": "best[height<=720]/best",
+        "outtmpl": str(work / "source.%(ext)s"),
+        "noplaylist": True,
+        "socket_timeout": 30,
+        "retries": 2,
+        "cachedir": False,
+        "quiet": True,
+        # YouTube format discovery now needs a JS runtime. yt-dlp[default]
+        # supplies the EJS solver; Deno must be available on PATH.
+        "js_runtimes": {"deno": {}},
+    }
+    with yt_dlp.YoutubeDL(options) as downloader:
         try:
             info = downloader.extract_info(url, download=True)
         except yt_dlp.utils.DownloadError as error:
