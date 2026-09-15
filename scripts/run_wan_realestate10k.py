@@ -22,6 +22,25 @@ if str(ROOT) not in sys.path:
 from data import build_dataset
 
 
+def _export_video(frames, path: Path, fps: int = 16) -> None:
+    """Write PIL/numpy frames with PyAV, avoiding diffusers' OpenCV backend."""
+    import av
+    import numpy as np
+
+    first = np.asarray(frames[0].convert("RGB") if hasattr(frames[0], "convert") else frames[0])
+    height, width = first.shape[:2]
+    with av.open(str(path), "w") as container:
+        stream = container.add_stream("libx264", rate=fps)
+        stream.width, stream.height, stream.pix_fmt = width, height, "yuv420p"
+        for frame in frames:
+            array = np.asarray(frame.convert("RGB") if hasattr(frame, "convert") else frame)
+            video_frame = av.VideoFrame.from_ndarray(array, format="rgb24")
+            for packet in stream.encode(video_frame):
+                container.mux(packet)
+        for packet in stream.encode():
+            container.mux(packet)
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--config", default="configs/realestate10k.yaml")
@@ -34,7 +53,6 @@ def main():
     if not torch.cuda.is_available():
         raise RuntimeError("Wan generation requires a CUDA GPU")
     from diffusers import WanPipeline
-    from diffusers.utils import export_to_video
 
     cfg = OmegaConf.load(args.config)
     cfg.data.n_eval = args.limit
@@ -53,7 +71,7 @@ def main():
                       generator=generator)
         frames = result.frames[0]
         video_path = args.output / f"{sample['clip_id']}.mp4"
-        export_to_video(frames, str(video_path), fps=16)
+        _export_video(frames, video_path, fps=16)
         manifest.append({"clip_id": sample["clip_id"], "prompt": sample["prompt"],
                          "noise_seed": seed, "video": str(video_path),
                          "source_pair_indices": sample["pair_indices"].tolist()})

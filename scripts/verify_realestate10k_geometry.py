@@ -3,9 +3,16 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
+
+# Running a file in scripts/ does not automatically expose the repository
+# root, where the local data package lives.
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from data.realestate10k import RealEstate10KDataset, RealEstate10KEpipolarConstraint
 
