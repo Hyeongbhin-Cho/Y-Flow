@@ -124,7 +124,10 @@ class GeometryBridge:
             clean_latents + self.sensitivity_epsilon * direction, step=step, sigma=sigma, record=False
         )
         if perturbed is None:
-            event["bridge_sensitivity"] = {"status": "perturbed_bridge_rejected"}
+            event["bridge_sensitivity"] = {
+                "status": "perturbed_bridge_rejected",
+                "accepted_pair_ids_base": [row["pair"] for row in event["pairs"] if row["accepted"]],
+            }
         else:
             gain = (perturbed.float() - geo.float()).square().mean().sqrt() / self.sensitivity_epsilon
             event["bridge_sensitivity"] = {
@@ -132,6 +135,8 @@ class GeometryBridge:
                 "empirical_rms_gain": float(gain),
                 "accepted_pairs_base": event["accepted_pairs"],
                 "accepted_pairs_perturbed": perturbed_event["accepted_pairs"],
+                "accepted_pair_ids_base": [row["pair"] for row in event["pairs"] if row["accepted"]],
+                "accepted_pair_ids_perturbed": [row["pair"] for row in perturbed_event["pairs"] if row["accepted"]],
             }
         return geo
 

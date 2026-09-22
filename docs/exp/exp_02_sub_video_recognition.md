@@ -382,3 +382,95 @@ GT에 같은 제약을 적용한 통과율과 제약별 잔차가 저장되어 �
 ## 10. 한 줄
 
 Exp-02-sub는 ImageNet 사전학습 ResNet-34의 layer2/layer3 공간 특징에 객체 슬롯 및 시간 Transformer 헤드를 붙여, CLEVRER 비디오에서 객체·궤적·충돌 상태를 직접 지도학습하는 인식 실험이다.
+
+
+ 1. Epipolar 제약의 (h)는 무엇인가?
+
+  기준 프레임의 점 (p=(x_1,y_1,1)^\top)과 다른 프레임의 대응점 (q=(x_k,y_k))에 대해, 카메라에서 계산한 fundamental matrix (F)로 에피폴라 선을 구합니다.
+
+  $$
+  Fp=(a,b,c)^\top
+  $$
+
+  구현된 제약은 점에서 선까지의 거리 − 허용 오차입니다.
+
+  $$
+ h(p,q;F)=\frac{|ax_k+by_k+c|}{\sqrt{a^2+b^2}}-\varepsilon\le0
+  $$
+
+  즉, 대응점이 에피폴라 선에서 (\varepsilon) 픽셀 이내에 있어야 합니다. 예를 들어 (\varepsilon=1)이면 거리 0.7 px는 (h=-0.3)으로 만족, 거리 3 px는 (h=2)로 위반
+  입니다.
+
+  실제 h() 구현 (data/realestate10k.py:128)에서 그대로 계산합니다. 기본 허용치는 1 px이지만, **Wan 비교 스크립트는 (\varepsilon=0)**으로 생성하므로 잔차 자체를
+  측정합니다. 설정 코드 (scripts/compare_wan_geometry_methods.py:51)
+
+  2. 실제로 어떻게 만족시켰나?
+
+  (h)를 loss에 넣어 줄이는 대신, 검출된 (q)를 선 위로 직접 투영합니다.
+
+  $$
+
+  q^\star=q-\frac{ax_k+by_k+c}{a^2+b^2}
+  \begin{pmatrix}a\b\end{pmatrix}
+  
+  $$
+
+  고정된 (p,F)와 비퇴화 선에서는 (aq_x^\star+bq_y^\star+c=0)이므로, 수치 오차를 제외하면 (h(p,q^\star;F)=-\varepsilon\le0)입니다.
+
+  이는 다음 문제의 닫힌 형태 해입니다.
+
+  $$
+  \min_{q'}\frac12|q'-q|^2
+  \quad\text{s.t.}\quad aq'_x+bq'_y+c=0
+  $$
+
+  투영 구현 (data/realestate10k.py:157)은 허용 오차가 양수여도 띠의 경계가 아니라 선 자체로 투영합니다. 퇴화한 선은 투영 대상에서 제외합니다.
+
+  3. 이 좌표 보정을 HardFlow/YFlow에 어떻게 전달했나?
+
+  실제 연결은 다음과 같습니다.
+
+  예측한 clean latent
+  → VAE decode
+  → SIFT 대응점 p, q 검출
+  → q를 q★로 투영
+  → q 위치의 영상 내용을 q★로 옮기는 RGB warp
+  → VAE encode
+  → 보정 latent로 다음 생성 상태 계산
+
+  이 전체 연산을 (Q_F(z)=E(W_F(D(z))))로 둡니다. 핵심은 좌표 (q^\star)의 제약 만족이 RGB warp와 VAE를 거친 결과에 그대로 보존되지는 않는다는 점입니다. warp 구
+  현 (scripts/warp_realestate10k_geometry.py:89)
+
+  두 방법은 이 보정 결과를 다음 상태에 반영하는 방식이 다릅니다. 코드의 감소하는 noise 시간 (\sigma_i)를 사용하면:
+
+  
+  $$z_{\rm clean}=z_i-\sigma_i v_i,\qquad
+  z_{\rm target}=(1-\alpha_i)z_{\rm clean}+\alpha_iQ_F(z_{\rm clean})$$
+  
+
+  - YFlow-Geo: 속도를 ((z_i-z_{\rm target})/\sigma_i)로 바꿔 scheduler를 실행합니다. 결과적으로 현재 상태에서 보정 target 방향으로 보간합니다.
+  - HardFlow-Geo: 원래 scheduler 결과에 ((1-\sigma_{i+1})(z_{\rm target}-z_{\rm clean}))를 더합니다. 추정 noise 성분을 유지하면서 terminal target 성분을 교체하
+    는 방식입니다.
+
+  실제 코드에서는 마지막 보정 step에 (\alpha_i=1)을 사용합니다. 두 경로 모두 epipolar (h(z)\le0)에 대한 PGD를 호출하지 않습니다. 두 방법의 구현 (scripts/
+  compare_wan_geometry_methods.py:194)
+
+  4. 원래 HardFlow/YFlow의 (h\le0) 적용과는 무엇이 다른가?
+
+  docs/HardFlow.md, docs/YFlow.md의 원래 방식은 terminal target을 다음처럼 최적화합니다.
+
+  
+  $$\min_z C(z)+\frac{\lambda}{2}|z-z_{\rm raw}|^2
+  +\underbrace{\frac{\mu}{2}|z-z_{\rm phys}|^2}_{\text{YFlow 추가 항}}
+  \quad\text{s.t.}\quad h(z)\le0$$
+  
+
+  기존 구현은 gradient step마다 project_feasible()을 호출해서 제약을 만족시키는 Projected Gradient Descent입니다. HardFlow PGD (eval/hard_flow.py:14), YFlow
+  PGD (eval/y_flow.py:76)
+
+  반면 Exp-02는 latent 공간의 feasible projector가 없어서 이 최적화를 RGB/VAE 보정으로 대체했습니다. 보정 채택도 모든 점의 (h\le0) 검사가 아니라, 충분한 매칭
+  ·coverage와 재매칭 median 오차 개선 등을 확인하는 방식입니다. 현재 코드에는 문서에 적힌 p90 개선 조건까지 구현되어 있지는 않습니다. 채택 조건 (scripts/
+  compare_wan_geometry_methods.py:97)
+
+  따라서 “HardFlow와 YFlow만 적용 가능했다”는 말은 terminal target을 교체하는 실험을 연결할 수 있었다는 의미로 이해해야 합니다. 두 방법이 최종 영상의 epipolar
+  hard constraint를 보장했다는 뜻은 아닙니다. 문서도 현재 결론 (docs/exp/exp_02_video.md:256)에서 이를 명시하고 있습니다.

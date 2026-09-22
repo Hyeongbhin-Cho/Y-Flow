@@ -215,8 +215,143 @@ $$d_S=\frac{(p_k^\top Fp_1)^2}{(Fp_1)_x^2+(Fp_1)_y^2+(F^\top p_k)_x^2+(F^\top p_
 | 5 | 후반 보정 1클립 → 개발 10클립 | 수치 안정성과 비용·품질 확인 |
 | 6 | 설정 동결, test 20×3 → 100×3 | 보정 효과와 실패율을 함께 보고 |
 
-`data/realestate10k.py`는 카메라 parser, 준비된 프레임 로더, Wan causal-VAE 입력 padding/mask, prompt/noise seed, 픽셀 대응점용 에피폴라 잔차와 투영 연산을 제공한다. `scripts/verify_realestate10k_geometry.py`는 원본/생성 MP4의 SIFT-F 잔차를, `scripts/warp_realestate10k_geometry.py`는 희소 RGB warp 뒤 새 SIFT 잔차를 기록한다. 좌표 투영의 제약과 영상 재측정 오라클을 분리한다. `BaseConstraint.project_feasible`의 엄밀 보장 계약은 대응점 표현에만 적용할 수 있다. RGB/latent 보정을 동일한 exact projector로 등록하지 않는다. scheduler 내부의 `Q_F` bridge 및 `YFlow-Geo`/각 `-Geo` sampler는 아직 구현 대상이다.
+`data/realestate10k.py`는 카메라 parser, 준비된 프레임 로더, Wan causal-VAE 입력 padding/mask, prompt/noise seed, 픽셀 대응점용 에피폴라 잔차와 투영 연산을 제공한다. `scripts/verify_realestate10k_geometry.py`는 원본/생성 MP4의 SIFT-F 잔차를, `scripts/warp_realestate10k_geometry.py`는 희소 RGB warp 뒤 새 SIFT 잔차를 기록한다. `scripts/compare_wan_geometry_methods.py`는 scheduler 내부의 `Q_F` bridge와 FlowMatch, terminal warp, YFlow-Geo, HardFlow-Geo pilot을 실행한다. 좌표 투영의 제약과 영상 재측정 오라클을 분리하며, `BaseConstraint.project_feasible`의 엄밀 보장 계약은 대응점 표현에만 적용할 수 있다. RGB/latent 보정을 동일한 exact projector로 등록하지 않는다.
 
-현재 `configs/exp_02_video.yaml`은 CLEVRER 설정이며 기존 실행 스크립트는 새 계획을 실행하지 않는다. `configs/realestate10k.yaml`은 개발 데이터 로더 설정이다. `model/wan.py`의 VAE helper는 Wan latent 정규화와 deterministic encode를 적용하지만, transformer 가중치 로드·text conditioning/CFG·scheduler 시간과 부호를 포함한 생성 경로는 아직 기준 구현과 대조하고 연결해야 한다.
+현재 `configs/exp_02_video.yaml`은 CLEVRER 설정이며 `configs/realestate10k.yaml`은 개발 데이터 로더 설정이다. `model/wan.py`의 VAE helper는 Wan latent 정규화와 deterministic encode를 적용한다. Wan transformer 가중치·text conditioning/CFG·scheduler 시간과 부호를 포함한 pilot 생성 경로는 기준 pipeline과 같은 seed에서 대조했으며, 다수 clip 확장 전에는 계속 동치 검증이 필요하다.
 
 첫 실행 목표는 **Wan 대규모 생성이 아니라 RealEstate10K 10클립에서 F 기반 평가가 작동하는지 확인하는 것**이다. 영상 보정 전달이 실패하면 결과를 명확히 남기고, 미분 가능한 latent 최적화 또는 명시적인 depth/reprojection 표현을 후속 설계로 검토한다. 그 경우 backprop-free 가정과 실험 범위를 다시 명시한다.
+
+## 7. 최종 pilot 보고서: Wan VAE bridge의 한계
+
+### 7.1 실험 설정
+
+동일한 prompt, seed, Wan 2.1 T2V-1.3B, 30 denoising step에서 RealEstate10K clip `75471527ff3b5afd` 하나를 생성했다. `YFlow-Geo`와 `HardFlow-Geo`는 마지막 두 step에서만 VAE bridge를 호출했고, $\alpha=0.5$를 사용했다. dense 설정은 `control_features=8000`, ratio test `0.8`, `min_controls=12`, `support_radius=64 px`, `max_matches=2000`이다. 모든 수치는 최종 생성 MP4에서 새로 SIFT를 추출하여 계산한 F 기반 raw residual (px)이다.
+
+표의 평균·분산은 각 방법에서 `status=ok`인 frame pair의 median residual을 0으로 대체하지 않고 집계한 표본 분산이다. 따라서 matcher 실패로 유효 pair 집합이 달라 방법 간 평균을 엄밀한 paired 비교로 해석할 수 없다. 특히 YFlow-Geo와 HardFlow-Geo의 낮은 매치 수는 좋은 결과가 아니라 실패 지표다.
+
+| 방법 | 유효 pair / 13 | mean (px) | variance (px²) | std. (px) | median (px) |
+| :--- | ---: | ---: | ---: | ---: | ---: |
+| FlowMatch | 13 / 13 | 43.75 | 1567.80 | 39.60 | 16.71 |
+| Terminal warp | 13 / 13 | 41.20 | 2353.59 | 48.51 | 12.59 |
+| YFlow-Geo | 10 / 13 | 53.20 | 2076.61 | 45.57 | 41.08 |
+| HardFlow-Geo | 9 / 13 | 54.82 | 1914.97 | 43.76 | 43.99 |
+
+Terminal warp는 가까운 pair에서 residual median을 낮춘다. 예를 들어 0→1/2/3은 FlowMatch의 16.71/33.93/49.54 px에서 3.16/4.59/10.56 px가 되었다. 그러나 dense control은 tail을 악화시켰다. terminal warp의 동일 pair p90은 92.36/54.06/81.02 px이며, 0→4 이후 장거리 pair도 개선하지 못했다. 따라서 이 결과는 최종 RGB 보정의 **국소적 가능성**만 보이며, 영상 전체의 안정된 기하 개선은 아니다.
+
+YFlow-Geo와 HardFlow-Geo는 terminal warp보다 일관되게 좋지 않았다. YFlow-Geo는 0→1에서 1.90 px까지 낮췄지만 0→3은 93.35 px로 악화했고 3개 pair에서 충분한 매칭을 잃었다. HardFlow-Geo도 0→1은 1.77 px였지만 0→2/3은 33.47/43.99 px이고 4개 pair가 무매칭 또는 매칭 부족이었다. 이 단일 clip에서는 YFlow-Geo가 HardFlow-Geo보다 mean과 final-step sensitivity가 조금 낮지만, 둘 다 유효 pair 감소와 큰 p90 때문에 우열을 주장할 근거가 없다.
+
+Bridge sensitivity $\hat L_Q=\|Q_F(z+\epsilon r)-Q_F(z)\|_2/\epsilon$ ($\epsilon=0.001$)는 terminal warp에서 81.25, YFlow-Geo에서 102.71과 19.14, HardFlow-Geo에서 102.71과 33.78이었다. 이는 strict Lipschitz 상수나 certificate가 아니라 경험적 진단값이다. 다만 작은 latent perturbation이 bridge 출력에서 크게 증폭됨을 보이며, VAE bridge를 안정적인 hard projector로 취급할 수 없다는 직접적 증거다. accept된 pair 수가 같아도 대응점의 identity·warp가 같다는 뜻은 아니다.
+
+### 7.2 실패 원인
+
+1. **제약 공간 불일치:** exact epipolar projection은 관측된 2D 대응점 좌표에만 정의된다. Wan latent에는 대응점 좌표, camera plane, 또는 해당 제약의 닫힌 feasible set이 없다.
+2. **불연속 bridge:** SIFT 검출·descriptor matching·ratio test·control accept/reject·sparse interpolation·RGB resampling·VAE encode는 미분 가능하거나 연속인 projector가 아니다. 비슷한 latent도 다른 control set과 다른 warp를 만들 수 있다.
+3. **VAE round-trip 손실:** $E(W_F(D(z)))$는 pixel warp를 latent로 되돌리는 근사 변환이다. VAE의 압축, temporal receptive field, 재구성 오차가 RGB에서 맞춘 대응점을 보존하지 않으며, 이후 DiT step이 그 보정을 다시 지울 수 있다.
+4. **가림과 제한된 overlap:** 더 많은 SIFT feature를 허용해도 0→4 이후에는 충분한 제어점이 생기지 않았다. 장거리 프레임의 가시 영역 차이는 detector 수를 늘려 해결되지 않는다.
+5. **저신뢰 control의 확대:** dense 설정은 가까운 pair의 coverage를 약 20--31%까지 늘렸으나 p90과 결과 분산도 키웠다. 더 느슨한 matching은 제약을 강화한 것이 아니라 잘못된 warp의 자유도를 늘린 것이다.
+6. **HardFlow 전제 불충족:** HardFlow의 hard projection은 모델 state 공간에서 정의된 feasible projector를 요구한다. 여기의 $Q_F$는 종단 clean prediction에 대한 사후 RGB/VAE 편집이므로, state-space hard constraint나 path-wise feasibility를 제공하지 않는다.
+
+### 7.3 적용 가능 범위와 결론
+
+이 VAE bridge에서는 FlowMatch baseline과 terminal warp만 직접 실행 가능한 비교이다. `YFlow-Geo`와 `HardFlow-Geo`는 terminal target을 bridge 결과로 치환한 탐색적 ablation이며, hard constraint를 Wan flow matching에 직접 적용한 구현이 아니다. 본 pilot에서 terminal warp는 일부 가까운 pair를 개선했지만, VAE bridge를 거친 feedback은 평균 오차, 분산, tail residual, 유효 매칭 수에서 baseline 또는 terminal warp를 일관되게 넘지 못했다.
+
+SafeFlow, UniConFlow, GuideFlow는 이 실험의 VAE bridge에 **적용할 수 없다.** SafeFlow와 UniConFlow는 latent-space barrier/zeroing function 및 그 Jacobian을 사용한 QP를 요구하지만, 현재 제약은 비미분 대응점 처리 뒤에만 정의된다. GuideFlow는 camera/geometry-conditioned guide 또는 energy model의 학습을 요구하며, Wan T2V의 입력과 10개 개발 clip에는 그 조건과 학습 근거가 없다. 이들을 단순 RGB/VAE bridge injection으로 구현하면 원 방법의 safety, convergence, guidance 주장을 잃으므로 정식 baseline으로 보고하지 않는다.
+
+따라서 다음 연구 주제는 **VAE bridge에도 적용 가능한 hard-constraint 전략의 설계**다. 후보는 (a) depth, camera, visibility를 명시적으로 표현하는 differentiable 3D reprojection latent, (b) decoder feature 또는 latent에서 학습한 연속적 correspondence/geometry surrogate와 검증된 projector, (c) warp와 VAE 재인코딩을 함께 학습하여 $D(Q(z))$의 대응점 보존을 강제하는 constrained decoder, (d) detector confidence·cycle consistency·visibility를 포함한 conservative acceptance 및 별도 평가 matcher이다. 이 전략은 먼저 synthetic camera scene과 다수 clip에서 연속성, VAE round-trip 보존, 최종 재매칭 개선을 검증한 뒤 flow matching의 hard constraint로 연결한다.
+
+## 8. PPT 발표용 구성 — 4페이지
+
+아래 SVG는 각각 **1600×900, 16:9** 벡터 그림이다. PowerPoint에서 `삽입 → 그림`으로 넣고 슬라이드에 맞추면 된다. 그림은 영문 표기로 구성했으며, 아래 한글 핵심 내용과 발표 멘트는 슬라이드 본문 또는 발표자 노트로 사용한다. 결과는 마지막 **dense pilot 한 클립**을 기준으로 한다.
+
+### 1페이지 — Wan 모델: latent 공간에서 비디오 생성
+
+![Wan의 텍스트 인코더, DiT, Flow Matching scheduler 및 VAE decoder 구조](figures/exp_02_video/01_wan_architecture.svg)
+
+**슬라이드 핵심 내용**
+
+- 텍스트를 T5 encoder로 변환하고, DiT의 cross-attention에 조건으로 전달한다.
+- DiT는 noisy video latent와 timestep을 받아 속도를 예측한다. Scheduler가 latent를 갱신하며, 본 실험은 30회 반복한다.
+- 최종 latent를 3D causal VAE decoder로 RGB 영상으로 변환한다. 기본 T2V 생성에는 RGB를 다시 넣는 VAE encoder가 필요하지 않지만, 본 기하 보정 bridge에는 재인코딩이 추가된다.
+- **핵심 문제: 생성 상태는 latent이고, 에피폴라 제약은 RGB에서 추출한 픽셀 좌표에 정의된다.** 본 T2V 실험에서 원본 camera pose는 모델의 직접 입력이 아니다.
+
+**발표 멘트:** “Wan은 픽셀을 직접 갱신하지 않고 압축된 영상 latent에서 생성합니다. 우리는 최종 영상을 디코딩한 뒤에야 대응점을 찾을 수 있습니다. 따라서 기하 보정을 생성 과정에 되돌리려면 VAE encoder와 decoder를 거쳐야 합니다.”
+
+구조 근거: [Wan 공식 구현의 모델 설명](https://github.com/Wan-Video/Wan2.1#introduction), [Wan 기술 보고서](https://arxiv.org/abs/2503.20314). 그림은 공식 그림의 복제가 아닌 본 실험용 구조 요약이다.
+
+### 2페이지 — 에피폴라: 대응점이 위치할 수 있는 선
+
+![두 영상에서 기준점 p가 만드는 에피폴라 선과 관측 대응점 q](figures/exp_02_video/02_epipolar_geometry.svg)
+
+**슬라이드 핵심 내용**
+
+- 동일한 정적 3D 점을 두 카메라에서 보면, 첫 영상의 점 $p$에 대응하는 두 번째 점 $q$는 에피폴라 선 $l=Fp$ 위에 있어야 한다.
+- 제약식은 $q^\top Fp=0$이다. $F$는 두 카메라의 상대 pose와 intrinsics로 계산한다.
+- 선 밖의 관측 대응점은 선 방향에 수직으로 이동시켜 제약을 만족시킬 수 있다.
+- **선 위의 어느 위치인지와 depth는 결정되지 않는다.** 에피폴라 만족만으로 정확한 novel view 또는 완전한 3D 일관성을 증명할 수 없다.
+
+**발표 멘트:** “첫 번째 영상에서 점 하나를 정하면 두 번째 영상에서는 대응점을 화면 전체가 아니라 특정 선 위에서 찾아야 합니다. 우리는 원본 카메라 정보로 이 선을 계산하고, 생성 영상의 대응점이 얼마나 벗어났는지 측정합니다.”
+
+### 3페이지 — 측정과 제약: 좌표 투영 후 영상 재검증
+
+![SIFT 측정, 점-선 거리, 좌표 투영, RGB warp와 VAE 재구성 후 재측정](figures/exp_02_video/03_measurement_constraint.svg)
+
+**슬라이드 핵심 내용**
+
+- 최종 MP4에서 SIFT 대응점을 새로 추출하고, 원본 camera $F$에 대한 **한쪽 점-선 거리**를 계산한다. 실제 pilot 값은 앞 절의 계획 지표인 Sampson 거리가 아니다.
+- $l=Fp=(a,b,c)^\top$일 때 $d=|a q_x+b q_y+c|/\sqrt{a^2+b^2}$ (px). Pair별 median, p90, 매치 수, 매칭 부족 여부를 함께 기록한다.
+- 좌표 투영은 $q^\star=q-\frac{a q_x+b q_y+c}{a^2+b^2}(a,b)^\top$. 비퇴화 선에서 좌표 잔차는 약 $10^{-14}$ px지만, 이 값은 **좌표 연산 검산**이다.
+- 투영 변위를 RGB warp로 옮긴 뒤 VAE 재인코딩·디코딩과 최종 영상 재매칭을 거쳐야 실제 영상 개선을 확인할 수 있다.
+
+**실제 실행 조건:** dense 보정은 SIFT feature 8000개, ratio 0.8, 최대 매치 2000개, 제어점 최소 12개, 최대 변위 64 px, support radius 64 px, coverage 최소 2%를 사용했다. Bridge는 보정 뒤 매치 최소 12개와 median 개선을 요구한다. **현재 accept gate는 p90 개선을 요구하지 않는다.** 최종 evaluator는 별도로 SIFT feature 4000개·ratio 0.75·매치 최소 8개를 사용한다. 따라서 bridge의 `min_matches=12`와 최종 평가의 유효 판정은 다르다.
+
+**발표 멘트:** “대응점을 선 위로 옮기면 수학적으로 잔차는 거의 0입니다. 그러나 그 점을 따라 영상을 warp하고 VAE를 통과시키면 대응점이 달라질 수 있습니다. 그래서 투영한 좌표가 아니라 최종 영상에서 다시 찾은 대응점으로 평가했습니다.”
+
+### 4페이지 — 방법별 결과와 다음 연구
+
+![Dense pilot의 방법별 평균 잔차, 표본분산, 표준편차와 유효 pair 수](figures/exp_02_video/04_method_results.svg)
+
+**방법 비교**
+
+| 방법 | 보정 적용 위치 | 평균 ± 표준편차 (px) | 표본분산 (px²) | 매칭 부족 pair |
+| :--- | :--- | ---: | ---: | ---: |
+| FlowMatch | 무보정 baseline | 43.75 ± 39.60 | 1567.80 | 0/13 (0%) |
+| Terminal warp | 최종 clean latent → RGB warp → VAE 재인코딩 | 41.20 ± 48.51 | 2353.59 | 0/13 (0%) |
+| YFlow-Geo | 후반 종단 예측 보정을 다음 생성 상태에 반영 | 53.20 ± 45.57 | 2076.61 | 3/13 (23.1%) |
+| HardFlow-Geo | 보정한 종단 target으로 다음 상태 재구성 | 54.82 ± 43.76 | 1914.97 | 4/13 (30.8%) |
+
+**통계 해석:** 각 유효 pair의 `raw_median_px`를 동일 가중치로 집계했다. 표준편차·표본분산은 **한 클립 내부 pair 간 변동**이며, 독립 실행 간 분산이나 신뢰구간이 아니다. Pair가 프레임을 공유하고 방법별 누락 집합도 달라 평균만으로 순위를 확정할 수 없다. 매칭 부족률은 기하 제약 위반율과도 구분한다.
+
+**슬라이드 결론**
+
+- Terminal warp는 가까운 pair에서 개선됐지만 전체 평균 개선은 작고 tail 오차가 남았다. YFlow-Geo와 HardFlow-Geo의 일관된 우월성은 확인하지 못했다.
+- 실패 원인 후보는 sparse matching·gate의 불연속, 보정 범위 부족, VAE 재구성 손실, 후속 생성 단계의 변화다. 이 pilot만으로 VAE가 단독 원인이라고 확정할 수는 없다.
+- SafeFlow·UniConFlow·GuideFlow는 **현재 비미분 bridge와 기존 구현 조건에서 원 방법 그대로 적용할 수 없어 비교에서 제외**했다. 모든 VAE 기반 설계에서 원천적으로 불가능하다는 의미는 아니다.
+- **다음 연구: VAE bridge를 통과한 최종 영상에서도 제약을 유지하는 hard-constraint 전략을 설계한다.**
+
+**발표 멘트:** “좌표 수준의 정확한 제약은 만들었지만, 생성 영상까지 그 보장이 전달되지는 않았습니다. 이번 실험은 특정 방법의 승리를 보인 결과라기보다, latent와 RGB 사이의 제약 보존 문제를 드러낸 pilot입니다. 다음 연구에서는 VAE를 통과한 뒤에도 검증 가능한 제약을 유지하는 방법을 찾겠습니다.”
+
+## 9. Dense pilot 결과 요약표
+
+제공된 `outputs/realestate10k_geo_dense` 결과 JSON의 최종 영상 `geometry`를 집계했다. 평가 대상은 RealEstate10K clip `75471527ff3b5afd` 하나이며, 첫 프레임 기준 7쌍과 인접 프레임 6쌍으로 총 13쌍이다. Wan2.1-T2V-1.3B, 30 steps, CFG 5.0, 보정 강도 0.5, 후반 보정 2 steps 설정을 사용했다.
+
+↑는 클수록, ↓는 작을수록 좋은 지표이며, 각 열의 가장 좋은 관측값은 **굵게** 표시했다(동률 포함). `None`은 현재 bridge에서 해당 원 방법을 적용하지 않아 결과가 없음을 뜻한다.
+
+| Method | Valid pairs ↑ | Mean epipolar error (px) ↓ | Std. (px) ↓ | Sample variance (px²) ↓ | Mean pair p90 (px) ↓ | Mean matches / pair ↑ | Matching failure rate ↓ |
+| :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| FlowMatch (Baseline) | **13/13** | 43.75 | **39.60** | **1567.80** | **58.18** | **30.85** | **0.0%** |
+| Terminal warp | **13/13** | **41.20** | 48.51 | 2353.59 | 78.06 | 20.46 | **0.0%** |
+| GuideFlow | None | None | None | None | None | None | None |
+| HardFlow-Geo | 9/13 | 54.82 | 43.76 | 1914.97 | 91.26 | 11.31 | 30.8% |
+| SafeFlow | None | None | None | None | None | None | None |
+| UniConFlow | None | None | None | None | None | None | None |
+| YFlow-Geo (Ours) | 10/13 | 53.20 | 45.57 | 2076.61 | 100.89 | 13.69 | 23.1% |
+
+지표 정의 및 해석:
+
+- **Valid pairs:** 최종 영상 재매칭에서 `status=ok`인 pair 수. 제약 만족 pair 수가 아니다.
+- **Mean epipolar error / Std. / Sample variance:** 유효 pair별 `raw_median_px`의 동일 가중 평균, 표본 표준편차, 표본분산(`ddof=1`). 표준편차·분산의 ↓는 pair 간 오차 변동이 작다는 뜻이며, 평균 오차와 함께 해석한다. 독립 실행 간 변동이나 신뢰구간이 아니다.
+- **Mean pair p90:** 유효 pair별 `raw_p90_px`의 산술평균. 모든 대응점을 합쳐 계산한 전체 p90이 아니다.
+- **Mean matches / pair:** 매칭 부족 pair를 포함한 전체 13쌍의 `matches` 평균. 매칭 수가 많아도 대응점의 정확성이나 제약 만족을 보장하지 않는다.
+- **Matching failure rate:** `status=insufficient_matches`인 pair 수 / 13. Epipolar 제약 위반율과 다르다. 매칭 실패 pair의 잔차를 0으로 대체하지 않았다.
+- **비교 범위:** 방법별 유효 pair 집합이 다르므로 굵은 값은 관측된 열별 최선값이며, 동일 pair에서의 우월성이나 통계적 유의성을 뜻하지 않는다. HardFlow-Geo와 YFlow-Geo는 terminal target을 RGB/VAE bridge로 교체하는 실험이며 원 방법의 hard constraint 보장을 제공하지 않는다.
+- **집계 제외:** `bridge_calls`의 중간 보정 결과와 `projected_max_abs_px`는 최종 영상 오차에 포함하지 않았다. 후자는 추출된 좌표를 선 위로 투영한 수학적 검산값이다.
