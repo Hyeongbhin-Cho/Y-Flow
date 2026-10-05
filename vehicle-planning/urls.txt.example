@@ -1,0 +1,16 @@
+# nuplan.org 로그인 -> Download 페이지에서 링크 주소 복사해서 한 줄에 하나씩 붙여넣기.
+# (링크에 서명 토큰이 붙어 있으면 시간이 지나면 만료됨 -> 만료되면 다시 복사해서 재실행하면 이어받음)
+# '#'으로 시작하는 줄은 무시. 파일 이름으로 split 자동 분류:
+#   이름에 mini -> splits/mini,  test -> splits/test,  나머지(train_*, val) -> splits/trainval
+# 센서(camera/lidar) zip은 필요 없어서 건너뜀.
+#
+# FlowDrive ckpt는 레포에 들어 있어서 학습 데이터(train_*)는 필요 없음. 평가용만 받으면 됨.
+#
+# 1) 스모크 테스트용 (작음, 강력 추천):
+# https://....../nuplan-v1.1_mini.zip
+#
+# 2) Val14 (val 로그 -> splits/trainval 로 들어감):
+# https://....../nuplan-v1.1_val.zip
+#
+# 3) Test14-random / Test14-hard / interPlan (test 로그):
+# https://....../nuplan-v1.1_test.zip

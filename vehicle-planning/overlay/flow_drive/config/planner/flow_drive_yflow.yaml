@@ -1,0 +1,47 @@
+flow_drive_yflow:
+  _target_: flow_drive.planner.yflow_planner.FlowDriveYFlowPlannerWrapper
+  _convert_: "all"
+
+  device: cuda
+  ckpt_path: ???
+  mlflow_exp_name: "None"
+  load_run_name: null
+  load_epoch: 0
+  post_mode: 2
+  render: False
+  video_dir: None
+  emergency_brake_enabled: True
+  corridor_source: route
+  default_speed_limit: 15.0
+  stats_dir: None
+  torch_threads: 1
+
+  yflow:
+    enabled: True
+    t_on: 0.5
+    gamma_max: 1.0
+    lam: 1.0
+    mu: 1.0
+    smooth_alpha: 2.0
+    w_progress: 0.0
+    dt: 0.1
+    a_max: 4.0
+    accel_mode: ball
+    a_lon_max: 2.2
+    a_lon_min: -3.8
+    a_lat_max: 4.5
+    retime_final_only: False
+    v_tol: 0.0
+    use_corridor: True
+    use_obstacles: False
+    iters: 150
+    final_iters: 600
+    rho: 300.0
+    scp_rounds: 4
+    scp_damping: 1.0
+    tol_speed: 0.1
+    tol_accel: 0.3
+    tol_pos: 0.05
+    solver_device: cpu
+    fallback_resample: False
+    corridor_precheck: False
