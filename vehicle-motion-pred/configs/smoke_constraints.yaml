@@ -1,0 +1,73 @@
+constraints:
+  a_cont: 8.0
+  a_max: 6.0
+  drivable_margin: 0.5
+  hard:
+  - speed
+  - continuity
+  - accel
+  lane_half_width: 2.0
+  proj_inner: 4
+  proj_relax: 1.8
+  proj_sweeps: 10
+  proj_sweeps_final: 50
+  proj_tail: 3
+  static_margin: 0.0
+  tol: 0.001
+  v_max: 25.0
+  w_hard: 0.0
+  w_lane: 0.1
+data:
+  cache_dir: datasets/synthetic
+  eval_split: val
+  limit_eval: null
+  limit_train: null
+  train_split: train
+device: cuda
+eval:
+  batch_size: 256
+  extra_k:
+  - 1
+  k: 6
+  kinematic_limits: {}
+  n_steps: 10
+  save_predictions: true
+  seed: 0
+  use_ema: true
+flow:
+  norm: per_step
+  t_schedule: uniform
+  train_samples_per_scene: 4
+model:
+  ctx_scale_m: 30.0
+  d_model: 128
+  dec_layers: 3
+  dropout: 0.1
+  enc_layers: 3
+  n_heads: 8
+out_dir: outputs
+run_name: fm_synthetic
+seed: 0
+train:
+  batch_size: 256
+  ema_decay: 0.999
+  grad_clip: 1.0
+  log_every: 200
+  lr: 0.0005
+  num_workers: 0
+  save_every: 2000
+  select_limit: 500
+  select_n_steps: 10
+  select_on_minade: true
+  steps: 6000
+  warmup: 500
+  weight_decay: 0.01
+yflow:
+  delta: 0.1
+  gamma_max: 1.0
+  lambda_oc: 10.0
+  max_iter: 20
+  max_step: 0.5
+  mu: 1.0
+  safety_buffer: 0.001
+  t_on: 0.5

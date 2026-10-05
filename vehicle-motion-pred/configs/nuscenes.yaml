@@ -1,0 +1,70 @@
+seed: 0
+device: cuda
+out_dir: outputs
+run_name: fm_nuscenes
+data:
+  cache_dir: datasets/nuscenes
+  train_split: train
+  eval_split: train_val
+  limit_train: null
+  limit_eval: null
+model:
+  d_model: 128
+  n_heads: 8
+  enc_layers: 3
+  dec_layers: 3
+  dropout: 0.2
+  ctx_scale_m: 40.0
+flow:
+  train_samples_per_scene: 4
+  t_schedule: uniform
+  norm: per_step
+train:
+  batch_size: 64
+  steps: 60000
+  lr: 0.0005
+  weight_decay: 0.01
+  warmup: 2000
+  grad_clip: 1.0
+  ema_decay: 0.999
+  log_every: 200
+  save_every: 5000
+  select_on_minade: true
+  select_limit: 2000
+  select_n_steps: 10
+  num_workers: 4
+eval:
+  k: 10
+  extra_k:
+  - 5
+  n_steps: 10
+  batch_size: 256
+  seed: 0
+  use_ema: true
+  save_predictions: true
+  kinematic_limits: {}
+constraints:
+  v_max: 25.0
+  a_max: 26.0
+  a_cont: 12.0
+  drivable_margin: 1.5
+  static_margin: -0.8
+  lane_half_width: 2.0
+  hard: [speed, continuity, accel, drivable, static]
+  w_hard: 0.0
+  w_lane: 0.1
+  tol: 0.001
+  proj_sweeps: 10
+  proj_sweeps_final: 50
+  proj_inner: 4
+  proj_relax: 1.8
+  proj_tail: 3
+yflow:
+  t_on: 0.5
+  lambda_oc: 10.0
+  mu: 1.0
+  delta: 0.1
+  gamma_max: 1.0
+  max_iter: 20
+  safety_buffer: 0.001
+  max_step: 0.5

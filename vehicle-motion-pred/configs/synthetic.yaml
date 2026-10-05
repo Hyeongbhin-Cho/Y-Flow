@@ -1,0 +1,45 @@
+seed: 0
+device: cuda
+out_dir: outputs
+run_name: fm_synthetic
+data:
+  cache_dir: datasets/synthetic
+  train_split: train
+  eval_split: val
+  limit_train: null
+  limit_eval: null
+model:
+  d_model: 128
+  n_heads: 8
+  enc_layers: 3
+  dec_layers: 3
+  dropout: 0.1
+  ctx_scale_m: 30.0
+flow:
+  train_samples_per_scene: 4
+  t_schedule: uniform
+  norm: per_step
+train:
+  batch_size: 256
+  steps: 6000
+  lr: 0.0005
+  weight_decay: 0.01
+  warmup: 500
+  grad_clip: 1.0
+  ema_decay: 0.999
+  log_every: 200
+  save_every: 2000
+  select_on_minade: true
+  select_limit: 500
+  select_n_steps: 10
+  num_workers: 0
+eval:
+  k: 6
+  extra_k:
+  - 1
+  n_steps: 10
+  batch_size: 256
+  seed: 0
+  use_ema: true
+  save_predictions: true
+  kinematic_limits: {}
